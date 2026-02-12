@@ -3,22 +3,23 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>FestőNapló v11.0 PRO</title>
+    <title>FestőNapló v11.1 PRO</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
     
     <style>
-        /* --- BUSINESS DESIGN SYSTEM --- */
+        /* --- BUSINESS DESIGN SYSTEM v2 --- */
         :root {
-            --primary: #1a237e; /* Profi sötétkék */
-            --accent: #c0a062; /* Arany/Bronz a kiemelésekhez */
-            --bg: #f4f6f8; /* Világosszürke irodai háttér */
-            --text: #263238; /* Sötét grafit */
+            --primary: #1a237e; /* Navy Blue */
+            --primary-light: #534bae;
+            --accent: #ffab00; /* Amber */
+            --bg: #eceff1;
+            --text: #263238;
             --white: #ffffff;
             --success: #2e7d32;
             --danger: #c62828;
-            --border-radius: 4px; /* Szögletesebb, komolyabb */
+            --radius: 4px;
         }
 
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; outline: none; }
@@ -31,93 +32,69 @@
 
         /* HEADER */
         header { 
-            flex: 0 0 60px; 
-            background: var(--primary); 
-            color: var(--white);
+            flex: 0 0 60px; background: var(--primary); color: var(--white);
             display: flex; justify-content: space-between; align-items: center; 
-            padding: 0 20px; 
-            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
-            z-index: 100;
+            padding: 0 20px; box-shadow: 0 2px 5px rgba(0,0,0,0.2); z-index: 100;
         }
-        h1 { margin: 0; font-size: 18px; font-weight: 500; letter-spacing: 0.5px; text-transform: uppercase; }
+        h1 { margin: 0; font-size: 18px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; }
         .header-actions button { color: var(--white); background: transparent; border: none; font-size: 18px; padding: 10px; }
 
-        /* CONTENT AREA */
+        /* CONTENT */
         #main-container { flex: 1; overflow-y: auto; padding: 15px; padding-bottom: 80px; }
 
         /* CARDS */
         .card { 
-            background: var(--white); 
-            border-radius: var(--border-radius); 
-            padding: 20px; 
-            margin-bottom: 15px; 
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1); 
-            border: 1px solid #e0e0e0;
+            background: var(--white); border-radius: var(--radius); padding: 20px; 
+            margin-bottom: 15px; box-shadow: 0 1px 3px rgba(0,0,0,0.12); border-left: 4px solid transparent;
         }
-        .card h3 { margin-top: 0; font-size: 16px; color: var(--primary); border-bottom: 2px solid #eee; padding-bottom: 10px; margin-bottom: 15px; }
+        .card h3 { margin-top: 0; font-size: 15px; color: var(--primary); border-bottom: 2px solid #eee; padding-bottom: 10px; margin-bottom: 15px; text-transform: uppercase; }
 
         /* INPUTS */
         .input-group { margin-bottom: 15px; }
-        label { display: block; font-size: 11px; font-weight: 700; color: #546e7a; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 0.5px; }
+        label { display: block; font-size: 11px; font-weight: 700; color: #546e7a; margin-bottom: 5px; text-transform: uppercase; }
         input, select, textarea { 
-            width: 100%; padding: 12px; 
-            border: 1px solid #cfd8dc; 
-            border-radius: var(--border-radius); 
-            font-size: 15px; 
-            background: #fff; 
-            color: #37474f;
-            transition: border 0.3s;
+            width: 100%; padding: 12px; border: 1px solid #cfd8dc; border-radius: var(--radius); 
+            font-size: 16px; background: #fff; color: #37474f; transition: border 0.2s;
         }
-        input:focus, select:focus, textarea:focus { border-color: var(--primary); }
+        input:focus, select:focus { border-color: var(--primary); }
         
         /* BUTTONS */
-        button { cursor: pointer; transition: all 0.2s; }
-        button.primary { width: 100%; background: var(--primary); color: var(--white); border: none; padding: 14px; border-radius: var(--border-radius); font-size: 14px; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; }
-        button.secondary { width: 100%; background: #eceff1; color: #455a64; border: 1px solid #cfd8dc; padding: 14px; border-radius: var(--border-radius); font-size: 14px; font-weight: bold; margin-top: 10px; text-transform: uppercase; }
-        button.success { width: 100%; background: var(--success); color: var(--white); border: none; padding: 14px; border-radius: var(--border-radius); font-size: 14px; font-weight: bold; margin-top:10px; text-transform: uppercase; }
-        button.danger { background: var(--danger); color: white; }
+        button { cursor: pointer; transition: all 0.2s; font-family: inherit; }
+        button.primary { width: 100%; background: var(--primary); color: var(--white); border: none; padding: 14px; border-radius: var(--radius); font-size: 14px; font-weight: bold; text-transform: uppercase; }
+        button.secondary { width: 100%; background: #cfd8dc; color: #37474f; border: none; padding: 14px; border-radius: var(--radius); font-size: 14px; font-weight: bold; margin-top: 10px; text-transform: uppercase; }
+        button.success { width: 100%; background: var(--success); color: var(--white); border: none; padding: 14px; border-radius: var(--radius); font-size: 14px; font-weight: bold; margin-top:10px; text-transform: uppercase; }
 
         /* NAVBAR */
         .navbar { 
-            flex: 0 0 70px; 
-            background: var(--white); 
-            border-top: 1px solid #e0e0e0; 
-            display: flex; justify-content: space-around; align-items: center; 
-            z-index: 100;
+            flex: 0 0 70px; background: var(--white); border-top: 1px solid #cfd8dc; 
+            display: flex; justify-content: space-around; align-items: center; z-index: 100;
         }
         .nav-btn { background: none; border: none; display: flex; flex-direction: column; align-items: center; color: #90a4ae; font-size: 10px; font-weight: bold; width: 60px; }
         .nav-btn i { font-size: 22px; margin-bottom: 4px; }
         .nav-btn.active { color: var(--primary); }
         .fab { 
-            width: 50px; height: 50px; 
-            background: var(--accent); 
-            border-radius: 50%; 
-            color: white; border: none; 
-            font-size: 20px; 
-            box-shadow: 0 4px 10px rgba(192, 160, 98, 0.4); 
-            display: flex; align-items: center; justify-content: center; 
-            margin-top: -25px; 
+            width: 54px; height: 54px; background: var(--accent); border-radius: 50%; 
+            color: #fff; border: none; font-size: 22px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); 
+            display: flex; align-items: center; justify-content: center; margin-top: -30px; 
         }
 
-        /* LIST & ITEMS */
+        /* LISTS */
         .list-item { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid #eee; }
-        .list-item:last-child { border-bottom: none; }
-        .quote-row { display: flex; align-items: center; border-bottom: 1px solid #eee; padding: 10px 0; font-size: 14px; }
-        .quote-total { font-size: 18px; font-weight: bold; color: var(--primary); text-align: right; margin-top: 15px; border-top: 2px solid #eee; padding-top: 10px; }
-        
-        /* SHOP CHECKBOX */
         .check-circle { width: 24px; height: 24px; border-radius: 4px; border: 2px solid #b0bec5; display: flex; align-items: center; justify-content: center; margin-right: 15px; flex-shrink: 0; }
         .item-done .check-circle { background-color: var(--success); border-color: var(--success); color: white; }
         .item-done .item-content { text-decoration: line-through; color: #b0bec5; }
-
+        
         /* EXTRAS */
-        .room-tag { background: #546e7a; color: white; padding: 3px 8px; border-radius: 3px; font-size: 11px; margin-right: 5px; display: inline-block; }
-        .calc-result-box { display:none; background: #e8eaf6; padding: 15px; border-radius: var(--border-radius); text-align: center; border: 1px solid #c5cae9; margin-top: 20px; }
-        .calc-val { font-size: 24px; font-weight: 900; color: var(--primary); }
+        .photo-btn { border: 2px dashed var(--primary); color: var(--primary); background: #e8eaf6; padding: 15px; border-radius: var(--radius); text-align: center; font-weight: bold; display: block; margin-bottom: 10px; }
+        .photo-preview { width: 100%; height: 200px; object-fit: contain; background: #fff; border: 1px solid #ddd; display: none; margin-bottom: 10px; }
+        
+        .calc-result-box { display:none; background: var(--primary); color: white; padding: 20px; border-radius: var(--radius); text-align: center; margin-top: 20px; }
+        .calc-val { font-size: 32px; font-weight: 900; color: var(--accent); }
 
         /* MODALS */
-        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 900; display: none; backdrop-filter: blur(2px); }
-        .modal-box { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 92%; max-height: 90%; background: #fff; border-radius: 6px; z-index: 901; display: none; flex-direction: column; padding: 25px; box-shadow: 0 20px 60px rgba(0,0,0,0.3); overflow-y: auto; }
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 900; display: none; }
+        .modal-box { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 95%; max-height: 95%; background: #fff; border-radius: var(--radius); z-index: 901; display: none; flex-direction: column; padding: 20px; box-shadow: 0 20px 60px rgba(0,0,0,0.5); overflow-y: auto; }
+        
         #toast { visibility: hidden; min-width: 250px; background-color: #333; color: #fff; text-align: center; border-radius: 4px; padding: 16px; position: fixed; z-index: 3000; left: 50%; bottom: 30px; transform: translateX(-50%); font-size: 14px; opacity: 0; transition: opacity 0.3s; }
         #toast.show { visibility: visible; opacity: 1; }
 
@@ -129,7 +106,7 @@
 
     <header>
         <div>
-            <div style="font-size:10px; opacity:0.7; letter-spacing:1px;">VÁLLALKOZÓI RENDSZER</div>
+            <div style="font-size:10px; opacity:0.8;">VÁLLALKOZÓI RENDSZER</div>
             <h1>FestőNapló PRO</h1>
         </div>
         <div class="header-actions">
@@ -146,9 +123,9 @@
                     <i class="fas fa-file-invoice" style="font-size:24px; margin-bottom:10px; opacity:0.8;"></i>
                     <div style="font-weight:bold;">Árajánlat</div>
                 </div>
-                <div class="card" onclick="switchTab('calc')" style="margin:0; background: linear-gradient(135deg, #c0a062 0%, #d4b06e 100%); color:white; border:none; cursor:pointer;">
+                <div class="card" onclick="switchTab('calc')" style="margin:0; background: linear-gradient(135deg, #ffab00 0%, #ff6f00 100%); color:white; border:none; cursor:pointer;">
                     <i class="fas fa-calculator" style="font-size:24px; margin-bottom:10px; opacity:0.8;"></i>
-                    <div style="font-weight:bold;">Anyagigény</div>
+                    <div style="font-weight:bold;">Kalkulátor</div>
                 </div>
             </div>
             
@@ -157,7 +134,7 @@
         </div>
 
         <div id="view-projects" class="view">
-            <div class="input-group"><input type="text" placeholder="Keresés ügyfél alapján..." onkeyup="filterProjects(this.value)"></div>
+            <div class="input-group"><input type="text" placeholder="Keresés..." onkeyup="filterProjects(this.value)"></div>
             <div id="projects-list"></div>
         </div>
 
@@ -182,7 +159,7 @@
                 <div id="quote-items-container"></div>
                 
                 <div style="background:#f5f7f8; padding:15px; border-radius:4px; margin-top:15px; border:1px solid #e0e0e0;">
-                    <label>Új tétel hozzáadása</label>
+                    <label>Új tétel</label>
                     <div style="display:flex; gap:10px; margin-bottom:10px;">
                         <input type="text" id="q-item-name" placeholder="Pl. Glettelés" style="flex:2;">
                         <input type="number" id="q-item-qty" placeholder="Menny." style="flex:1;">
@@ -195,15 +172,15 @@
                             <option value="óra">óra</option>
                             <option value="nap">nap</option>
                         </select>
-                        <input type="number" id="q-item-price" placeholder="Egységár (Ft)" style="flex:1.5;">
+                        <input type="number" id="q-item-price" placeholder="Ár (Ft)" style="flex:1.5;">
                         <button onclick="addQuoteItem()" style="background:var(--success); color:white; border:none; border-radius:4px; width:50px; font-size:18px;"><i class="fas fa-plus"></i></button>
                     </div>
                 </div>
-                <div class="quote-total" id="quote-grand-total">0 Ft</div>
+                <div id="quote-grand-total" style="font-size:20px; font-weight:bold; text-align:right; margin-top:15px; color:var(--primary);">0 Ft</div>
             </div>
 
             <div style="display:flex; gap:10px;">
-                <button onclick="saveCurrentQuote()" class="secondary" style="flex:1;"><i class="fas fa-save"></i> Mentés</button>
+                <button onclick="saveCurrentQuote()" class="secondary" style="flex:1;"><i class="fas fa-save"></i> MENTÉS</button>
                 <button onclick="generateProQuote()" class="primary" style="flex:1;"><i class="fas fa-file-pdf"></i> PDF</button>
             </div>
             
@@ -226,6 +203,9 @@
                 <div class="input-group"><input type="text" id="shop-code" placeholder="Színkód / Típus"></div>
                 <div class="input-group"><input type="text" id="shop-note" placeholder="Megjegyzés"></div>
                 
+                <label class="photo-btn"><i class="fas fa-camera"></i> FOTÓ CSATOLÁSA<input type="file" id="shop-photo" accept="image/*" style="display:none;" onchange="handleShopPhoto(this)"></label>
+                <img id="shop-photo-prev" class="photo-preview">
+
                 <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-top:10px;">
                     <div class="input-group" style="margin:0;"><label>Projekt</label><select id="shop-project-select" onchange="updateRoomSelectInShop()"></select></div>
                     <div class="input-group" style="margin:0;"><label>Helyiség</label><select id="shop-room-select"></select></div>
@@ -233,21 +213,22 @@
                 <button onclick="addShopItem()" class="primary" style="margin-top:15px;">HOZZÁADÁS</button>
             </div>
             
-            <h3 style="font-size:14px; text-transform:uppercase; color:#78909c; margin: 15px 0;">Lista</h3>
+            <h3 style="font-size:14px; text-transform:uppercase; color:#78909c; margin: 15px 0;">Anyaglista</h3>
             <div id="shop-list"></div>
-            <button onclick="shareShopList()" class="secondary" style="width:100%; margin-top:20px;"><i class="fas fa-share-nodes"></i> Lista Küldése</button>
+            <button onclick="shareShopList()" class="secondary" style="width:100%; margin-top:20px; background:#37474f; color:white;"><i class="fas fa-share-nodes"></i> LISTA KÜLDÉSE</button>
         </div>
 
         <div id="view-calc" class="view">
             <div class="card">
-                <h3>Professzionális Kalkulátor</h3>
+                <h3>Anyagszükséglet</h3>
                 <div class="input-group">
-                    <label>Kalkuláció típusa</label>
+                    <label>Mit számolunk?</label>
                     <select id="calc-type" onchange="renderCalcInputs()" style="font-weight:bold; color:var(--primary);">
-                        <option value="paint">Falfestés (Diszperzit)</option>
-                        <option value="adhesive">Csemperagasztás</option>
+                        <option value="paint">Festés</option>
+                        <option value="adhesive">Csemperagasztó</option>
                         <option value="plaster">Glettelés (Zsákos)</option>
-                        <option value="screed">Esztrich Betonozás</option>
+                        <option value="screed">Esztrich Beton</option>
+                        <option value="plaster_finish">Gipszvakolat</option>
                     </select>
                 </div>
 
@@ -256,9 +237,9 @@
                 <button onclick="calculateMaterial()" class="primary" style="margin-top:20px;">SZÁMOLÁS</button>
                 
                 <div id="calc-result-box" class="calc-result-box">
-                    <div style="font-size:12px; color:#546e7a; text-transform:uppercase; font-weight:bold;">Szükséges mennyiség:</div>
+                    <div style="font-size:12px; text-transform:uppercase; opacity:0.8;">Vásárolandó:</div>
                     <div class="calc-val" id="calc-result-num"></div>
-                    <div style="font-size:13px; color:#455a64; margin-top:5px;" id="calc-result-desc"></div>
+                    <div style="font-size:14px; margin-top:5px;" id="calc-result-desc"></div>
                 </div>
             </div>
         </div>
@@ -291,15 +272,18 @@
         <div class="input-group"><label>Telefonszám</label><input type="tel" id="inp-phone"></div>
         <div class="input-group"><label>Email cím</label><input type="email" id="inp-email"></div>
         <div class="input-group"><label>Cím / Munkaterület</label><input type="text" id="inp-address"></div>
-        <div class="input-group"><label>Megjegyzés (pl. kapukód)</label><textarea id="inp-note"></textarea></div>
+        <div class="input-group"><label>Megjegyzés</label><textarea id="inp-note"></textarea></div>
         <button onclick="saveProject()" class="primary">LÉTREHOZÁS</button>
         <button onclick="closeModal()" class="secondary">MÉGSE</button>
     </div>
 
-    <div id="view-detail" class="modal-box" style="width:100%; height:100%; max-height:100%; border-radius:0; padding:0; display:none; background:#f4f6f8;">
+    <div id="view-detail" class="modal-box" style="width:100%; height:100%; max-height:100%; border-radius:0; padding:0; display:none; background:#eceff1;">
         <div style="background:white; padding:15px; border-bottom:1px solid #e0e0e0; display:flex; justify-content:space-between; align-items:center;">
             <button onclick="closeModal()" style="border:none; background:none; color:var(--primary); font-weight:bold;"><i class="fas fa-arrow-left"></i> VISSZA</button>
-            <button onclick="deleteCurrentProject()" style="border:none; background:none; color:var(--danger);"><i class="fas fa-trash"></i></button>
+            <div>
+                <button onclick="editProject()" style="border:none; background:none; color:var(--text); margin-right:10px;"><i class="fas fa-pen"></i></button>
+                <button onclick="deleteCurrentProject()" style="border:none; background:none; color:var(--danger);"><i class="fas fa-trash"></i></button>
+            </div>
         </div>
         <div style="padding:20px; overflow-y:auto;">
             <h2 id="d-client" style="margin:0 0 5px 0; color:var(--primary);"></h2>
@@ -346,20 +330,36 @@
         <button onclick="closeModal()" class="secondary" style="margin-top:20px;">BEZÁRÁS</button>
     </div>
 
+    <div id="detail-edit" class="modal-box">
+        <h3>Szerkesztés</h3>
+        <div class="input-group"><label>Név</label><input type="text" id="edit-client"></div>
+        <div class="input-group"><label>Telefon</label><input type="tel" id="edit-phone"></div>
+        <div class="input-group"><label>Email</label><input type="email" id="edit-email"></div>
+        <div class="input-group"><label>Cím</label><input type="text" id="edit-address"></div>
+        <div class="input-group"><label>Jegyzet</label><textarea id="edit-note"></textarea></div>
+        <button onclick="saveEdit()" class="primary">MENTÉS</button>
+        <button onclick="closeModal()" class="secondary">MÉGSE</button>
+    </div>
+
+    <div id="fav-box" class="modal-box"><h3>Gyorslista</h3><div id="fav-list-container"></div><button onclick="closeModal()" class="secondary">Bezárás</button></div>
+
     <script>
         // --- DATA LAYER ---
-        let projects = JSON.parse(localStorage.getItem('fn110_projects')) || [];
-        if(!projects.length && localStorage.getItem('fn105_projects')) projects = JSON.parse(localStorage.getItem('fn105_projects'));
+        let projects = JSON.parse(localStorage.getItem('fn111_projects')) || [];
+        if(!projects.length && localStorage.getItem('fn110_projects')) projects = JSON.parse(localStorage.getItem('fn110_projects'));
         
-        let shopItems = JSON.parse(localStorage.getItem('fn110_shop')) || [];
-        if(!shopItems.length && localStorage.getItem('fn105_shop')) shopItems = JSON.parse(localStorage.getItem('fn105_shop'));
+        let shopItems = JSON.parse(localStorage.getItem('fn111_shop')) || [];
+        if(!shopItems.length && localStorage.getItem('fn110_shop')) shopItems = JSON.parse(localStorage.getItem('fn110_shop'));
 
-        let profile = JSON.parse(localStorage.getItem('fn110_profile')) || {name:'', address:'', tax:'', phone:'', email:'', bank:''};
-        if(!profile.name && localStorage.getItem('fn105_profile')) profile = JSON.parse(localStorage.getItem('fn105_profile'));
+        let profile = JSON.parse(localStorage.getItem('fn111_profile')) || {name:'', address:'', tax:'', phone:'', email:'', bank:''};
+        if(!profile.name && localStorage.getItem('fn110_profile')) profile = JSON.parse(localStorage.getItem('fn110_profile'));
 
-        let savedQuotes = JSON.parse(localStorage.getItem('fn110_quotes')) || [];
+        let savedQuotes = JSON.parse(localStorage.getItem('fn111_quotes')) || [];
+        let favorites = JSON.parse(localStorage.getItem('fn111_favs')) || ["Dulux", "Héra", "Rigips", "Ceresit", "Mapei", "Szalag"];
+
         let quoteItems = [];
         let currentDetailId = null;
+        let tempShopImage = null;
 
         // INIT
         renderDashboard();
@@ -385,41 +385,29 @@
             setTimeout(()=> t.className = t.className.replace("show", ""), 3000);
         }
 
-        // --- SHARE FIX (INTENT + FALLBACK) ---
+        // --- SHARE LOGIC (JAVÍTOTT + FALLBACK) ---
         async function shareText(title, text) {
-            // 1. Próbáljuk a modern Web Share API-t (Android Chrome/Webview támogatja)
             if (navigator.share) {
-                try {
-                    await navigator.share({ title: title, text: text });
-                    return;
-                } catch (err) {
-                    console.log('Share API error:', err);
-                }
+                try { await navigator.share({ title: title, text: text }); return; } catch (err) {}
             }
-            
-            // 2. Ha az nem megy, próbáljuk az Android Intentet (erőszakos módszer)
             try {
                 window.location.href = "intent:#Intent;action=android.intent.action.SEND;type=text/plain;S.android.intent.extra.TEXT=" + encodeURIComponent(text) + ";end";
-                return; 
-            } catch (e) {
-                console.log('Intent error');
-            }
-
-            // 3. Ha minden kötél szakad: Vágólap
+                return;
+            } catch (e) {}
+            
+            // FALLBACK CLIPBOARD
             const el = document.createElement('textarea');
             el.value = text;
             document.body.appendChild(el);
             el.select();
             document.execCommand('copy');
             document.body.removeChild(el);
-            alert("A lista a vágólapra másolva! (Illeszd be Messengerbe/Emailbe)");
+            alert("Megosztás sikertelen. A lista a VÁGÓLAPRA másolva! Illeszd be bárhova.");
         }
 
         function shareShopList() {
             let txt = "BEVÁSÁRLÓLISTA:\n\n";
-            shopItems.forEach(i => {
-                if(!i.done) txt += `[ ] ${i.qty}x ${i.text} ${i.code ? '('+i.code+')' : ''}\n`;
-            });
+            shopItems.forEach(i => { if(!i.done) txt += `[ ] ${i.qty}x ${i.text} ${i.code ? '('+i.code+')' : ''}\n`; });
             shareText("Bevásárlólista", txt);
         }
 
@@ -431,7 +419,7 @@
             shareText("Anyaglista", txt);
         }
 
-        // --- NEW CALCULATOR LOGIC (CUSTOM PACKAGE) ---
+        // --- CALCULATOR PRO (kg/m2/mm) ---
         function renderCalcInputs() {
             const type = document.getElementById('calc-type').value;
             const c = document.getElementById('calc-inputs-container');
@@ -439,16 +427,22 @@
             
             if(type === 'paint') {
                 html += `<div class="input-group"><label>Rétegek száma</label><input type="number" id="calc-layers" value="2"></div>`;
-                html += `<div class="input-group"><label>Kiadósság ($m^2$/Liter)</label><input type="number" id="calc-coverage" value="10" placeholder="Gyári adat"></div>`;
+                html += `<div class="input-group"><label>Kiadósság ($m^2$/Liter)</label><input type="number" id="calc-coverage" value="10"></div>`;
                 html += `<div class="input-group"><label>Kiszerelés (Liter/Vödör)</label><input type="number" id="calc-pack" value="10"></div>`;
-            } else if (type === 'adhesive' || type === 'plaster' || type === 'screed') {
-                let label = "Anyagigény (kg/$m^2$)";
-                let def = "4"; // ragasztó
-                if(type === 'plaster') { label = "Anyagigény (kg/$m^2$/réteg)"; def="1.5"; html += `<div class="input-group"><label>Rétegek</label><input type="number" id="calc-layers" value="2"></div>`; }
-                if(type === 'screed') { label = "Anyagigény (kg/$m^2$/cm)"; def="20"; html += `<div class="input-group"><label>Vastagság (cm)</label><input type="number" id="calc-thick" value="5"></div>`; }
-                
-                html += `<div class="input-group"><label>${label}</label><input type="number" id="calc-cons" value="${def}"></div>`;
-                html += `<div class="input-group"><label>Zsák mérete (kg)</label><input type="number" id="calc-pack" value="25"></div>`;
+            } else {
+                // PORANYAGOK (kg/m2/mm)
+                let thickLabel = "Vastagság (mm)";
+                let thickDef = "3";
+                let consDef = "1.5"; // Átlagos glett/ragasztó
+                let packDef = "25"; // Zsák
+
+                if(type === 'adhesive') { thickDef = "4"; consDef = "1.4"; } // Ragasztó
+                if(type === 'screed') { thickDef = "50"; consDef = "20"; thickLabel = "Vastagság (mm) (pl. 5cm = 50mm)"; } // Beton (mm-ben számolunk a képlet miatt, de a zsákok cm-re adják meg sokszor, de itt mm a kérés) - JAVÍTÁS: A user mm-t kért. 1 mm-hez kb 1.5-2kg kell. Esztrichnél 1cm-hez kb 20kg. Tehát 1mm-hez 2kg.
+                if(type === 'plaster_finish') { thickDef = "10"; consDef = "1"; } // Vakolat
+
+                html += `<div class="input-group"><label>${thickLabel}</label><input type="number" id="calc-thick" value="${thickDef}"></div>`;
+                html += `<div class="input-group"><label>Anyagigény (kg / $m^2$ / 1mm)</label><input type="number" id="calc-cons" value="${consDef}"></div>`;
+                html += `<div class="input-group"><label>Zsák mérete (kg)</label><input type="number" id="calc-pack" value="${packDef}"></div>`;
             }
             c.innerHTML = html;
             document.getElementById('calc-result-box').style.display = 'none';
@@ -469,16 +463,8 @@
                 const coverage = parseFloat(document.getElementById('calc-coverage').value);
                 totalNeeded = (area * layers) / coverage; // Literben
                 unit = "Liter";
-            } else if (type === 'adhesive') {
-                const cons = parseFloat(document.getElementById('calc-cons').value);
-                totalNeeded = area * cons; // Kg
-                unit = "Kg";
-            } else if (type === 'plaster') {
-                const layers = parseFloat(document.getElementById('calc-layers').value);
-                const cons = parseFloat(document.getElementById('calc-cons').value);
-                totalNeeded = area * layers * cons; // Kg
-                unit = "Kg";
-            } else if (type === 'screed') {
+            } else {
+                // PORANYAG KÉPLET: Area * Vastagság * Anyagigény
                 const thick = parseFloat(document.getElementById('calc-thick').value);
                 const cons = parseFloat(document.getElementById('calc-cons').value);
                 totalNeeded = area * thick * cons; // Kg
@@ -492,7 +478,7 @@
             document.getElementById('calc-result-box').style.display = 'block';
         }
 
-        // --- CORE FUNCTIONS (SAME AS BEFORE BUT STYLED) ---
+        // --- CORE FUNCTIONS ---
         function saveProfile() {
             profile.name=document.getElementById('prof-name').value;
             profile.address=document.getElementById('prof-address').value;
@@ -500,7 +486,7 @@
             profile.phone=document.getElementById('prof-phone').value;
             profile.email=document.getElementById('prof-email').value;
             profile.bank=document.getElementById('prof-bank').value;
-            localStorage.setItem('fn110_profile', JSON.stringify(profile));
+            localStorage.setItem('fn111_profile', JSON.stringify(profile));
             updateProfilePreview(); closeModal(); showToast('Mentve');
         }
         function updateProfilePreview() { document.getElementById('quote-company-preview').innerHTML = profile.name ? `<b>${profile.name}</b><br>${profile.phone}` : '<i>Nincsenek adatok.</i>'; }
@@ -515,7 +501,7 @@
                 note:document.getElementById('inp-note').value, 
                 rooms:[]
             });
-            localStorage.setItem('fn110_projects', JSON.stringify(projects));
+            localStorage.setItem('fn111_projects', JSON.stringify(projects));
             closeModal(); document.getElementById('inp-client').value='';
             renderDashboard(); switchTab('projects'); showToast('Mentve');
         }
@@ -536,59 +522,53 @@
             currentDetailId=id; const p=projects.find(x=>x.id==id);
             document.getElementById('d-client').innerText=p.client;
             document.getElementById('d-address').innerText=p.address;
-            
-            const btnCall=document.getElementById('btn-call');
-            p.phone ? (btnCall.href='tel:'+p.phone, btnCall.style.opacity=1) : (btnCall.href='#', btnCall.style.opacity=0.5);
-            
-            const btnMail=document.getElementById('btn-mail');
-            p.email ? (btnMail.href='mailto:'+p.email, btnMail.style.opacity=1) : (btnMail.href='#', btnMail.style.opacity=0.5);
-
-            document.getElementById('d-rooms').innerHTML = (p.rooms||[]).map(r=>`<span class="room-tag">${r}</span>`).join('');
+            const btnCall=document.getElementById('btn-call'); p.phone ? (btnCall.href='tel:'+p.phone, btnCall.style.opacity=1) : (btnCall.href='#', btnCall.style.opacity=0.5);
+            const btnMail=document.getElementById('btn-mail'); p.email ? (btnMail.href='mailto:'+p.email, btnMail.style.opacity=1) : (btnMail.href='#', btnMail.style.opacity=0.5);
+            document.getElementById('d-rooms').innerHTML = (p.rooms||[]).map(r=>`<span class="room-tag">${r} <i class="fas fa-times" onclick="deleteRoom('${r}')" style="margin-left:5px;cursor:pointer;"></i></span>`).join('');
             renderDetailList();
-            document.getElementById('modal-overlay').style.display='block';
-            document.getElementById('view-detail').style.display='flex';
+            document.getElementById('modal-overlay').style.display='block'; document.getElementById('view-detail').style.display='flex';
         }
 
-        function addRoom() { const v=document.getElementById('new-room-input').value; const s=document.getElementById('new-room-size').value; if(!v) return; const p=projects.find(x=>x.id==currentDetailId); if(!p.rooms) p.rooms=[]; p.rooms.push(s?`${v} (${s}m²)`:v); localStorage.setItem('fn110_projects',JSON.stringify(projects)); document.getElementById('new-room-input').value=''; openDetail(currentDetailId); }
-        
+        function addRoom() { const v=document.getElementById('new-room-input').value; const s=document.getElementById('new-room-size').value; if(!v) return; const p=projects.find(x=>x.id==currentDetailId); if(!p.rooms) p.rooms=[]; p.rooms.push(s?`${v} (${s}m²)`:v); localStorage.setItem('fn111_projects',JSON.stringify(projects)); document.getElementById('new-room-input').value=''; openDetail(currentDetailId); }
+        function deleteRoom(rName) { if(!confirm('Törlöd a helyiséget?'))return; const p=projects.find(x=>x.id==currentDetailId); p.rooms=p.rooms.filter(r=>r!==rName); localStorage.setItem('fn111_projects',JSON.stringify(projects)); openDetail(currentDetailId); }
+
         function addShopItem() {
             const txt=document.getElementById('shop-input').value; if(!txt) return showToast('Mit vettél?');
             shopItems.unshift({
                 id:Date.now(), text:txt, qty:document.getElementById('shop-qty').value, 
                 code:document.getElementById('shop-code').value, note:document.getElementById('shop-note').value, 
+                image:tempShopImage,
                 projectId:document.getElementById('shop-project-select').value||null, 
                 room:document.getElementById('shop-room-select').value||null, done:false
             });
-            localStorage.setItem('fn110_shop', JSON.stringify(shopItems));
-            document.getElementById('shop-input').value=''; document.getElementById('shop-code').value='';
+            localStorage.setItem('fn111_shop', JSON.stringify(shopItems));
+            document.getElementById('shop-input').value=''; document.getElementById('shop-photo-prev').style.display='none'; tempShopImage=null;
             showToast('Hozzáadva!'); renderShop();
         }
 
         function renderShop() {
             document.getElementById('shop-list').innerHTML = shopItems.map(i => {
                 let pTag=''; if(i.projectId) { const p=projects.find(x=>x.id==i.projectId); if(p) pTag=`<div style="font-size:11px; color:#1a237e; font-weight:bold; margin-top:2px;">${p.client} ${i.room?'('+i.room+')':''}</div>`; }
+                let imgIcon = i.image ? `<i class="fas fa-image" style="color:var(--accent); margin-left:5px;"></i>` : '';
                 return `<div class="list-item ${i.done?'item-done':''}">
                     <div style="display:flex; align-items:center; flex:1;">
                         <div class="check-circle" onclick="toggleShop(${i.id})"><i class="fas fa-check" style="font-size:12px;"></i></div>
-                        <div>
-                            <div style="font-weight:bold; font-size:15px;">${i.qty}x ${i.text}</div>
-                            <div style="font-size:13px; color:#78909c;">${i.code||''} ${i.note||''}</div>
-                            ${pTag}
-                        </div>
+                        <div><div style="font-weight:bold; font-size:15px;">${i.qty}x ${i.text} ${imgIcon}</div><div style="font-size:13px; color:#78909c;">${i.code||''} ${i.note||''}</div>${pTag}</div>
                     </div>
                     <i class="fas fa-trash" style="color:#cfd8dc; padding:10px; cursor:pointer;" onclick="delShop(${i.id})"></i>
                 </div>`;
             }).join('');
         }
 
-        function toggleShop(id) { const i=shopItems.find(x=>x.id==id); i.done=!i.done; localStorage.setItem('fn110_shop', JSON.stringify(shopItems)); renderShop(); if(currentDetailId) renderDetailList(); }
-        function delShop(id) { shopItems=shopItems.filter(x=>x.id!=id); localStorage.setItem('fn110_shop', JSON.stringify(shopItems)); renderShop(); if(currentDetailId) renderDetailList(); }
-        
+        function toggleShop(id) { const i=shopItems.find(x=>x.id==id); i.done=!i.done; localStorage.setItem('fn111_shop', JSON.stringify(shopItems)); renderShop(); if(currentDetailId) renderDetailList(); }
+        function delShop(id) { shopItems=shopItems.filter(x=>x.id!=id); localStorage.setItem('fn111_shop', JSON.stringify(shopItems)); renderShop(); if(currentDetailId) renderDetailList(); }
+        function handleShopPhoto(input) { if(input.files&&input.files[0]){const r=new FileReader();r.onload=e=>{tempShopImage=e.target.result;document.getElementById('shop-photo-prev').src=tempShopImage;document.getElementById('shop-photo-prev').style.display='block';};r.readAsDataURL(input.files[0]);}}
+
         function renderDetailList() {
             const l=document.getElementById('d-materials-list'); l.innerHTML='';
             const items=shopItems.filter(i=>i.projectId==currentDetailId);
             if(!items.length) { l.innerHTML='<div style="color:#b0bec5;text-align:center; padding:20px;">Nincs anyag hozzárendelve.</div>'; return; }
-            l.innerHTML=items.map(i=>`<div class="list-item"><div style="font-weight:bold;">${i.qty}x ${i.text}</div><div style="font-size:13px;">${i.code||'-'}</div></div>`).join('');
+            l.innerHTML=items.map(i=>`<div class="list-item"><div style="font-weight:bold;">${i.qty}x ${i.text}</div><div>${i.image?`<img src="${i.image}" style="width:40px;height:40px;object-fit:cover;border-radius:4px;">`:''}<div style="font-size:13px;">${i.code||'-'}</div></div></div>`).join('');
         }
 
         // --- QUOTE & PDF ---
@@ -614,16 +594,10 @@
             const { jsPDF } = window.jspdf; const doc = new jsPDF();
             let y = 20;
             
-            // Header Color Block
-            doc.setFillColor(26, 35, 126); // Navy Blue
-            doc.rect(0, 0, 210, 40, 'F');
-            doc.setTextColor(255, 255, 255);
-            doc.setFontSize(22); doc.text(title, 14, 25);
+            doc.setFillColor(26, 35, 126); doc.rect(0, 0, 210, 40, 'F');
+            doc.setTextColor(255, 255, 255); doc.setFontSize(22); doc.text(title, 14, 25);
+            doc.setTextColor(0,0,0); y = 50;
             
-            doc.setTextColor(0,0,0);
-            y = 50;
-            
-            // Vállalkozó
             doc.setFontSize(10); doc.setTextColor(100); doc.text("KIÁLLÍTÓ:", 14, y); y+=5;
             doc.setFontSize(12); doc.setTextColor(0); doc.setFont("helvetica", "bold"); doc.text(profile.name, 14, y); y+=5;
             doc.setFont("helvetica", "normal"); doc.setFontSize(10);
@@ -633,7 +607,6 @@
             if(profile.email) { doc.text(`Email: ${profile.email}`, 14, y); y+=5; }
             if(profile.bank) { doc.text(`Bank: ${profile.bank}`, 14, y); y+=5; }
 
-            // Ügyfél (Jobb oldal)
             if(clientData && clientData.name) {
                 let cy = 50;
                 doc.setFontSize(10); doc.setTextColor(100); doc.text("MEGRENDELŐ:", 120, cy); cy+=5;
@@ -645,10 +618,7 @@
 
             y += 10;
             const headers = isQuote ? [['Megnevezés', 'Menny.', 'Egységár', 'Összesen']] : (clientData.customHeaders ? [clientData.customHeaders] : [['Anyag', 'Menny.', 'Infó']]);
-            doc.autoTable({
-                startY: y, head: headers, body: tableData,
-                theme: 'grid', headStyles: { fillColor: [26, 35, 126] }, styles: { fontSize: 10, cellPadding: 3 }
-            });
+            doc.autoTable({ startY: y, head: headers, body: tableData, theme: 'grid', headStyles: { fillColor: [26, 35, 126] }, styles: { fontSize: 10, cellPadding: 3 } });
 
             if(isQuote) {
                 const total = quoteItems.reduce((acc, curr) => acc + curr.total, 0);
@@ -661,21 +631,29 @@
         function generateProQuote() {
             if(!quoteItems.length) return showToast('Üres lista');
             createPDF("ÁRAJÁNLAT", quoteItems.map(i=>[i.name, `${i.qty} ${i.unit}`, i.price, i.total]), true, {
-                name: document.getElementById('quote-client-name').value,
-                address: document.getElementById('quote-client-address').value,
-                date: document.getElementById('quote-date').value
+                name: document.getElementById('quote-client-name').value, address: document.getElementById('quote-client-address').value, date: document.getElementById('quote-date').value
             });
         }
         function generateProjectPDF() {
-            if(!currentDetailId) return;
-            const p=projects.find(x=>x.id==currentDetailId);
-            const items=shopItems.filter(x=>x.projectId==currentDetailId);
+            if(!currentDetailId) return; const p=projects.find(x=>x.id==currentDetailId); const items=shopItems.filter(x=>x.projectId==currentDetailId);
             createPDF("ANYAGLISTA", items.map(i=>[i.text, i.qty+" db", i.room||'-', i.code||'-']), false, {
-                name: p.client, address: p.address, date: new Date().toLocaleDateString('hu-HU'),
-                customHeaders: ['Anyag', 'Menny.', 'Hely', 'Kód']
+                name: p.client, address: p.address, date: new Date().toLocaleDateString('hu-HU'), customHeaders: ['Anyag', 'Menny.', 'Hely', 'Kód']
             });
         }
 
+        // --- EXTRAS ---
+        function handleFavoriteClick() {
+            const v=document.getElementById('shop-input').value;
+            if(v && !favorites.includes(v)) { favorites.push(v); localStorage.setItem('fn111_favs', JSON.stringify(favorites)); showToast('Kedvenc!'); }
+            else { 
+                const c=document.getElementById('fav-list-container'); c.innerHTML='';
+                favorites.forEach(f=>c.innerHTML+=`<div style="padding:10px; border-bottom:1px solid #eee;" onclick="document.getElementById('shop-input').value='${f}';closeModal()">${f}</div>`);
+                openModal('fav-box');
+            }
+        }
+        function editProject() { const p=projects.find(x=>x.id==currentDetailId); openModal('detail-edit'); document.getElementById('edit-client').value=p.client; document.getElementById('edit-phone').value=p.phone||''; document.getElementById('edit-email').value=p.email||''; document.getElementById('edit-address').value=p.address||''; document.getElementById('edit-note').value=p.note||''; }
+        function saveEdit() { const p=projects.find(x=>x.id==currentDetailId); p.client=document.getElementById('edit-client').value; p.phone=document.getElementById('edit-phone').value; p.email=document.getElementById('edit-email').value; p.address=document.getElementById('edit-address').value; p.note=document.getElementById('edit-note').value; localStorage.setItem('fn111_projects',JSON.stringify(projects)); closeModal(); openDetail(currentDetailId); showToast('Mentve'); }
+        
         // --- HELPERS ---
         function updateShopSelect() { const s=document.getElementById('shop-project-select'); s.innerHTML='<option value="">-- Raktár --</option>'+projects.map(p=>`<option value="${p.id}">${p.client}</option>`).join(''); updateRoomSelectInShop(); }
         function updateRoomSelectInShop() { const pid=document.getElementById('shop-project-select').value; const s=document.getElementById('shop-room-select'); s.innerHTML='<option value="">(Nincs)</option>'; if(pid){const p=projects.find(x=>x.id==pid);if(p&&p.rooms)s.innerHTML+=p.rooms.map(r=>`<option value="${r}">${r}</option>`).join('');} }
@@ -684,14 +662,13 @@
         function renderDashboard(){document.getElementById('dashboard-list').innerHTML=projects.slice(0,3).map(p=>`<div class="card" onclick="openDetail(${p.id})" style="cursor:pointer; padding:15px; border-left:3px solid var(--primary);"><b>${p.client}</b></div>`).join('');}
         function loadProfileInputs(){document.getElementById('prof-name').value=profile.name;document.getElementById('prof-address').value=profile.address;document.getElementById('prof-tax').value=profile.tax;document.getElementById('prof-phone').value=profile.phone;document.getElementById('prof-email').value=profile.email;document.getElementById('prof-bank').value=profile.bank;}
         function filterProjects(v){document.getElementById('projects-list').innerHTML=projects.filter(p=>p.client.toLowerCase().includes(v.toLowerCase())).map(p=>`<div class="card" onclick="openDetail(${p.id})"><b>${p.client}</b></div>`).join('');}
-        function deleteCurrentProject(){projects=projects.filter(x=>x.id!=currentDetailId);localStorage.setItem('fn110_projects',JSON.stringify(projects));closeModal();renderProjects();renderDashboard();}
-        function saveCurrentQuote(){if(!quoteItems.length)return showToast('Üres!');const c=document.getElementById('quote-client-name').value||'Névtelen',d=document.getElementById('quote-date').value,t=quoteItems.reduce((a,b)=>a+b.total,0);savedQuotes.unshift({id:Date.now(),client:c,date:d,total:t,items:[...quoteItems]});localStorage.setItem('fn110_quotes',JSON.stringify(savedQuotes));renderSavedQuotes();showToast('Mentve!');}
+        function deleteCurrentProject(){projects=projects.filter(x=>x.id!=currentDetailId);localStorage.setItem('fn111_projects',JSON.stringify(projects));closeModal();renderProjects();renderDashboard();}
+        function saveCurrentQuote(){if(!quoteItems.length)return showToast('Üres!');const c=document.getElementById('quote-client-name').value||'Névtelen',d=document.getElementById('quote-date').value,t=quoteItems.reduce((a,b)=>a+b.total,0);savedQuotes.unshift({id:Date.now(),client:c,date:d,total:t,items:[...quoteItems]});localStorage.setItem('fn111_quotes',JSON.stringify(savedQuotes));renderSavedQuotes();showToast('Mentve!');}
         function renderSavedQuotes(){document.getElementById('saved-quotes-list').innerHTML=savedQuotes.map(q=>`<div class="list-item"><div><b>${q.client}</b><br><small>${q.date} | ${q.total.toLocaleString()} Ft</small></div><div><button onclick="loadQuote(${q.id})" style="border:none;color:var(--primary);background:none;"><i class="fas fa-upload"></i></button><button onclick="deleteQuote(${q.id})" style="border:none;color:var(--danger);background:none;"><i class="fas fa-trash"></i></button></div></div>`).join('');}
         function loadQuote(id){const q=savedQuotes.find(x=>x.id==id);if(!q)return;quoteItems=[...q.items];document.getElementById('quote-client-name').value=q.client;renderQuoteItems();showToast('Betöltve!');}
-        function deleteQuote(id){if(!confirm('Biztos?'))return;savedQuotes=savedQuotes.filter(x=>x.id!=id);localStorage.setItem('fn110_quotes',JSON.stringify(savedQuotes));renderSavedQuotes();}
-        function handleFavoriteClick(){const v=document.getElementById('shop-input').value;if(v)showToast('Sztárolva!');}
+        function deleteQuote(id){if(!confirm('Biztos?'))return;savedQuotes=savedQuotes.filter(x=>x.id!=id);localStorage.setItem('fn111_quotes',JSON.stringify(savedQuotes));renderSavedQuotes();}
         function exportData(){const d=JSON.stringify({p:projects,s:shopItems,pr:profile,q:savedQuotes});const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([d],{type:'text/json'}));a.download='festonaplo_backup.json';a.click();}
-        function importData(el){const fr=new FileReader();fr.onload=e=>{try{const d=JSON.parse(e.target.result);if(d.p){projects=d.p;shopItems=d.s;profile=d.pr;savedQuotes=d.q;localStorage.setItem('fn110_projects',JSON.stringify(projects));localStorage.setItem('fn110_shop',JSON.stringify(shopItems));localStorage.setItem('fn110_profile',JSON.stringify(profile));localStorage.setItem('fn110_quotes',JSON.stringify(savedQuotes));location.reload();}}catch(e){alert('Hiba!');}};fr.readAsText(el.files[0]);}
+        function importData(el){const fr=new FileReader();fr.onload=e=>{try{const d=JSON.parse(e.target.result);if(d.p){projects=d.p;shopItems=d.s;profile=d.pr;savedQuotes=d.q;localStorage.setItem('fn111_projects',JSON.stringify(projects));localStorage.setItem('fn111_shop',JSON.stringify(shopItems));localStorage.setItem('fn111_profile',JSON.stringify(profile));localStorage.setItem('fn111_quotes',JSON.stringify(savedQuotes));location.reload();}}catch(e){alert('Hiba!');}};fr.readAsText(el.files[0]);}
     </script>
 </body>
 </html>
