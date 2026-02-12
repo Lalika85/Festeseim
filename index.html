@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>FestőNapló v10.3</title>
+    <title>FestőNapló v10.4 Master</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
@@ -85,12 +85,16 @@
         .btn-email { background-color: #17a2b8; }
         .btn-disabled { background-color: #ddd; color: #888; pointer-events: none; }
         .fav-item { padding: 15px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; }
+        
+        /* CALC STYLES */
+        .calc-result-box { display:none; text-align:center; padding:15px; margin-top:20px; background:#e3f2fd; border-radius:10px; border:1px solid #90caf9; }
+        .calc-number { font-size:28px; font-weight:bold; color:#0d47a1; margin-top:5px; }
     </style>
 </head>
 <body>
 
     <header>
-        <div><div style="font-size:10px;font-weight:bold;color:#888;">FESTŐNAPLÓ v10.3</div><h1 id="page-title">Áttekintés</h1></div>
+        <div><div style="font-size:10px;font-weight:bold;color:#888;">FESTŐNAPLÓ v10.4</div><h1 id="page-title">Áttekintés</h1></div>
         <div class="header-actions">
             <button id="header-share-btn" onclick="shareCurrentShopList()" style="display:none;"><i class="fas fa-share-alt"></i></button>
             <button onclick="openModal('backup-box')"><i class="fas fa-save"></i></button>
@@ -192,14 +196,27 @@
 
         <div id="view-calc" class="view">
             <div class="card">
-                <h3>Festék Számolás</h3>
-                <div class="input-group"><label>Falfelület (nm)</label><input type="number" id="calc-area"></div>
-                <div style="display:flex; gap:15px;">
-                    <div class="input-group"><label>Rétegek</label><input type="number" id="calc-layers" value="2"></div>
-                    <div class="input-group"><label>Kiadósság</label><input type="number" id="calc-coverage" value="10"></div>
+                <h3 style="margin-top:0;">Anyagszükséglet</h3>
+                
+                <div class="input-group">
+                    <label>Mit számolunk?</label>
+                    <select id="calc-type" onchange="renderCalcInputs()" style="font-weight:bold; color:#007bff; background:#e3f2fd;">
+                        <option value="paint">Festés (Diszperzit)</option>
+                        <option value="adhesive">Csemperagasztó</option>
+                        <option value="plaster">Glettelés (Zsákos)</option>
+                        <option value="screed">Esztrich Beton</option>
+                        <option value="primer">Mélyalapozó</option>
+                    </select>
                 </div>
-                <button onclick="calculatePaint()" class="primary">SZÁMOLÁS</button>
-                <div id="calc-result-box" class="calc-result-box" style="display:none; text-align:center; padding:15px; margin-top:10px; background:#e3f2fd; border-radius:10px;"><div style="font-size:32px; font-weight:bold; color:#0d47a1;" id="calc-result-num"></div></div>
+
+                <div id="calc-inputs-container"></div>
+
+                <button onclick="calculateMaterial()" class="primary" style="margin-top:15px;">SZÁMOLÁS</button>
+                <div id="calc-result-box" class="calc-result-box">
+                    <div style="font-size:12px; color:#666;">Eredmény:</div>
+                    <div class="calc-number" id="calc-result-num"></div>
+                    <div style="font-size:12px; color:#666; margin-top:5px;" id="calc-result-desc"></div>
+                </div>
             </div>
         </div>
     </div>
@@ -307,27 +324,31 @@
     <div id="backup-box" class="modal-box"><h2>Mentés</h2><button onclick="exportData()" class="primary" style="margin-bottom:10px; background:#28a745;">Letöltés</button><label class="primary" style="background:#007bff; text-align:center; display:block;">Visszatöltés<input type="file" style="display:none;" onchange="importData(this)"></label><button onclick="closeModal()" class="secondary">Bezárás</button></div>
 
     <script>
-        // --- ADATBÁZIS ---
-        let projects = JSON.parse(localStorage.getItem('fn103_projects')) || [];
-        if(projects.length===0 && localStorage.getItem('fn102_projects')) projects=JSON.parse(localStorage.getItem('fn102_projects'));
+        // --- ADATBÁZIS & MIGRÁCIÓ ---
+        let projects = JSON.parse(localStorage.getItem('fn104_projects')) || [];
+        if(projects.length === 0 && localStorage.getItem('fn103_projects')) projects = JSON.parse(localStorage.getItem('fn103_projects'));
         
-        let shopItems = JSON.parse(localStorage.getItem('fn103_shop')) || [];
-        if(shopItems.length===0 && localStorage.getItem('fn102_shop')) shopItems=JSON.parse(localStorage.getItem('fn102_shop'));
+        let shopItems = JSON.parse(localStorage.getItem('fn104_shop')) || [];
+        if(shopItems.length === 0 && localStorage.getItem('fn103_shop')) shopItems = JSON.parse(localStorage.getItem('fn103_shop'));
 
-        let profile = JSON.parse(localStorage.getItem('fn103_profile')) || {name:'', address:'', tax:'', phone:'', email:'', bank:''};
-        let favorites = JSON.parse(localStorage.getItem('fn103_favs')) || ["Héra Gold", "Dulux", "Glett", "Szalag", "Fólia", "Henger"];
-        let savedQuotes = JSON.parse(localStorage.getItem('fn103_quotes')) || [];
+        let profile = JSON.parse(localStorage.getItem('fn104_profile')) || {name:'', address:'', tax:'', phone:'', email:'', bank:''};
+        if(localStorage.getItem('fn103_profile')) profile = JSON.parse(localStorage.getItem('fn103_profile'));
+
+        let favorites = JSON.parse(localStorage.getItem('fn104_favs')) || ["Héra Gold", "Dulux", "Glett", "Szalag", "Fólia", "Henger"];
+        let savedQuotes = JSON.parse(localStorage.getItem('fn104_quotes')) || [];
         
         let quoteItems = [];
         let currentDetailId = null;
         let tempShopImage = null;
         let pendingCallback = null;
 
+        // INIT
         renderDashboard();
         updateShopSelect();
         updateProfilePreview();
         renderSavedQuotes();
         document.getElementById('quote-date').valueAsDate = new Date();
+        renderCalcInputs(); // Set default calc
 
         function switchTab(id) {
             document.querySelectorAll('.view').forEach(e => e.classList.remove('active'));
@@ -340,6 +361,78 @@
             if(id==='shop') renderShop();
         }
 
+        // --- NEW MULTI-CALCULATOR LOGIC ---
+        function renderCalcInputs() {
+            const type = document.getElementById('calc-type').value;
+            const container = document.getElementById('calc-inputs-container');
+            let html = '';
+
+            // Common field: Area
+            html += `<div class="input-group"><label>Falfelület ($m^2$)</label><input type="number" id="calc-area" placeholder="pl. 50"></div>`;
+
+            if(type === 'paint') {
+                html += `<div class="input-group"><label>Rétegek száma</label><input type="number" id="calc-param1" value="2"></div>`;
+                html += `<div class="input-group"><label>Kiadósság ($m^2$/liter)</label><input type="number" id="calc-param2" value="10"></div>`;
+            } else if (type === 'adhesive') {
+                html += `<div class="input-group"><label>Anyagigény (kg/$m^2$)</label><input type="number" id="calc-param1" value="4" placeholder="Átlag: 3-5"></div>`;
+            } else if (type === 'plaster') {
+                html += `<div class="input-group"><label>Rétegek száma</label><input type="number" id="calc-param1" value="2"></div>`;
+                html += `<div class="input-group"><label>Anyagigény (kg/$m^2$/réteg)</label><input type="number" id="calc-param2" value="1.5"></div>`;
+            } else if (type === 'screed') {
+                html += `<div class="input-group"><label>Vastagság (cm)</label><input type="number" id="calc-param1" value="5"></div>`;
+                html += `<div class="input-group"><label>Anyagigény (kg/$m^2$/cm)</label><input type="number" id="calc-param2" value="20"></div>`;
+            } else if (type === 'primer') {
+                html += `<div class="input-group"><label>Kiadósság ($m^2$/liter)</label><input type="number" id="calc-param1" value="7"></div>`;
+            }
+
+            container.innerHTML = html;
+            document.getElementById('calc-result-box').style.display = 'none';
+        }
+
+        function calculateMaterial() {
+            const type = document.getElementById('calc-type').value;
+            const area = parseFloat(document.getElementById('calc-area').value);
+            if(!area) return showToast('Add meg a felületet!');
+
+            let result = 0;
+            let unit = '';
+            let desc = '';
+
+            if(type === 'paint') {
+                const layers = parseFloat(document.getElementById('calc-param1').value) || 2;
+                const coverage = parseFloat(document.getElementById('calc-param2').value) || 10;
+                result = Math.ceil((area * layers) / coverage);
+                unit = 'Liter';
+                desc = `(${layers} rétegben, ${coverage} $m^2$/l kiadóssággal)`;
+            } else if (type === 'adhesive') {
+                const consumption = parseFloat(document.getElementById('calc-param1').value) || 4;
+                result = Math.ceil(area * consumption);
+                unit = 'Kg';
+                desc = `Kb. ${Math.ceil(result/25)} zsák (25kg)`;
+            } else if (type === 'plaster') {
+                const layers = parseFloat(document.getElementById('calc-param1').value) || 2;
+                const consumption = parseFloat(document.getElementById('calc-param2').value) || 1.5;
+                result = Math.ceil(area * layers * consumption);
+                unit = 'Kg';
+                desc = `Kb. ${Math.ceil(result/20)} zsák (20kg)`;
+            } else if (type === 'screed') {
+                const thick = parseFloat(document.getElementById('calc-param1').value) || 5;
+                const consumption = parseFloat(document.getElementById('calc-param2').value) || 20;
+                result = Math.ceil(area * thick * consumption);
+                unit = 'Kg';
+                desc = `Kb. ${Math.ceil(result/40)} zsák (40kg)`;
+            } else if (type === 'primer') {
+                const coverage = parseFloat(document.getElementById('calc-param1').value) || 7;
+                result = Math.ceil(area / coverage);
+                unit = 'Liter';
+            }
+
+            document.getElementById('calc-result-num').innerText = `${result} ${unit}`;
+            document.getElementById('calc-result-desc').innerText = desc;
+            document.getElementById('calc-result-box').style.display = 'block';
+        }
+
+        // --- STANDARD APP LOGIC ---
         function openModal(id) {
             document.getElementById('modal-overlay').style.display = 'block';
             document.getElementById(id).style.display = 'flex';
@@ -360,9 +453,8 @@
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF();
             
-            // 1. CÉG ADATOK (BAL FELSŐ)
             let y = 20;
-            doc.setFontSize(18); doc.text(title, 150, y); // Cím jobbra
+            doc.setFontSize(18); doc.text(title, 150, y);
             
             doc.setFontSize(12); doc.setFont("helvetica", "bold"); 
             doc.text(profile.name, 14, y); y+=6;
@@ -374,26 +466,19 @@
             if(profile.email) { doc.text(`Email: ${profile.email}`, 14, y); y+=6; }
             if(profile.bank) { doc.text(`Bankszámla: ${profile.bank}`, 14, y); y+=6; }
 
-            // 2. VONAL & ÜGYFÉL ADATOK (FEJLÉC ALATT)
             doc.setDrawColor(200); doc.line(14, y+5, 196, y+5);
             y += 15;
 
-            // ITT A JAVÍTÁS: Ügyfél adatok kiírása
             if(clientData && clientData.name) {
                 doc.setFontSize(10); doc.setTextColor(100); doc.text("Megrendelő:", 14, y);
                 doc.setFontSize(12); doc.setTextColor(0); doc.setFont("helvetica", "bold");
                 doc.text(clientData.name, 14, y+6);
-                
                 doc.setFont("helvetica", "normal"); doc.setFontSize(10);
                 if(clientData.address) doc.text(clientData.address, 14, y+11);
-                
-                // Dátum jobbra
                 if(clientData.date) doc.text(`Kelt: ${clientData.date}`, 150, y+6);
-                
-                y += 20; // Helyet hagyunk a táblázatnak
+                y += 20;
             }
 
-            // 3. TÁBLÁZAT
             const headers = isQuote ? [['Megnevezés', 'Menny.', 'Ár', 'Össz.']] : (clientData.customHeaders ? [clientData.customHeaders] : [['Anyag', 'Menny.', 'Infó']]);
             doc.autoTable({
                 startY: y,
@@ -412,7 +497,6 @@
             showToast("PDF Letöltve!");
         }
 
-        // --- ÁRAJÁNLAT FUNKCIÓK ---
         function generateProQuote() {
             if(quoteItems.length === 0) return showToast('Üres lista!');
             const cName = document.getElementById('quote-client-name').value;
@@ -426,13 +510,27 @@
             );
         }
 
+        function generateProjectPDF() {
+            if(!currentDetailId) return;
+            const p = projects.find(x => x.id == currentDetailId);
+            const items = shopItems.filter(i => i.projectId == currentDetailId);
+            if(items.length === 0) return showToast('Nincs anyag!');
+            
+            const tableData = items.map(i => [i.text, i.qty + " db", i.room || "-", i.code || "-"]);
+            createPDF("ANYAGLISTA", tableData, false, { 
+                name: p.client, 
+                address: p.address, 
+                date: new Date().toLocaleDateString('hu-HU'),
+                customHeaders: ['Anyag', 'Menny.', 'Hely', 'Kód']
+            });
+        }
+
         function addQuoteItem() {
             const n=document.getElementById('q-item-name').value; const q=document.getElementById('q-item-qty').value;
             const p=document.getElementById('q-item-price').value; const u=document.getElementById('q-item-unit').value;
             if(!n || !q || !p) return;
             quoteItems.push({name:n, qty:q, price:p, unit:u, total:q*p});
             
-            // JAVÍTÁS: Mezők törlése hozzáadás után
             document.getElementById('q-item-name').value='';
             document.getElementById('q-item-qty').value='';
             document.getElementById('q-item-price').value='';
@@ -450,26 +548,9 @@
             document.getElementById('quote-grand-total').innerText = `Összesen: ${t} Ft`;
         }
 
-        // --- PROJEKT PDF ---
-        function generateProjectPDF() {
-            if(!currentDetailId) return;
-            const p = projects.find(x => x.id == currentDetailId);
-            const items = shopItems.filter(i => i.projectId == currentDetailId);
-            if(items.length === 0) return showToast('Nincs anyag!');
-            
-            const tableData = items.map(i => [i.text, i.qty + " db", i.room || "-", i.code || "-"]);
-            createPDF("ANYAGLISTA", tableData, false, { 
-                name: p.client, 
-                address: p.address, 
-                date: new Date().toLocaleDateString('hu-HU'),
-                customHeaders: ['Anyag', 'Menny.', 'Hely', 'Kód']
-            });
-        }
-
-        // --- SHOP & MATERIALS ---
+        // --- SHOP & PROJECTS ---
         function addShopItem() {
-            const txt = document.getElementById('shop-input').value;
-            if(!txt) return showToast('Mit vettél?');
+            const txt = document.getElementById('shop-input').value; if(!txt) return showToast('Mit vettél?');
             const item = {
                 id: Date.now(), text: txt,
                 qty: document.getElementById('shop-qty').value,
@@ -481,7 +562,7 @@
                 done: false
             };
             shopItems.unshift(item);
-            localStorage.setItem('fn103_shop', JSON.stringify(shopItems));
+            localStorage.setItem('fn104_shop', JSON.stringify(shopItems));
             document.getElementById('shop-input').value = '';
             document.getElementById('shop-code').value = '';
             document.getElementById('shop-note').value = '';
@@ -500,15 +581,10 @@
                     if(p) projectTag = `<div style="font-size:10px; color:#007bff;">${p.client} ${i.room ? '('+i.room+')' : ''}</div>`;
                 }
                 let img = i.image ? `<i class="fas fa-camera" style="color:#007bff; margin-left:5px;"></i>` : '';
-                
                 list.innerHTML += `<div class="card ${doneClass}" style="display:flex; align-items:center; justify-content:space-between;">
                     <div style="display:flex; align-items:center; flex:1;">
                         <div class="check-circle" onclick="toggleShop(${i.id})"><i class="fas fa-check"></i></div>
-                        <div>
-                            <div style="font-weight:bold;">${i.qty}x ${i.text} ${img}</div>
-                            <div style="font-size:12px; color:#666;">${i.code||''} ${i.note||''}</div>
-                            ${projectTag}
-                        </div>
+                        <div><div style="font-weight:bold;">${i.qty}x ${i.text} ${img}</div><div style="font-size:12px; color:#666;">${i.code||''} ${i.note||''}</div>${projectTag}</div>
                     </div>
                     <i class="fas fa-trash" style="color:#dc3545; padding:10px;" onclick="delShop(${i.id})"></i>
                 </div>`;
@@ -518,33 +594,22 @@
         function renderDetailList() {
             const list = document.getElementById('d-materials-list'); list.innerHTML = '';
             const items = shopItems.filter(i => i.projectId == currentDetailId);
-            if(!items.length) { list.innerHTML = '<div style="color:#999; text-align:center;">Nincs anyag ehhez a munkához.</div>'; return; }
+            if(!items.length) { list.innerHTML = '<div style="color:#999; text-align:center;">Nincs anyag.</div>'; return; }
             items.forEach(i => {
                 const room = i.room ? `(${i.room})` : '';
                 const doneClass = i.done ? 'item-done' : '';
                 const img = i.image ? `<img src="${i.image}" class="material-thumb" onclick="openImg('${i.image}')">` : '<div class="material-thumb"></div>';
-                list.innerHTML += `<div class="material-item ${doneClass}"><div class="check-circle" onclick="toggleShop(${i.id})"><i class="fas fa-check"></i></div>${img}<div style="flex:1;"><div style="font-weight:bold;">${i.qty}x ${i.text}</div><div style="font-size:12px; color:#666;">${i.code||''} ${room}</div><div style="font-size:11px; font-style:italic;">${i.note||''}</div></div><button class="icon-btn btn-edit" onclick="openItemEdit(${i.id})"><i class="fas fa-pen"></i></button></div>`;
+                list.innerHTML += `<div class="material-item ${doneClass}"><div class="check-circle" onclick="toggleShop(${i.id})"><i class="fas fa-check"></i></div>${img}<div style="flex:1;"><div style="font-weight:bold;">${i.qty}x ${i.text}</div><div style="font-size:12px; color:#666;">${i.code||''} ${room}</div></div><button class="icon-btn btn-edit" onclick="openItemEdit(${i.id})"><i class="fas fa-pen"></i></button></div>`;
             });
         }
 
-        function goToShopForCurrentProject() {
-            if(!currentDetailId) return;
-            switchTab('shop');
-            setTimeout(() => {
-                const select = document.getElementById('shop-project-select');
-                if(select) { select.value = currentDetailId; updateRoomSelectInShop(); }
-            }, 50);
-            closeModal();
-        }
-
-        // --- SAVED QUOTES LOGIC ---
         function saveCurrentQuote() {
             if(quoteItems.length === 0) return showToast('Üres lista!');
             const client = document.getElementById('quote-client-name').value || 'Névtelen';
             const date = document.getElementById('quote-date').value;
             const total = quoteItems.reduce((acc,curr)=>acc+curr.total,0);
             savedQuotes.unshift({ id: Date.now(), client, date, total, items: [...quoteItems] });
-            localStorage.setItem('fn103_quotes', JSON.stringify(savedQuotes));
+            localStorage.setItem('fn104_quotes', JSON.stringify(savedQuotes));
             renderSavedQuotes(); showToast('Ajánlat mentve!');
         }
 
@@ -554,10 +619,7 @@
             savedQuotes.forEach(q => {
                 c.innerHTML += `<div class="saved-quote-item">
                     <div><b>${q.client}</b><br><small>${q.date} | ${q.total.toLocaleString()} Ft</small></div>
-                    <div>
-                        <button onclick="loadQuote(${q.id})" style="border:none;background:#e3f2fd;color:#007bff;padding:5px 10px;border-radius:5px;"><i class="fas fa-upload"></i></button>
-                        <button onclick="deleteQuote(${q.id})" style="border:none;background:#ffebee;color:#dc3545;padding:5px 10px;border-radius:5px;"><i class="fas fa-trash"></i></button>
-                    </div>
+                    <div><button onclick="loadQuote(${q.id})" style="border:none;background:#e3f2fd;color:#007bff;padding:5px 10px;border-radius:5px;"><i class="fas fa-upload"></i></button><button onclick="deleteQuote(${q.id})" style="border:none;background:#ffebee;color:#dc3545;padding:5px 10px;border-radius:5px;"><i class="fas fa-trash"></i></button></div>
                 </div>`;
             });
         }
@@ -569,14 +631,8 @@
             document.getElementById('quote-client-name').value = q.client;
             renderQuoteItems(); showToast('Ajánlat betöltve!');
         }
-        function deleteQuote(id) {
-            if(!confirm('Törlöd?')) return;
-            savedQuotes = savedQuotes.filter(x=>x.id!=id);
-            localStorage.setItem('fn103_quotes', JSON.stringify(savedQuotes));
-            renderSavedQuotes();
-        }
+        function deleteQuote(id) { if(!confirm('Törlöd?')) return; savedQuotes = savedQuotes.filter(x=>x.id!=id); localStorage.setItem('fn104_quotes', JSON.stringify(savedQuotes)); renderSavedQuotes(); }
 
-        // --- STANDARD LOGIC ---
         function saveProfile() {
             profile.name = document.getElementById('prof-name').value;
             profile.address = document.getElementById('prof-address').value;
@@ -584,7 +640,7 @@
             profile.phone = document.getElementById('prof-phone').value;
             profile.email = document.getElementById('prof-email').value;
             profile.bank = document.getElementById('prof-bank').value;
-            localStorage.setItem('fn103_profile', JSON.stringify(profile));
+            localStorage.setItem('fn104_profile', JSON.stringify(profile));
             updateProfilePreview(); closeModal(); showToast('Mentve');
         }
         function updateProfilePreview() {
@@ -615,7 +671,7 @@
                 rooms: []
             };
             projects.unshift(p);
-            localStorage.setItem('fn103_projects', JSON.stringify(projects));
+            localStorage.setItem('fn104_projects', JSON.stringify(projects));
             closeModal();
             document.getElementById('inp-client').value = ''; 
             document.getElementById('inp-phone').value = ''; 
@@ -638,23 +694,18 @@
             currentDetailId=id; const p=projects.find(x=>x.id==id);
             document.getElementById('d-client').innerText=p.client;
             document.getElementById('d-address').innerText=p.address;
-            
             const btnCall = document.getElementById('btn-call');
             const btnMail = document.getElementById('btn-mail');
             if(p.phone) { btnCall.href = 'tel:'+p.phone; btnCall.classList.remove('btn-disabled'); } 
             else { btnCall.href = '#'; btnCall.classList.add('btn-disabled'); }
             if(p.email) { btnMail.href = 'mailto:'+p.email; btnMail.classList.remove('btn-disabled'); }
             else { btnMail.href = '#'; btnMail.classList.add('btn-disabled'); }
-            
             const mapLink = document.getElementById('map-link');
             if(p.address) { mapLink.href = 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(p.address); }
-
             const dRooms=document.getElementById('d-rooms'); dRooms.innerHTML='';
             if(p.rooms) p.rooms.forEach(r => dRooms.innerHTML+=`<span class="room-tag">${r}</span>`);
-            
             const note=document.getElementById('d-note-block');
             if(p.note) { note.innerText=p.note; note.style.display='block'; } else { note.style.display='none'; }
-            
             renderDetailList();
             openModal('view-detail');
         }
@@ -664,16 +715,16 @@
             const p=projects.find(x=>x.id==currentDetailId);
             if(!p.rooms) p.rooms=[];
             p.rooms.push(s ? `${v} (${s}m²)` : v);
-            localStorage.setItem('fn103_projects', JSON.stringify(projects));
+            localStorage.setItem('fn104_projects', JSON.stringify(projects));
             document.getElementById('new-room-input').value=''; openDetail(currentDetailId);
         }
         function deleteCurrentProject() {
             projects=projects.filter(x=>x.id!=currentDetailId);
-            localStorage.setItem('fn103_projects', JSON.stringify(projects));
+            localStorage.setItem('fn104_projects', JSON.stringify(projects));
             closeModal(); renderProjects(); renderDashboard();
         }
-        function toggleShop(id) { const i=shopItems.find(x=>x.id==id); i.done=!i.done; localStorage.setItem('fn103_shop', JSON.stringify(shopItems)); renderShop(); if(currentDetailId) renderDetailList(); }
-        function delShop(id) { shopItems=shopItems.filter(x=>x.id!=id); localStorage.setItem('fn103_shop', JSON.stringify(shopItems)); renderShop(); if(currentDetailId) renderDetailList(); }
+        function toggleShop(id) { const i=shopItems.find(x=>x.id==id); i.done=!i.done; localStorage.setItem('fn104_shop', JSON.stringify(shopItems)); renderShop(); if(currentDetailId) renderDetailList(); }
+        function delShop(id) { shopItems=shopItems.filter(x=>x.id!=id); localStorage.setItem('fn104_shop', JSON.stringify(shopItems)); renderShop(); if(currentDetailId) renderDetailList(); }
         function updateShopSelect() {
             const s=document.getElementById('shop-project-select'); s.innerHTML='<option value="">-- Raktár --</option>';
             projects.forEach(p => s.innerHTML+=`<option value="${p.id}">${p.client}</option>`);
@@ -723,7 +774,7 @@
             p.email = document.getElementById('edit-email').value;
             p.address = document.getElementById('edit-address').value;
             p.note = document.getElementById('edit-note').value;
-            localStorage.setItem('fn103_projects', JSON.stringify(projects));
+            localStorage.setItem('fn104_projects', JSON.stringify(projects));
             closeModal(); openDetail(currentDetailId); showToast('Mentve');
         }
         function confirmAction(choice) {
@@ -738,7 +789,7 @@
         }
         function handleFavoriteClick() {
             const v=document.getElementById('shop-input').value;
-            if(v && !favorites.includes(v)) { favorites.push(v); localStorage.setItem('fn103_favs', JSON.stringify(favorites)); showToast('Kedvenc!'); }
+            if(v && !favorites.includes(v)) { favorites.push(v); localStorage.setItem('fn104_favs', JSON.stringify(favorites)); showToast('Kedvenc!'); }
             else { 
                 const c=document.getElementById('fav-list-container'); c.innerHTML='';
                 favorites.forEach(f=>c.innerHTML+=`<div class="fav-item" onclick="document.getElementById('shop-input').value='${f}';closeModal()">${f}</div>`);
@@ -761,16 +812,12 @@
             i.qty=document.getElementById('item-edit-qty').value;
             i.code=document.getElementById('item-edit-code').value;
             i.note=document.getElementById('item-edit-note').value;
-            localStorage.setItem('fn103_shop', JSON.stringify(shopItems));
+            localStorage.setItem('fn104_shop', JSON.stringify(shopItems));
             closeModal(); renderShop(); if(currentDetailId) renderDetailList();
         }
         function filterProjects(v) {
             const l=document.getElementById('projects-list'); l.innerHTML='';
             projects.filter(p=>p.client.toLowerCase().includes(v.toLowerCase())).forEach(p=>l.innerHTML+=`<div class="card" onclick="openDetail(${p.id})"><b>${p.client}</b></div>`);
-        }
-        function calculatePaint() {
-             const a=document.getElementById('calc-area').value; const l=document.getElementById('calc-layers').value; const c=document.getElementById('calc-coverage').value;
-             if(a&&l&&c) { document.getElementById('calc-result-num').innerText=Math.ceil((a*l)/c)+" L"; document.getElementById('calc-result-box').style.display='block'; }
         }
         function openImg(src) { showToast('Kép megtekintése nem támogatott'); }
         function exportData() {
@@ -785,11 +832,11 @@
                     const d = JSON.parse(e.target.result);
                     if(d.p && d.s) {
                         projects = d.p; shopItems = d.s; if(d.f) favorites = d.f; if(d.pr) profile = d.pr; if(d.q) savedQuotes = d.q;
-                        localStorage.setItem('fn103_projects', JSON.stringify(projects));
-                        localStorage.setItem('fn103_shop', JSON.stringify(shopItems));
-                        localStorage.setItem('fn103_favs', JSON.stringify(favorites));
-                        localStorage.setItem('fn103_profile', JSON.stringify(profile));
-                        localStorage.setItem('fn103_quotes', JSON.stringify(savedQuotes));
+                        localStorage.setItem('fn104_projects', JSON.stringify(projects));
+                        localStorage.setItem('fn104_shop', JSON.stringify(shopItems));
+                        localStorage.setItem('fn104_favs', JSON.stringify(favorites));
+                        localStorage.setItem('fn104_profile', JSON.stringify(profile));
+                        localStorage.setItem('fn104_quotes', JSON.stringify(savedQuotes));
                         showToast('Visszatöltve!'); setTimeout(()=>location.reload(), 1000);
                     }
                 } catch(e) { showToast('Hibás fájl!'); }
