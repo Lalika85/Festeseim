@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>FestőNapló v9.7</title>
+    <title>FestőNapló v9.8</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     
     <style>
@@ -90,7 +90,7 @@
 <body>
 
     <header>
-        <div><div style="font-size:10px;font-weight:bold;color:#888;">FESTŐNAPLÓ v9.7</div><h1 id="page-title">Áttekintés</h1></div>
+        <div><div style="font-size:10px;font-weight:bold;color:#888;">FESTŐNAPLÓ v9.8</div><h1 id="page-title">Áttekintés</h1></div>
         <div class="header-actions">
             <button id="header-share-btn" onclick="shareCurrentShopList()" style="display:none;"><i class="fas fa-share-alt"></i></button>
             <button onclick="openModal('backup-box')"><i class="fas fa-save"></i></button>
@@ -271,16 +271,16 @@
 
     <script>
         // --- CORE & INIT ---
-        let projects = JSON.parse(localStorage.getItem('fn97_projects')) || [];
-        // Migráció régi verziókból, ha kell
-        if(projects.length === 0 && localStorage.getItem('fn96_projects')) {
-            projects = JSON.parse(localStorage.getItem('fn96_projects'));
-        }
-        let shopItems = JSON.parse(localStorage.getItem('fn97_shop')) || [];
-        if(shopItems.length === 0 && localStorage.getItem('fn96_shop')) {
-            shopItems = JSON.parse(localStorage.getItem('fn96_shop'));
-        }
-        let favorites = JSON.parse(localStorage.getItem('fn97_favs')) || ["Héra Gold", "Dulux", "Glett", "Szalag", "Fólia", "Henger"];
+        let projects = JSON.parse(localStorage.getItem('fn98_projects')) || [];
+        // Migráció ha kell
+        if(projects.length === 0 && localStorage.getItem('fn97_projects')) { projects = JSON.parse(localStorage.getItem('fn97_projects')); }
+        else if(projects.length === 0 && localStorage.getItem('fn96_projects')) { projects = JSON.parse(localStorage.getItem('fn96_projects')); }
+        
+        let shopItems = JSON.parse(localStorage.getItem('fn98_shop')) || [];
+        if(shopItems.length === 0 && localStorage.getItem('fn97_shop')) { shopItems = JSON.parse(localStorage.getItem('fn97_shop')); }
+        else if(shopItems.length === 0 && localStorage.getItem('fn96_shop')) { shopItems = JSON.parse(localStorage.getItem('fn96_shop')); }
+        
+        let favorites = JSON.parse(localStorage.getItem('fn98_favs')) || ["Héra Gold", "Dulux", "Glett", "Szalag", "Fólia", "Henger"];
         
         let currentDetailId = null;
         let tempShopImage = null;
@@ -298,14 +298,13 @@
             if(id==='projects') document.getElementById('btn-proj').classList.add('active');
             if(id==='shop') { document.getElementById('btn-shop').classList.add('active'); updateShopSelect(); renderShop(); }
             if(id==='calc') document.getElementById('btn-calc').classList.add('active');
-            
             document.getElementById('header-share-btn').style.display = (id === 'shop') ? 'block' : 'none';
             document.getElementById('page-title').innerText = (id==='dashboard'?'Áttekintés':(id==='projects'?'Munkák':(id==='shop'?'Bolt':'Kalkulátor')));
             if(id==='projects') renderProjects();
             if(id==='dashboard') renderDashboard();
         }
 
-        // --- CUSTOM TOAST & CONFIRM ---
+        // --- TOAST & CONFIRM ---
         function showToast(msg) {
             const t = document.getElementById("toast");
             t.innerText = msg; t.className = "show";
@@ -341,14 +340,14 @@
                 phone: document.getElementById('inp-phone').value,
                 email: document.getElementById('inp-email').value,
                 address: document.getElementById('inp-address').value,
-                note: document.getElementById('inp-note').value, // ÚJ: Jegyzet
+                note: document.getElementById('inp-note').value,
                 status: document.getElementById('inp-status').value,
                 start: document.getElementById('inp-start').value,
                 end: document.getElementById('inp-end').value,
                 rooms: []
             };
             projects.unshift(p);
-            localStorage.setItem('fn97_projects', JSON.stringify(projects));
+            localStorage.setItem('fn98_projects', JSON.stringify(projects));
             closeModal();
             document.getElementById('inp-client').value = ''; 
             document.getElementById('inp-note').value = '';
@@ -388,14 +387,11 @@
             document.getElementById('d-start').innerText = p.start || '-';
             document.getElementById('d-end').innerText = p.end || '-';
             
-            // ÚJ: Jegyzet megjelenítése
             const noteBlock = document.getElementById('d-note-block');
             if(p.note && p.note.trim() !== "") {
                 noteBlock.innerText = p.note;
                 noteBlock.style.display = 'block';
-            } else {
-                noteBlock.style.display = 'none';
-            }
+            } else { noteBlock.style.display = 'none'; }
 
             const btnCall = document.getElementById('btn-call');
             const btnMail = document.getElementById('btn-mail');
@@ -419,18 +415,13 @@
 
         function closeDetail() { document.getElementById('view-detail').classList.remove('show'); }
 
-        // --- JAVÍTOTT PLUSZ GOMB (BOLTBA UGRÁS) ---
+        // --- GO TO SHOP ---
         function goToShopForCurrentProject() {
             if(!currentDetailId) return;
-            // 1. Átváltunk a bolt nézetre
             switchTab('shop');
-            // 2. Beállítjuk a selectort (kis késleltetés a biztonság kedvéért, de általában azonnal jó)
             setTimeout(() => {
                 const select = document.getElementById('shop-project-select');
-                if(select) {
-                    select.value = currentDetailId;
-                    updateRoomSelectInShop();
-                }
+                if(select) { select.value = currentDetailId; updateRoomSelectInShop(); }
             }, 50);
             closeDetail();
         }
@@ -455,7 +446,7 @@
             document.getElementById('edit-phone').value = p.phone || '';
             document.getElementById('edit-email').value = p.email || '';
             document.getElementById('edit-address').value = p.address || '';
-            document.getElementById('edit-note').value = p.note || ''; // ÚJ: Szerkesztés
+            document.getElementById('edit-note').value = p.note || '';
         }
         function saveEdit() {
             const p = projects.find(x => x.id == currentDetailId);
@@ -463,15 +454,15 @@
             p.phone = document.getElementById('edit-phone').value;
             p.email = document.getElementById('edit-email').value;
             p.address = document.getElementById('edit-address').value;
-            p.note = document.getElementById('edit-note').value; // ÚJ: Mentés
-            localStorage.setItem('fn97_projects', JSON.stringify(projects));
+            p.note = document.getElementById('edit-note').value;
+            localStorage.setItem('fn98_projects', JSON.stringify(projects));
             showToast('Mentve!'); openDetail(currentDetailId);
         }
         function cancelEdit() { document.getElementById('detail-display').style.display = 'block'; document.getElementById('detail-edit').style.display = 'none'; }
         
         function deleteCurrentProject() {
             projects = projects.filter(x => x.id != currentDetailId);
-            localStorage.setItem('fn97_projects', JSON.stringify(projects));
+            localStorage.setItem('fn98_projects', JSON.stringify(projects));
             closeDetail(); renderDashboard(); showToast('Törölve!');
         }
 
@@ -490,7 +481,7 @@
                 done: false
             };
             shopItems.unshift(item);
-            localStorage.setItem('fn97_shop', JSON.stringify(shopItems));
+            localStorage.setItem('fn98_shop', JSON.stringify(shopItems));
             document.getElementById('shop-input').value = '';
             document.getElementById('shop-photo-prev').style.display = 'none';
             tempShopImage = null;
@@ -505,12 +496,12 @@
         }
         function toggleItem(id) {
             const i = shopItems.find(x => x.id == id);
-            if(i) { i.done = !i.done; localStorage.setItem('fn97_shop', JSON.stringify(shopItems)); renderShop(); if(currentDetailId) renderDetailList(); }
+            if(i) { i.done = !i.done; localStorage.setItem('fn98_shop', JSON.stringify(shopItems)); renderShop(); if(currentDetailId) renderDetailList(); }
         }
         function askDeleteItem(id) { askConfirm('Törlöd az anyagot?', function() { deleteItem(id); }); }
         function deleteItem(id) {
             shopItems = shopItems.filter(x => x.id != id);
-            localStorage.setItem('fn97_shop', JSON.stringify(shopItems));
+            localStorage.setItem('fn98_shop', JSON.stringify(shopItems));
             renderShop(); if(currentDetailId) renderDetailList(); showToast('Anyag törölve');
         }
         function openItemEdit(id) {
@@ -525,7 +516,7 @@
             const i = shopItems.find(x => x.id == id);
             i.text = document.getElementById('item-edit-text').value;
             i.qty = document.getElementById('item-edit-qty').value;
-            localStorage.setItem('fn97_shop', JSON.stringify(shopItems));
+            localStorage.setItem('fn98_shop', JSON.stringify(shopItems));
             closeModal(); renderShop(); if(currentDetailId) renderDetailList(); showToast('Mentve');
         }
 
@@ -535,7 +526,7 @@
             if (currentInput && !favorites.includes(currentInput)) {
                 askConfirm('Mented a kedvencek közé?', function() {
                     favorites.push(currentInput);
-                    localStorage.setItem('fn97_favs', JSON.stringify(favorites));
+                    localStorage.setItem('fn98_favs', JSON.stringify(favorites));
                     showToast('Mentve!');
                 });
             } else {
@@ -545,11 +536,38 @@
             }
         }
         function deleteFav(idx) {
-            favorites.splice(idx, 1); localStorage.setItem('fn97_favs', JSON.stringify(favorites));
+            favorites.splice(idx, 1); localStorage.setItem('fn98_favs', JSON.stringify(favorites));
             closeModal(); showToast('Törölve');
         }
 
-        // --- JAVÍTOTT MEGOSZTÁS (NATIVE SHARE) ---
+        // --- JAVÍTOTT MEGOSZTÁS (MEDIAN APK HOZ) ---
+        async function shareList(title, items) {
+            if(!items.length) return showToast('Üres lista');
+            let txt = title + ":\n\n";
+            items.forEach(i => txt += `- ${i.qty}x ${i.text} ${i.code ? '('+i.code+')' : ''}\n`);
+            
+            // 1. Megpróbáljuk a natív megosztást (ha működik)
+            if (navigator.share) {
+                try {
+                    await navigator.share({ title: title, text: txt });
+                    return;
+                } catch (e) { console.log('Web share failed, trying Median...'); }
+            }
+            
+            // 2. HA APK-BAN VAGYUNK: Ez a "titkos" parancs nyitja meg a Messengert
+            // A Median "intercepteli" ezt a linket és megosztást indít
+            window.location.href = 'median://share?text=' + encodeURIComponent(txt) + '&title=' + encodeURIComponent(title);
+            
+            // 3. Biztonsági másolás (ha véletlenül nem APK-ban vagyunk)
+            setTimeout(() => { copyToClipboard(txt); }, 1000);
+        }
+        
+        function copyToClipboard(txt) {
+            const el = document.createElement('textarea'); el.value = txt; document.body.appendChild(el);
+            el.select(); document.execCommand('copy'); document.body.removeChild(el);
+            showToast('Lista a vágólapon (ha nem nyílt meg a megosztás)');
+        }
+
         function shareCurrentShopList() {
              const pid = document.getElementById('shop-project-select').value;
              const items = shopItems.filter(x => x.projectId == pid || (!pid && !x.projectId));
@@ -560,37 +578,8 @@
             const items = shopItems.filter(x => x.projectId == currentDetailId);
             shareList(p.client + " Anyaglista", items);
         }
-        
-        async function shareList(title, items) {
-            if(!items.length) return showToast('Üres lista');
-            let txt = title + ":\n\n";
-            items.forEach(i => txt += `- ${i.qty}x ${i.text} ${i.code ? '('+i.code+')' : ''}\n`);
-            
-            // Itt próbáljuk meg a natív megosztást (Messenger, Viber, stb)
-            if (navigator.share) {
-                try {
-                    await navigator.share({
-                        title: title,
-                        text: txt
-                    });
-                    console.log('Megosztva');
-                } catch (err) {
-                    console.error('Megosztás hiba:', err);
-                    // Ha a user bezárja a megosztást, nem kell hibaüzenet
-                }
-            } else {
-                // Ha valamiért mégsem támogatott, marad a vágólap
-                copyToClipboard(txt);
-            }
-        }
-        
-        function copyToClipboard(txt) {
-            const el = document.createElement('textarea'); el.value = txt; document.body.appendChild(el);
-            el.select(); document.execCommand('copy'); document.body.removeChild(el);
-            showToast('Lista másolva!');
-        }
 
-        // --- HELPERS ---
+        // --- HELPER FUNCS ---
         function updateShopSelect() {
             const s = document.getElementById('shop-project-select'); s.innerHTML = '<option value="">-- Raktár --</option>';
             projects.forEach(p => s.innerHTML += `<option value="${p.id}">${p.client}</option>`);
@@ -605,31 +594,24 @@
             }
         }
         
-        // --- ÚJ HELYISÉG + MÉRET ---
         function addRoomToProject() {
             const val = document.getElementById('new-room-input').value;
-            const size = document.getElementById('new-room-size').value; // ÚJ: Méret
+            const size = document.getElementById('new-room-size').value;
             if(!val) return;
-            
             const p = projects.find(x => x.id == currentDetailId);
             if(!p.rooms) p.rooms = [];
-            
-            // Ha van méret, hozzáírjuk, ha nincs, csak a nevet
             const roomString = size ? `${val} (${size} m²)` : val;
-            
             p.rooms.push(roomString);
-            localStorage.setItem('fn97_projects', JSON.stringify(projects));
-            
+            localStorage.setItem('fn98_projects', JSON.stringify(projects));
             document.getElementById('new-room-input').value = '';
             document.getElementById('new-room-size').value = '';
             openDetail(currentDetailId);
         }
-        
         function askDeleteRoom(r) {
             askConfirm('Törlöd a helyiséget?', function(){
                 const p = projects.find(x => x.id == currentDetailId);
                 p.rooms = p.rooms.filter(x => x !== r);
-                localStorage.setItem('fn97_projects', JSON.stringify(projects));
+                localStorage.setItem('fn98_projects', JSON.stringify(projects));
                 openDetail(currentDetailId);
             });
         }
@@ -663,9 +645,9 @@
                     const d = JSON.parse(e.target.result);
                     if(d.p && d.s) {
                         projects = d.p; shopItems = d.s; if(d.f) favorites = d.f;
-                        localStorage.setItem('fn97_projects', JSON.stringify(projects));
-                        localStorage.setItem('fn97_shop', JSON.stringify(shopItems));
-                        localStorage.setItem('fn97_favs', JSON.stringify(favorites));
+                        localStorage.setItem('fn98_projects', JSON.stringify(projects));
+                        localStorage.setItem('fn98_shop', JSON.stringify(shopItems));
+                        localStorage.setItem('fn98_favs', JSON.stringify(favorites));
                         showToast('Visszatöltve!'); setTimeout(()=>location.reload(), 1000);
                     }
                 } catch(e) { showToast('Hibás fájl!'); }
