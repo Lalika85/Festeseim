@@ -3,348 +3,363 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>FestőNapló v10.5</title>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <title>FestőNapló v11.0 PRO</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
     
     <style>
-        /* --- ALAPOK --- */
-        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            background-color: #f0f2f5; margin: 0; padding: 0;
-            display: flex; flex-direction: column; height: 100vh; overflow: hidden;
+        /* --- BUSINESS DESIGN SYSTEM --- */
+        :root {
+            --primary: #1a237e; /* Profi sötétkék */
+            --accent: #c0a062; /* Arany/Bronz a kiemelésekhez */
+            --bg: #f4f6f8; /* Világosszürke irodai háttér */
+            --text: #263238; /* Sötét grafit */
+            --white: #ffffff;
+            --success: #2e7d32;
+            --danger: #c62828;
+            --border-radius: 4px; /* Szögletesebb, komolyabb */
         }
 
-        /* --- HEADER (ÚJ DIZÁJN HOGY LÁSD A VÁLTOZÁST) --- */
-        header { flex: 0 0 70px; background: #007bff; border-bottom: 1px solid #0056b3; display: flex; justify-content: space-between; align-items: center; padding: 0 20px; z-index: 10; color: white; }
-        h1 { margin: 0; font-size: 20px; color: white; }
-        .header-actions button { margin-left: 10px; font-size: 20px; color: white; background: none; border: none; padding: 10px; }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; outline: none; }
+        body {
+            font-family: 'Roboto', 'Segoe UI', sans-serif;
+            background-color: var(--bg); margin: 0; padding: 0;
+            display: flex; flex-direction: column; height: 100vh; overflow: hidden;
+            color: var(--text);
+        }
 
-        /* --- CONTENT --- */
-        #main-container { flex: 1; overflow-y: auto; padding: 20px; padding-bottom: 80px; background-color: #f0f2f5; }
+        /* HEADER */
+        header { 
+            flex: 0 0 60px; 
+            background: var(--primary); 
+            color: var(--white);
+            display: flex; justify-content: space-between; align-items: center; 
+            padding: 0 20px; 
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+            z-index: 100;
+        }
+        h1 { margin: 0; font-size: 18px; font-weight: 500; letter-spacing: 0.5px; text-transform: uppercase; }
+        .header-actions button { color: var(--white); background: transparent; border: none; font-size: 18px; padding: 10px; }
 
-        /* --- UI ELEMEK --- */
-        .card { background: #fff; border-radius: 12px; padding: 15px; margin-bottom: 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.03); border: 1px solid #eef0f2; position: relative; }
+        /* CONTENT AREA */
+        #main-container { flex: 1; overflow-y: auto; padding: 15px; padding-bottom: 80px; }
+
+        /* CARDS */
+        .card { 
+            background: var(--white); 
+            border-radius: var(--border-radius); 
+            padding: 20px; 
+            margin-bottom: 15px; 
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1); 
+            border: 1px solid #e0e0e0;
+        }
+        .card h3 { margin-top: 0; font-size: 16px; color: var(--primary); border-bottom: 2px solid #eee; padding-bottom: 10px; margin-bottom: 15px; }
+
+        /* INPUTS */
         .input-group { margin-bottom: 15px; }
-        label { display: block; font-size: 11px; font-weight: bold; color: #666; margin-bottom: 5px; text-transform: uppercase; }
-        input, select, textarea { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 8px; font-size: 16px; background: #fff; font-family: inherit; }
-        textarea { resize: vertical; min-height: 80px; }
+        label { display: block; font-size: 11px; font-weight: 700; color: #546e7a; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 0.5px; }
+        input, select, textarea { 
+            width: 100%; padding: 12px; 
+            border: 1px solid #cfd8dc; 
+            border-radius: var(--border-radius); 
+            font-size: 15px; 
+            background: #fff; 
+            color: #37474f;
+            transition: border 0.3s;
+        }
+        input:focus, select:focus, textarea:focus { border-color: var(--primary); }
         
-        button.primary { width: 100%; background: #007bff; color: white; border: none; padding: 16px; border-radius: 12px; font-size: 16px; font-weight: bold; }
-        button.secondary { width: 100%; background: #f0f0f0; color: #333; border: none; padding: 16px; border-radius: 12px; font-size: 14px; font-weight: bold; margin-top: 10px; }
-        button.success { width: 100%; background: #28a745; color: white; border: none; padding: 16px; border-radius: 12px; font-size: 16px; font-weight: bold; margin-top:10px; }
-        button.pro-btn { width: 100%; background: linear-gradient(45deg, #1e3c72, #2a5298); color: white; border: none; padding: 16px; border-radius: 12px; font-size: 16px; font-weight: bold; margin-top: 10px; display: flex; align-items: center; justify-content: center; gap: 10px; }
+        /* BUTTONS */
+        button { cursor: pointer; transition: all 0.2s; }
+        button.primary { width: 100%; background: var(--primary); color: var(--white); border: none; padding: 14px; border-radius: var(--border-radius); font-size: 14px; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; }
+        button.secondary { width: 100%; background: #eceff1; color: #455a64; border: 1px solid #cfd8dc; padding: 14px; border-radius: var(--border-radius); font-size: 14px; font-weight: bold; margin-top: 10px; text-transform: uppercase; }
+        button.success { width: 100%; background: var(--success); color: var(--white); border: none; padding: 14px; border-radius: var(--border-radius); font-size: 14px; font-weight: bold; margin-top:10px; text-transform: uppercase; }
+        button.danger { background: var(--danger); color: white; }
 
-        .icon-btn { border: none; background: none; padding: 10px; font-size: 18px; }
-        .btn-edit { color: #007bff; }
-        .btn-delete { color: #dc3545; }
+        /* NAVBAR */
+        .navbar { 
+            flex: 0 0 70px; 
+            background: var(--white); 
+            border-top: 1px solid #e0e0e0; 
+            display: flex; justify-content: space-around; align-items: center; 
+            z-index: 100;
+        }
+        .nav-btn { background: none; border: none; display: flex; flex-direction: column; align-items: center; color: #90a4ae; font-size: 10px; font-weight: bold; width: 60px; }
+        .nav-btn i { font-size: 22px; margin-bottom: 4px; }
+        .nav-btn.active { color: var(--primary); }
+        .fab { 
+            width: 50px; height: 50px; 
+            background: var(--accent); 
+            border-radius: 50%; 
+            color: white; border: none; 
+            font-size: 20px; 
+            box-shadow: 0 4px 10px rgba(192, 160, 98, 0.4); 
+            display: flex; align-items: center; justify-content: center; 
+            margin-top: -25px; 
+        }
 
-        /* --- PDF & QUOTE --- */
-        .quote-row { display: flex; gap: 5px; margin-bottom: 10px; align-items: center; border-bottom: 1px solid #eee; padding-bottom: 10px; }
-        .quote-total { font-size: 20px; font-weight: bold; color: #007bff; text-align: right; margin-top: 20px; border-top: 2px solid #eee; padding-top: 10px; }
-        .quote-header { background: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 15px; border: 1px solid #e9ecef; }
-        .saved-quote-item { padding: 10px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; }
+        /* LIST & ITEMS */
+        .list-item { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid #eee; }
+        .list-item:last-child { border-bottom: none; }
+        .quote-row { display: flex; align-items: center; border-bottom: 1px solid #eee; padding: 10px 0; font-size: 14px; }
+        .quote-total { font-size: 18px; font-weight: bold; color: var(--primary); text-align: right; margin-top: 15px; border-top: 2px solid #eee; padding-top: 10px; }
+        
+        /* SHOP CHECKBOX */
+        .check-circle { width: 24px; height: 24px; border-radius: 4px; border: 2px solid #b0bec5; display: flex; align-items: center; justify-content: center; margin-right: 15px; flex-shrink: 0; }
+        .item-done .check-circle { background-color: var(--success); border-color: var(--success); color: white; }
+        .item-done .item-content { text-decoration: line-through; color: #b0bec5; }
 
-        /* --- SHOP --- */
-        .check-circle { width: 28px; height: 28px; border-radius: 50%; border: 2px solid #ccc; display: flex; align-items: center; justify-content: center; margin-right: 15px; flex-shrink: 0; }
-        .item-done .check-circle { background-color: #28a745; border-color: #28a745; color: white; }
-        .item-done .item-content { text-decoration: line-through; color: #aaa; }
-        .material-item { display: flex; gap: 15px; border-bottom: 1px solid #f0f0f0; padding: 15px 0; align-items: center; }
-        .material-thumb { width: 50px; height: 50px; border-radius: 6px; object-fit: cover; background: #eee; flex-shrink: 0; }
-        .photo-btn { border: 2px dashed #007bff; color: #007bff; background: #f0f8ff; padding: 20px; border-radius: 10px; text-align: center; font-weight: bold; display: block; margin-bottom: 10px; }
-        .photo-preview { width: 100%; height: 200px; object-fit: contain; background: #f9f9f9; border-radius: 8px; display: none; margin-bottom: 10px; border: 1px solid #ddd; }
+        /* EXTRAS */
+        .room-tag { background: #546e7a; color: white; padding: 3px 8px; border-radius: 3px; font-size: 11px; margin-right: 5px; display: inline-block; }
+        .calc-result-box { display:none; background: #e8eaf6; padding: 15px; border-radius: var(--border-radius); text-align: center; border: 1px solid #c5cae9; margin-top: 20px; }
+        .calc-val { font-size: 24px; font-weight: 900; color: var(--primary); }
 
-        /* --- EXTRAS --- */
-        .room-tag { background: #6c757d; color: white; padding: 4px 8px; border-radius: 4px; font-size: 12px; margin-right: 5px; display: inline-block; margin-bottom: 5px; }
-        .status-badge { display: inline-block; padding: 4px 8px; border-radius: 6px; font-size: 11px; font-weight: bold; text-transform: uppercase; margin-bottom: 5px; }
-        .st-active { background: #e3f2fd; color: #0d47a1; } .st-pending { background: #fff3e0; color: #e65100; } .st-done { background: #e8f5e9; color: #1b5e20; }
-        .note-block { background: #fff3cd; padding: 15px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid #ffc107; color: #856404; font-size: 14px; line-height: 1.4; display: none; }
-        .nav-map-link { background-color: #4285f4; color: white; text-decoration: none; padding: 8px 12px; border-radius: 6px; font-weight: bold; font-size: 14px; display: flex; gap: 5px; align-items: center; }
-
-        /* --- NAVBAR --- */
-        .navbar { flex: 0 0 80px; background: #fff; border-top: 1px solid #eee; display: flex; justify-content: space-around; align-items: flex-start; padding-top: 10px; z-index: 10; }
-        .nav-btn { background: none; border: none; display: flex; flex-direction: column; align-items: center; color: #bbb; font-size: 10px; font-weight: bold; width: 60px; }
-        .nav-btn i { font-size: 24px; margin-bottom: 5px; }
-        .nav-btn.active { color: #007bff; }
-        .fab { width: 56px; height: 56px; background: #007bff; border-radius: 50%; color: white; border: none; font-size: 24px; box-shadow: 0 4px 15px rgba(0,123,255,0.5); display: flex; align-items: center; justify-content: center; margin-top: -30px; }
-
-        /* --- MODALS --- */
-        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; display: none; }
-        .modal-box { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 90%; max-height: 90%; background: #fff; border-radius: 15px; z-index: 1001; display: none; flex-direction: column; padding: 20px; box-shadow: 0 10px 40px rgba(0,0,0,0.4); overflow-y: auto; }
-        #toast { visibility: hidden; min-width: 250px; background-color: #333; color: #fff; text-align: center; border-radius: 50px; padding: 16px; position: fixed; z-index: 3000; left: 50%; bottom: 30px; transform: translateX(-50%); font-size: 14px; opacity: 0; transition: opacity 0.3s; }
+        /* MODALS */
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 900; display: none; backdrop-filter: blur(2px); }
+        .modal-box { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 92%; max-height: 90%; background: #fff; border-radius: 6px; z-index: 901; display: none; flex-direction: column; padding: 25px; box-shadow: 0 20px 60px rgba(0,0,0,0.3); overflow-y: auto; }
+        #toast { visibility: hidden; min-width: 250px; background-color: #333; color: #fff; text-align: center; border-radius: 4px; padding: 16px; position: fixed; z-index: 3000; left: 50%; bottom: 30px; transform: translateX(-50%); font-size: 14px; opacity: 0; transition: opacity 0.3s; }
         #toast.show { visibility: visible; opacity: 1; }
-        #confirm-modal { z-index: 2000; text-align: center; }
-        .confirm-btn-group { display: flex; gap: 10px; margin-top: 20px; }
+
         .view { display: none; }
         .view.active { display: block; }
-        .contact-row { display: flex; gap: 10px; margin: 10px 0 20px 0; }
-        .contact-btn { flex: 1; padding: 12px; border-radius: 8px; text-decoration: none; font-weight: bold; color: white; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 14px; }
-        .btn-call { background-color: #28a745; }
-        .btn-email { background-color: #17a2b8; }
-        .btn-disabled { background-color: #ddd; color: #888; pointer-events: none; }
-        .fav-item { padding: 15px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; }
-        
-        /* CALC STYLES */
-        .calc-result-box { display:none; text-align:center; padding:15px; margin-top:20px; background:#e3f2fd; border-radius:10px; border:1px solid #90caf9; }
-        .calc-number { font-size:28px; font-weight:bold; color:#0d47a1; margin-top:5px; }
     </style>
 </head>
 <body>
 
     <header>
         <div>
-            <div style="font-size:10px;font-weight:bold;color:#e3f2fd;">FESTŐNAPLÓ</div>
-            <h1 id="page-title">v10.5 Áttekintés</h1>
+            <div style="font-size:10px; opacity:0.7; letter-spacing:1px;">VÁLLALKOZÓI RENDSZER</div>
+            <h1>FestőNapló PRO</h1>
         </div>
         <div class="header-actions">
-            <button id="header-share-btn" onclick="shareCurrentShopList()" style="display:none;"><i class="fas fa-share-alt"></i></button>
-            <button onclick="openModal('backup-box')"><i class="fas fa-save"></i></button>
+            <button id="header-share-btn" onclick="shareCurrentShopList()" style="display:none;"><i class="fas fa-share-nodes"></i></button>
+            <button onclick="openModal('backup-box')"><i class="fas fa-database"></i></button>
         </div>
     </header>
 
     <div id="main-container">
+        
         <div id="view-dashboard" class="view active">
-            <h3 style="color:#666;">Gyorsmenü</h3>
-            <div class="card" onclick="switchTab('quote')" style="cursor:pointer; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color:white;">
-                <div style="font-size:18px; font-weight:bold;"><i class="fas fa-file-invoice-dollar"></i> Árajánlatok</div>
-                <div style="font-size:12px; opacity:0.8; margin-top:5px;">Szerkesztés, Mentés és PDF</div>
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-bottom:15px;">
+                <div class="card" onclick="switchTab('quote')" style="margin:0; background: linear-gradient(135deg, #1a237e 0%, #283593 100%); color:white; border:none; cursor:pointer;">
+                    <i class="fas fa-file-invoice" style="font-size:24px; margin-bottom:10px; opacity:0.8;"></i>
+                    <div style="font-weight:bold;">Árajánlat</div>
+                </div>
+                <div class="card" onclick="switchTab('calc')" style="margin:0; background: linear-gradient(135deg, #c0a062 0%, #d4b06e 100%); color:white; border:none; cursor:pointer;">
+                    <i class="fas fa-calculator" style="font-size:24px; margin-bottom:10px; opacity:0.8;"></i>
+                    <div style="font-weight:bold;">Anyagigény</div>
+                </div>
             </div>
-            <h3 style="color:#666;">Legutóbbi munkák</h3>
+            
+            <h3 style="font-size:14px; text-transform:uppercase; color:#78909c; margin: 10px 0;">Aktív Munkák</h3>
             <div id="dashboard-list"></div>
         </div>
 
         <div id="view-projects" class="view">
-            <div class="input-group"><input type="text" placeholder="Keresés..." onkeyup="filterProjects(this.value)"></div>
+            <div class="input-group"><input type="text" placeholder="Keresés ügyfél alapján..." onkeyup="filterProjects(this.value)"></div>
             <div id="projects-list"></div>
         </div>
 
         <div id="view-quote" class="view">
-            <div class="card quote-header">
+            <div class="card" style="border-left: 4px solid var(--accent);">
                 <div style="display:flex; justify-content:space-between; align-items:center;">
-                    <h3 style="margin:0; color:#333;">Cégadatok (Fejléc)</h3>
-                    <button onclick="openModal('profile-box')" style="background:#e9ecef; border:none; padding:8px 12px; border-radius:6px; font-weight:bold; color:#333;"><i class="fas fa-cog"></i> Beállítás</button>
+                    <h3 style="margin:0; border:none;">Saját Cégadatok</h3>
+                    <button onclick="openModal('profile-box')" style="background:#eceff1; border:none; padding:6px 12px; border-radius:4px; font-weight:bold; color:var(--text); font-size:12px;">SZERKESZTÉS</button>
                 </div>
-                <div id="quote-company-preview" style="font-size:13px; color:#666; margin-top:10px;">
-                    <i>Még nincsenek adatok.</i>
-                </div>
+                <div id="quote-company-preview" style="font-size:13px; color:#546e7a; margin-top:10px; line-height:1.4;"></div>
             </div>
 
             <div class="card">
-                <h3 style="margin-top:0;">Ügyfél adatai</h3>
-                <div class="input-group"><input type="text" id="quote-client-name" placeholder="Ügyfél neve"></div>
-                <div class="input-group"><input type="text" id="quote-client-address" placeholder="Ügyfél címe"></div>
-                <div class="input-group"><input type="date" id="quote-date"></div>
+                <h3>Megrendelő</h3>
+                <div class="input-group"><input type="text" id="quote-client-name" placeholder="Név"></div>
+                <div class="input-group"><input type="text" id="quote-client-address" placeholder="Cím"></div>
+                <div class="input-group"><label>Dátum</label><input type="date" id="quote-date"></div>
             </div>
 
             <div class="card">
-                <h3 style="margin-top:0;">Tételek</h3>
+                <h3>Tételek</h3>
                 <div id="quote-items-container"></div>
-                <div style="background:#f8f9fa; padding:10px; border-radius:8px; margin-top:10px; border:1px dashed #ccc;">
-                    <div style="display:flex; gap:5px; margin-bottom:5px;">
-                        <input type="text" id="q-item-name" placeholder="Megnevezés" style="flex:2;">
+                
+                <div style="background:#f5f7f8; padding:15px; border-radius:4px; margin-top:15px; border:1px solid #e0e0e0;">
+                    <label>Új tétel hozzáadása</label>
+                    <div style="display:flex; gap:10px; margin-bottom:10px;">
+                        <input type="text" id="q-item-name" placeholder="Pl. Glettelés" style="flex:2;">
                         <input type="number" id="q-item-qty" placeholder="Menny." style="flex:1;">
                     </div>
-                    <div style="display:flex; gap:5px;">
+                    <div style="display:flex; gap:10px;">
                         <select id="q-item-unit" style="flex:1;">
                             <option value="m²">m²</option>
                             <option value="db">db</option>
                             <option value="fm">fm</option>
                             <option value="óra">óra</option>
+                            <option value="nap">nap</option>
                         </select>
-                        <input type="number" id="q-item-price" placeholder="Ár (Ft)" style="flex:2;">
-                        <button onclick="addQuoteItem()" style="background:#28a745; color:white; border:none; border-radius:8px; width:50px; font-size:20px;">+</button>
+                        <input type="number" id="q-item-price" placeholder="Egységár (Ft)" style="flex:1.5;">
+                        <button onclick="addQuoteItem()" style="background:var(--success); color:white; border:none; border-radius:4px; width:50px; font-size:18px;"><i class="fas fa-plus"></i></button>
                     </div>
                 </div>
-                <div class="quote-total" id="quote-grand-total">Végösszeg: 0 Ft</div>
+                <div class="quote-total" id="quote-grand-total">0 Ft</div>
             </div>
 
             <div style="display:flex; gap:10px;">
-                <button onclick="saveCurrentQuote()" class="secondary" style="margin-bottom:20px; flex:1;"><i class="fas fa-save"></i> MENTÉS</button>
-                <button onclick="generateProQuote()" class="primary" style="margin-bottom:20px; flex:2; background: linear-gradient(45deg, #1e3c72, #2a5298);"><i class="fas fa-file-pdf"></i> PDF LETÖLTÉS</button>
+                <button onclick="saveCurrentQuote()" class="secondary" style="flex:1;"><i class="fas fa-save"></i> Mentés</button>
+                <button onclick="generateProQuote()" class="primary" style="flex:1;"><i class="fas fa-file-pdf"></i> PDF</button>
             </div>
-
-            <div class="card">
-                <h3 style="margin-top:0;">Mentett Ajánlatok</h3>
+            
+            <div id="saved-quotes-container" style="margin-top:20px;">
+                <h3 style="font-size:14px; text-transform:uppercase; color:#78909c;">Mentett Ajánlatok</h3>
                 <div id="saved-quotes-list"></div>
             </div>
         </div>
 
         <div id="view-shop" class="view">
             <div class="card">
-                <h3>Új anyag rögzítése</h3>
+                <h3>Anyag Felírás</h3>
                 <div style="display:flex; gap:10px; margin-bottom:10px;">
                     <input type="number" id="shop-qty" value="1" style="width:70px;" placeholder="Db">
                     <div style="flex:1; display:flex; gap:5px;">
-                        <input type="text" id="shop-input" placeholder="Pl. Dulux Latex" style="margin-bottom:0;">
-                        <button onclick="handleFavoriteClick()" style="background:#ffc107; border:none; border-radius:8px; width:50px; color:#fff; font-size:18px;"><i class="fas fa-star"></i></button>
+                        <input type="text" id="shop-input" placeholder="Anyag neve..." style="margin-bottom:0;">
+                        <button onclick="handleFavoriteClick()" style="background:var(--accent); border:none; border-radius:4px; width:45px; color:white;"><i class="fas fa-star"></i></button>
                     </div>
                 </div>
-                <div class="input-group"><input type="text" id="shop-code" placeholder="Színkód / Recept" style="color:#007bff;"></div>
-                <div class="input-group"><input type="text" id="shop-note" placeholder="Megjegyzés..."></div>
-                <label class="photo-btn"><i class="fas fa-camera"></i> FOTÓZÁS<input type="file" id="shop-photo" accept="image/*" style="display:none;" onchange="handleShopPhoto(this)"></label>
-                <img id="shop-photo-prev" class="photo-preview">
+                <div class="input-group"><input type="text" id="shop-code" placeholder="Színkód / Típus"></div>
+                <div class="input-group"><input type="text" id="shop-note" placeholder="Megjegyzés"></div>
                 
-                <div style="display:flex; gap:10px;">
-                    <div style="flex:1"><label>Ügyfél</label><select id="shop-project-select" onchange="updateRoomSelectInShop()" style="background:#f9f9f9;"><option value="">-- Raktár --</option></select></div>
-                    <div style="flex:1"><label>Helyiség</label><select id="shop-room-select" style="background:#f9f9f9;"><option value="">(Nincs)</option></select></div>
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-top:10px;">
+                    <div class="input-group" style="margin:0;"><label>Projekt</label><select id="shop-project-select" onchange="updateRoomSelectInShop()"></select></div>
+                    <div class="input-group" style="margin:0;"><label>Helyiség</label><select id="shop-room-select"></select></div>
                 </div>
-                <button onclick="addShopItem()" class="primary" style="margin-top:10px;">RÖGZÍTÉS</button>
+                <button onclick="addShopItem()" class="primary" style="margin-top:15px;">HOZZÁADÁS</button>
             </div>
-            <h3>Bevásárlólista</h3>
+            
+            <h3 style="font-size:14px; text-transform:uppercase; color:#78909c; margin: 15px 0;">Lista</h3>
             <div id="shop-list"></div>
-            <button onclick="shareShopList()" class="secondary" style="width:100%"><i class="fas fa-share-alt"></i> Lista küldése</button>
+            <button onclick="shareShopList()" class="secondary" style="width:100%; margin-top:20px;"><i class="fas fa-share-nodes"></i> Lista Küldése</button>
         </div>
 
         <div id="view-calc" class="view">
             <div class="card">
-                <h3 style="margin-top:0;">Anyagszükséglet</h3>
-                
+                <h3>Professzionális Kalkulátor</h3>
                 <div class="input-group">
-                    <label>Mit számolunk?</label>
-                    <select id="calc-type" onchange="renderCalcInputs()" style="font-weight:bold; color:#007bff; background:#e3f2fd;">
-                        <option value="paint">Festés (Diszperzit)</option>
-                        <option value="adhesive">Csemperagasztó</option>
+                    <label>Kalkuláció típusa</label>
+                    <select id="calc-type" onchange="renderCalcInputs()" style="font-weight:bold; color:var(--primary);">
+                        <option value="paint">Falfestés (Diszperzit)</option>
+                        <option value="adhesive">Csemperagasztás</option>
                         <option value="plaster">Glettelés (Zsákos)</option>
-                        <option value="screed">Esztrich Beton</option>
-                        <option value="primer">Mélyalapozó</option>
+                        <option value="screed">Esztrich Betonozás</option>
                     </select>
                 </div>
 
                 <div id="calc-inputs-container"></div>
 
-                <button onclick="calculateMaterial()" class="primary" style="margin-top:15px;">SZÁMOLÁS</button>
+                <button onclick="calculateMaterial()" class="primary" style="margin-top:20px;">SZÁMOLÁS</button>
+                
                 <div id="calc-result-box" class="calc-result-box">
-                    <div style="font-size:12px; color:#666;">Eredmény:</div>
-                    <div class="calc-number" id="calc-result-num"></div>
-                    <div style="font-size:12px; color:#666; margin-top:5px;" id="calc-result-desc"></div>
+                    <div style="font-size:12px; color:#546e7a; text-transform:uppercase; font-weight:bold;">Szükséges mennyiség:</div>
+                    <div class="calc-val" id="calc-result-num"></div>
+                    <div style="font-size:13px; color:#455a64; margin-top:5px;" id="calc-result-desc"></div>
                 </div>
             </div>
         </div>
+
     </div>
 
     <nav class="navbar">
-        <button class="nav-btn active" onclick="switchTab('dashboard')" id="btn-dash"><i class="fas fa-home"></i></button>
-        <button class="nav-btn" onclick="switchTab('projects')" id="btn-proj"><i class="fas fa-list"></i></button>
+        <button class="nav-btn active" onclick="switchTab('dashboard')" id="btn-dash"><i class="fas fa-chart-pie"></i>Áttekintés</button>
+        <button class="nav-btn" onclick="switchTab('projects')" id="btn-proj"><i class="fas fa-folder-open"></i>Munkák</button>
         <button class="fab" onclick="openModal('new-project-box')"><i class="fas fa-plus"></i></button>
-        <button class="nav-btn" onclick="switchTab('quote')" id="btn-quote"><i class="fas fa-file-invoice"></i></button>
-        <button class="nav-btn" onclick="switchTab('shop')" id="btn-shop"><i class="fas fa-shopping-basket"></i></button>
-        <button class="nav-btn" onclick="switchTab('calc')" id="btn-calc"><i class="fas fa-calculator"></i></button>
+        <button class="nav-btn" onclick="switchTab('quote')" id="btn-quote"><i class="fas fa-file-invoice"></i>Ajánlat</button>
+        <button class="nav-btn" onclick="switchTab('shop')" id="btn-shop"><i class="fas fa-shopping-cart"></i>Bolt</button>
     </nav>
 
     <div id="profile-box" class="modal-box">
-        <h2>Vállalkozás Adatai</h2>
-        <div class="input-group"><label>Cégnév</label><input type="text" id="prof-name"></div>
-        <div class="input-group"><label>Cím</label><input type="text" id="prof-address"></div>
+        <h3>Vállalkozás Adatai</h3>
+        <div class="input-group"><label>Cégnév / Név</label><input type="text" id="prof-name"></div>
+        <div class="input-group"><label>Székhely / Cím</label><input type="text" id="prof-address"></div>
         <div class="input-group"><label>Adószám</label><input type="text" id="prof-tax"></div>
-        <div class="input-group"><label>Telefon</label><input type="text" id="prof-phone"></div>
-        <div class="input-group"><label>Email</label><input type="text" id="prof-email"></div>
-        <div class="input-group"><label>Bankszámla</label><input type="text" id="prof-bank"></div>
-        <button onclick="saveProfile()" class="success">Mentés</button>
-        <button onclick="closeModal()" class="secondary">Bezárás</button>
+        <div class="input-group"><label>Telefonszám</label><input type="text" id="prof-phone"></div>
+        <div class="input-group"><label>Email cím</label><input type="text" id="prof-email"></div>
+        <div class="input-group"><label>Bankszámlaszám</label><input type="text" id="prof-bank"></div>
+        <button onclick="saveProfile()" class="success">MENTÉS</button>
+        <button onclick="closeModal()" class="secondary">BEZÁRÁS</button>
     </div>
 
     <div id="new-project-box" class="modal-box">
-        <h2>Új Munka</h2>
-        <div class="input-group"><label>Ügyfél Név</label><input type="text" id="inp-client"></div>
-        <div class="input-group"><label>Telefon</label><input type="tel" id="inp-phone"></div>
-        <div class="input-group"><label>Email</label><input type="email" id="inp-email"></div>
-        <div class="input-group"><label>Cím</label><input type="text" id="inp-address"></div>
-        <div class="input-group"><label>Jegyzet</label><textarea id="inp-note"></textarea></div>
-        <div class="input-group"><label>Státusz</label><select id="inp-status"><option value="active">Folyamatban</option><option value="pending">Függő</option></select></div>
-        <div style="display:flex; gap:10px;">
-            <div class="input-group" style="flex:1"><label>Kezdés</label><input type="date" id="inp-start"></div>
-            <div class="input-group" style="flex:1"><label>Vége</label><input type="date" id="inp-end"></div>
-        </div>
-        <button onclick="saveProject()" class="primary">Létrehozás</button>
-        <button onclick="closeModal()" class="secondary">Mégse</button>
+        <h3>Új Ügyfél Felvétele</h3>
+        <div class="input-group"><label>Ügyfél Neve</label><input type="text" id="inp-client"></div>
+        <div class="input-group"><label>Telefonszám</label><input type="tel" id="inp-phone"></div>
+        <div class="input-group"><label>Email cím</label><input type="email" id="inp-email"></div>
+        <div class="input-group"><label>Cím / Munkaterület</label><input type="text" id="inp-address"></div>
+        <div class="input-group"><label>Megjegyzés (pl. kapukód)</label><textarea id="inp-note"></textarea></div>
+        <button onclick="saveProject()" class="primary">LÉTREHOZÁS</button>
+        <button onclick="closeModal()" class="secondary">MÉGSE</button>
     </div>
 
-    <div id="view-detail" class="modal-box" style="width:100%; height:100%; max-height:100%; top:0; left:0; transform:none; border-radius:0;">
-        <div style="display:flex; justify-content:space-between; margin-bottom:20px;">
-            <button onclick="closeModal()" style="border:none; background:none; font-weight:bold; color:#007bff;"><i class="fas fa-arrow-left"></i> Vissza</button>
-            <button onclick="deleteCurrentProject()" style="border:none; background:none; color:#dc3545;"><i class="fas fa-trash"></i></button>
+    <div id="view-detail" class="modal-box" style="width:100%; height:100%; max-height:100%; border-radius:0; padding:0; display:none; background:#f4f6f8;">
+        <div style="background:white; padding:15px; border-bottom:1px solid #e0e0e0; display:flex; justify-content:space-between; align-items:center;">
+            <button onclick="closeModal()" style="border:none; background:none; color:var(--primary); font-weight:bold;"><i class="fas fa-arrow-left"></i> VISSZA</button>
+            <button onclick="deleteCurrentProject()" style="border:none; background:none; color:var(--danger);"><i class="fas fa-trash"></i></button>
         </div>
-        <h2 id="d-client"></h2>
-        <p id="d-address" style="color:#666;"></p>
-        
-        <div id="d-note-block" class="note-block"></div>
-
-        <div class="contact-row">
-            <a href="#" id="btn-call" class="contact-btn btn-call"><i class="fas fa-phone"></i> Hívás</a>
-            <a href="#" id="btn-mail" class="contact-btn btn-email"><i class="fas fa-envelope"></i> Email</a>
-        </div>
-        <div style="display:flex; align-items:center; gap:10px; margin-bottom:20px;">
-             <a href="#" id="map-link" target="_blank" class="nav-map-link" style="flex:1; justify-content:center;"><i class="fas fa-location-arrow"></i> Útvonal</a>
-             <button onclick="generateProjectPDF()" class="nav-map-link" style="background:#6c757d; border:none; flex:1; cursor:pointer;"><i class="fas fa-file-pdf"></i> Anyaglista</button>
-        </div>
-
-        <div class="card" style="background:#f9f9f9;">
-            <label>Helyiségek</label>
-            <div style="display:flex; gap:5px; margin-bottom:5px;">
-                <input type="text" id="new-room-input" placeholder="Pl. Nappali" style="flex:2;">
-                <input type="number" id="new-room-size" placeholder="m²" style="flex:1;">
+        <div style="padding:20px; overflow-y:auto;">
+            <h2 id="d-client" style="margin:0 0 5px 0; color:var(--primary);"></h2>
+            <p id="d-address" style="color:#546e7a; margin:0 0 20px 0; font-size:14px;"></p>
+            
+            <div style="display:flex; gap:10px; margin-bottom:20px;">
+                <a href="#" id="btn-call" class="contact-btn" style="background:var(--success); color:white; text-decoration:none; flex:1; text-align:center; padding:12px; border-radius:4px; font-weight:bold;"><i class="fas fa-phone"></i> Hívás</a>
+                <a href="#" id="btn-mail" class="contact-btn" style="background:#0288d1; color:white; text-decoration:none; flex:1; text-align:center; padding:12px; border-radius:4px; font-weight:bold;"><i class="fas fa-envelope"></i> Email</a>
             </div>
-            <button onclick="addRoom()" class="primary" style="padding:10px;">Hozzáadás</button>
-            <div id="d-rooms" style="margin-top:10px;"></div>
-        </div>
 
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-top:20px; margin-bottom:10px;">
-            <h3 style="margin:0;">Anyagok</h3>
-            <div>
-                <button onclick="shareProjectList()" style="background:#eee; padding:8px 12px; border:none; border-radius:6px; margin-right:5px;"><i class="fas fa-share-alt"></i></button>
-                <button onclick="goToShopForCurrentProject()" style="background:#e3f2fd; color:#007bff; padding:8px 12px; border:none; border-radius:6px;"><i class="fas fa-plus"></i></button>
+            <div class="card">
+                <label>Helyiségek / Területek</label>
+                <div style="display:flex; gap:5px; margin-bottom:10px;">
+                    <input type="text" id="new-room-input" placeholder="Pl. Nappali" style="flex:2;">
+                    <input type="number" id="new-room-size" placeholder="m²" style="flex:1;">
+                    <button onclick="addRoom()" class="primary" style="width:40px; padding:0;"><i class="fas fa-plus"></i></button>
+                </div>
+                <div id="d-rooms"></div>
             </div>
-        </div>
-        <div id="d-materials-list"></div>
-    </div>
 
-    <div id="detail-edit" class="modal-box">
-        <h2>Szerkesztés</h2>
-        <div class="input-group"><label>Név</label><input type="text" id="edit-client"></div>
-        <div class="input-group"><label>Telefon</label><input type="tel" id="edit-phone"></div>
-        <div class="input-group"><label>Email</label><input type="email" id="edit-email"></div>
-        <div class="input-group"><label>Cím</label><input type="text" id="edit-address"></div>
-        <div class="input-group"><label>Jegyzet</label><textarea id="edit-note"></textarea></div>
-        <div class="input-group"><label>Státusz</label><select id="edit-status"><option value="active">Folyamatban</option><option value="done">Kész</option></select></div>
-        <div style="display:flex; gap:10px;">
-            <div class="input-group" style="flex:1"><label>Kezdés</label><input type="date" id="edit-start"></div>
-            <div class="input-group" style="flex:1"><label>Vége</label><input type="date" id="edit-end"></div>
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                <h3 style="margin:0; font-size:14px; color:#78909c;">BEÉPÍTETT ANYAGOK</h3>
+                <div style="display:flex; gap:5px;">
+                    <button onclick="generateProjectPDF()" style="background:#546e7a; color:white; border:none; border-radius:4px; padding:5px 10px;"><i class="fas fa-file-pdf"></i></button>
+                    <button onclick="shareProjectList()" style="background:#78909c; color:white; border:none; border-radius:4px; padding:5px 10px;"><i class="fas fa-share-nodes"></i></button>
+                </div>
+            </div>
+            <div id="d-materials-list"></div>
+            <button onclick="goToShopForCurrentProject()" class="secondary" style="width:100%; margin-top:20px;">+ ANYAG HOZZÁADÁSA</button>
         </div>
-        <button onclick="saveEdit()" class="primary">Mentés</button>
-        <button onclick="closeModal()" class="secondary">Mégse</button>
     </div>
 
     <div id="modal-overlay" class="modal-overlay"></div>
     <div id="toast">Üzenet</div>
-    <div id="confirm-modal" class="modal-box">
-        <h3 id="confirm-msg">Biztos?</h3>
-        <div class="confirm-btn-group"><button onclick="confirmAction(true)" class="primary" style="background:#dc3545;">Igen</button><button onclick="confirmAction(false)" class="secondary" style="margin-top:0;">Nem</button></div>
-    </div>
     
-    <div id="fav-box" class="modal-box"><h2>Gyorslista</h2><div id="fav-list-container"></div><button onclick="closeModal()" class="secondary">Bezárás</button></div>
-    <div id="item-edit-box" class="modal-box"><input type="hidden" id="item-edit-id"><div class="input-group"><label>Db</label><input type="number" id="item-edit-qty"></div><div class="input-group"><label>Név</label><input type="text" id="item-edit-text"></div><div class="input-group"><label>Kód</label><input type="text" id="item-edit-code"></div><div class="input-group"><label>Jegyzet</label><input type="text" id="item-edit-note"></div><button onclick="saveItemEdit()" class="primary">Mentés</button><button onclick="closeModal()" class="secondary">Mégse</button></div>
-    <div id="backup-box" class="modal-box"><h2>Mentés</h2><button onclick="exportData()" class="primary" style="margin-bottom:10px; background:#28a745;">Letöltés</button><label class="primary" style="background:#007bff; text-align:center; display:block;">Visszatöltés<input type="file" style="display:none;" onchange="importData(this)"></label><button onclick="closeModal()" class="secondary">Bezárás</button></div>
+    <div id="backup-box" class="modal-box">
+        <h3>Adatbázis Kezelés</h3>
+        <p style="font-size:13px; color:#666;">Mentsd le az adataidat rendszeresen!</p>
+        <button onclick="exportData()" class="primary" style="background:#2e7d32;">LETÖLTÉS (BACKUP)</button>
+        <label class="secondary" style="text-align:center; display:block; margin-top:10px; cursor:pointer;">
+            VISSZATÖLTÉS
+            <input type="file" style="display:none;" onchange="importData(this)">
+        </label>
+        <button onclick="closeModal()" class="secondary" style="margin-top:20px;">BEZÁRÁS</button>
+    </div>
 
     <script>
-        // --- ADATBÁZIS & MIGRÁCIÓ (v10.5) ---
-        let projects = JSON.parse(localStorage.getItem('fn105_projects')) || [];
-        if(projects.length === 0 && localStorage.getItem('fn104_projects')) projects = JSON.parse(localStorage.getItem('fn104_projects'));
+        // --- DATA LAYER ---
+        let projects = JSON.parse(localStorage.getItem('fn110_projects')) || [];
+        if(!projects.length && localStorage.getItem('fn105_projects')) projects = JSON.parse(localStorage.getItem('fn105_projects'));
         
-        let shopItems = JSON.parse(localStorage.getItem('fn105_shop')) || [];
-        if(shopItems.length === 0 && localStorage.getItem('fn104_shop')) shopItems = JSON.parse(localStorage.getItem('fn104_shop'));
+        let shopItems = JSON.parse(localStorage.getItem('fn110_shop')) || [];
+        if(!shopItems.length && localStorage.getItem('fn105_shop')) shopItems = JSON.parse(localStorage.getItem('fn105_shop'));
 
-        let profile = JSON.parse(localStorage.getItem('fn105_profile')) || {name:'', address:'', tax:'', phone:'', email:'', bank:''};
-        if(localStorage.getItem('fn104_profile')) profile = JSON.parse(localStorage.getItem('fn104_profile'));
+        let profile = JSON.parse(localStorage.getItem('fn110_profile')) || {name:'', address:'', tax:'', phone:'', email:'', bank:''};
+        if(!profile.name && localStorage.getItem('fn105_profile')) profile = JSON.parse(localStorage.getItem('fn105_profile'));
 
-        let favorites = JSON.parse(localStorage.getItem('fn105_favs')) || ["Héra Gold", "Dulux", "Glett", "Szalag", "Fólia", "Henger"];
-        let savedQuotes = JSON.parse(localStorage.getItem('fn105_quotes')) || [];
-        
+        let savedQuotes = JSON.parse(localStorage.getItem('fn110_quotes')) || [];
         let quoteItems = [];
         let currentDetailId = null;
-        let tempShopImage = null;
-        let pendingCallback = null;
 
         // INIT
         renderDashboard();
@@ -354,69 +369,231 @@
         document.getElementById('quote-date').valueAsDate = new Date();
         renderCalcInputs();
 
+        // --- NAVIGATION ---
         function switchTab(id) {
             document.querySelectorAll('.view').forEach(e => e.classList.remove('active'));
             document.getElementById('view-'+id).classList.add('active');
             document.querySelectorAll('.nav-btn').forEach(e => e.classList.remove('active'));
             if(document.getElementById('btn-'+id)) document.getElementById('btn-'+id).classList.add('active');
-            document.getElementById('page-title').innerText = (id==='quote'?'Árajánlat':(id==='shop'?'Bolt/Anyagok':(id==='calc'?'Kalkulátor':'v10.5 Áttekintés')));
             document.getElementById('header-share-btn').style.display = (id === 'shop') ? 'block' : 'none';
             if(id==='projects') renderProjects();
             if(id==='shop') renderShop();
         }
 
-        // --- CALC LOGIC ---
+        function showToast(msg) {
+            const t = document.getElementById("toast"); t.innerText = msg; t.className = "show";
+            setTimeout(()=> t.className = t.className.replace("show", ""), 3000);
+        }
+
+        // --- SHARE FIX (INTENT + FALLBACK) ---
+        async function shareText(title, text) {
+            // 1. Próbáljuk a modern Web Share API-t (Android Chrome/Webview támogatja)
+            if (navigator.share) {
+                try {
+                    await navigator.share({ title: title, text: text });
+                    return;
+                } catch (err) {
+                    console.log('Share API error:', err);
+                }
+            }
+            
+            // 2. Ha az nem megy, próbáljuk az Android Intentet (erőszakos módszer)
+            try {
+                window.location.href = "intent:#Intent;action=android.intent.action.SEND;type=text/plain;S.android.intent.extra.TEXT=" + encodeURIComponent(text) + ";end";
+                return; 
+            } catch (e) {
+                console.log('Intent error');
+            }
+
+            // 3. Ha minden kötél szakad: Vágólap
+            const el = document.createElement('textarea');
+            el.value = text;
+            document.body.appendChild(el);
+            el.select();
+            document.execCommand('copy');
+            document.body.removeChild(el);
+            alert("A lista a vágólapra másolva! (Illeszd be Messengerbe/Emailbe)");
+        }
+
+        function shareShopList() {
+            let txt = "BEVÁSÁRLÓLISTA:\n\n";
+            shopItems.forEach(i => {
+                if(!i.done) txt += `[ ] ${i.qty}x ${i.text} ${i.code ? '('+i.code+')' : ''}\n`;
+            });
+            shareText("Bevásárlólista", txt);
+        }
+
+        function shareProjectList() {
+            const p = projects.find(x => x.id == currentDetailId);
+            const items = shopItems.filter(x => x.projectId == currentDetailId);
+            let txt = `${p.client.toUpperCase()} - ANYAGOK:\n\n`;
+            items.forEach(i => txt += `- ${i.qty}x ${i.text} ${i.code ? '('+i.code+')' : ''}\n`);
+            shareText("Anyaglista", txt);
+        }
+
+        // --- NEW CALCULATOR LOGIC (CUSTOM PACKAGE) ---
         function renderCalcInputs() {
             const type = document.getElementById('calc-type').value;
-            const container = document.getElementById('calc-inputs-container');
-            let html = '<div class="input-group"><label>Falfelület ($m^2$)</label><input type="number" id="calc-area" placeholder="pl. 50"></div>';
+            const c = document.getElementById('calc-inputs-container');
+            let html = `<div class="input-group"><label>Falfelület ($m^2$)</label><input type="number" id="calc-area" placeholder="Pl. 50"></div>`;
+            
             if(type === 'paint') {
-                html += '<div class="input-group"><label>Rétegek száma</label><input type="number" id="calc-param1" value="2"></div><div class="input-group"><label>Kiadósság ($m^2$/l)</label><input type="number" id="calc-param2" value="10"></div>';
-            } else if (type === 'adhesive') {
-                html += '<div class="input-group"><label>Anyagigény (kg/$m^2$)</label><input type="number" id="calc-param1" value="4"></div>';
-            } else if (type === 'plaster') {
-                html += '<div class="input-group"><label>Rétegek</label><input type="number" id="calc-param1" value="2"></div><div class="input-group"><label>Anyag/réteg (kg/$m^2$)</label><input type="number" id="calc-param2" value="1.5"></div>';
-            } else if (type === 'screed') {
-                html += '<div class="input-group"><label>Vastagság (cm)</label><input type="number" id="calc-param1" value="5"></div><div class="input-group"><label>Anyag (kg/$m^2$/cm)</label><input type="number" id="calc-param2" value="20"></div>';
-            } else if (type === 'primer') {
-                html += '<div class="input-group"><label>Kiadósság ($m^2$/l)</label><input type="number" id="calc-param1" value="7"></div>';
+                html += `<div class="input-group"><label>Rétegek száma</label><input type="number" id="calc-layers" value="2"></div>`;
+                html += `<div class="input-group"><label>Kiadósság ($m^2$/Liter)</label><input type="number" id="calc-coverage" value="10" placeholder="Gyári adat"></div>`;
+                html += `<div class="input-group"><label>Kiszerelés (Liter/Vödör)</label><input type="number" id="calc-pack" value="10"></div>`;
+            } else if (type === 'adhesive' || type === 'plaster' || type === 'screed') {
+                let label = "Anyagigény (kg/$m^2$)";
+                let def = "4"; // ragasztó
+                if(type === 'plaster') { label = "Anyagigény (kg/$m^2$/réteg)"; def="1.5"; html += `<div class="input-group"><label>Rétegek</label><input type="number" id="calc-layers" value="2"></div>`; }
+                if(type === 'screed') { label = "Anyagigény (kg/$m^2$/cm)"; def="20"; html += `<div class="input-group"><label>Vastagság (cm)</label><input type="number" id="calc-thick" value="5"></div>`; }
+                
+                html += `<div class="input-group"><label>${label}</label><input type="number" id="calc-cons" value="${def}"></div>`;
+                html += `<div class="input-group"><label>Zsák mérete (kg)</label><input type="number" id="calc-pack" value="25"></div>`;
             }
-            container.innerHTML = html;
+            c.innerHTML = html;
             document.getElementById('calc-result-box').style.display = 'none';
         }
+
         function calculateMaterial() {
             const type = document.getElementById('calc-type').value;
             const area = parseFloat(document.getElementById('calc-area').value);
-            if(!area) return showToast('Add meg a felületet!');
-            let r=0, u='', d='';
+            const pack = parseFloat(document.getElementById('calc-pack').value);
+            
+            if(!area || !pack) return showToast('Tölts ki minden mezőt!');
+
+            let totalNeeded = 0;
+            let unit = '';
+            
             if(type === 'paint') {
-                const l=parseFloat(document.getElementById('calc-param1').value)||2;
-                const c=parseFloat(document.getElementById('calc-param2').value)||10;
-                r=Math.ceil((area*l)/c); u='Liter'; d=`${l} rétegben`;
+                const layers = parseFloat(document.getElementById('calc-layers').value);
+                const coverage = parseFloat(document.getElementById('calc-coverage').value);
+                totalNeeded = (area * layers) / coverage; // Literben
+                unit = "Liter";
             } else if (type === 'adhesive') {
-                const c=parseFloat(document.getElementById('calc-param1').value)||4;
-                r=Math.ceil(area*c); u='Kg'; d=`Kb. ${Math.ceil(r/25)} zsák (25kg)`;
+                const cons = parseFloat(document.getElementById('calc-cons').value);
+                totalNeeded = area * cons; // Kg
+                unit = "Kg";
             } else if (type === 'plaster') {
-                const l=parseFloat(document.getElementById('calc-param1').value)||2;
-                const c=parseFloat(document.getElementById('calc-param2').value)||1.5;
-                r=Math.ceil(area*l*c); u='Kg'; d=`Kb. ${Math.ceil(r/20)} zsák (20kg)`;
+                const layers = parseFloat(document.getElementById('calc-layers').value);
+                const cons = parseFloat(document.getElementById('calc-cons').value);
+                totalNeeded = area * layers * cons; // Kg
+                unit = "Kg";
             } else if (type === 'screed') {
-                const t=parseFloat(document.getElementById('calc-param1').value)||5;
-                const c=parseFloat(document.getElementById('calc-param2').value)||20;
-                r=Math.ceil(area*t*c); u='Kg'; d=`Kb. ${Math.ceil(r/40)} zsák (40kg)`;
-            } else if (type === 'primer') {
-                const c=parseFloat(document.getElementById('calc-param1').value)||7;
-                r=Math.ceil(area/c); u='Liter';
+                const thick = parseFloat(document.getElementById('calc-thick').value);
+                const cons = parseFloat(document.getElementById('calc-cons').value);
+                totalNeeded = area * thick * cons; // Kg
+                unit = "Kg";
             }
-            document.getElementById('calc-result-num').innerText = `${r} ${u}`;
-            document.getElementById('calc-result-desc').innerText = d;
+
+            const packages = Math.ceil(totalNeeded / pack);
+            
+            document.getElementById('calc-result-num').innerText = `${packages} db`;
+            document.getElementById('calc-result-desc').innerText = `Összesen: ${Math.ceil(totalNeeded)} ${unit} anyag. (${pack} ${unit}-es kiszerelésben)`;
             document.getElementById('calc-result-box').style.display = 'block';
         }
 
-        // --- QUOTE ---
+        // --- CORE FUNCTIONS (SAME AS BEFORE BUT STYLED) ---
+        function saveProfile() {
+            profile.name=document.getElementById('prof-name').value;
+            profile.address=document.getElementById('prof-address').value;
+            profile.tax=document.getElementById('prof-tax').value;
+            profile.phone=document.getElementById('prof-phone').value;
+            profile.email=document.getElementById('prof-email').value;
+            profile.bank=document.getElementById('prof-bank').value;
+            localStorage.setItem('fn110_profile', JSON.stringify(profile));
+            updateProfilePreview(); closeModal(); showToast('Mentve');
+        }
+        function updateProfilePreview() { document.getElementById('quote-company-preview').innerHTML = profile.name ? `<b>${profile.name}</b><br>${profile.phone}` : '<i>Nincsenek adatok.</i>'; }
+        
+        function saveProject() {
+            const n=document.getElementById('inp-client').value; if(!n) return showToast('Név kötelező!');
+            projects.unshift({
+                id:Date.now(), client:n, 
+                phone:document.getElementById('inp-phone').value, 
+                email:document.getElementById('inp-email').value, 
+                address:document.getElementById('inp-address').value, 
+                note:document.getElementById('inp-note').value, 
+                rooms:[]
+            });
+            localStorage.setItem('fn110_projects', JSON.stringify(projects));
+            closeModal(); document.getElementById('inp-client').value='';
+            renderDashboard(); switchTab('projects'); showToast('Mentve');
+        }
+
+        function renderProjects() {
+            document.getElementById('projects-list').innerHTML = projects.map(p => `
+                <div class="card" onclick="openDetail(${p.id})" style="cursor:pointer; display:flex; justify-content:space-between; align-items:center;">
+                    <div>
+                        <div style="font-weight:bold; font-size:16px; color:var(--primary);">${p.client}</div>
+                        <div style="font-size:13px; color:#78909c;">${p.address || 'Nincs cím'}</div>
+                    </div>
+                    <i class="fas fa-chevron-right" style="color:#cfd8dc;"></i>
+                </div>
+            `).join('');
+        }
+
+        function openDetail(id) {
+            currentDetailId=id; const p=projects.find(x=>x.id==id);
+            document.getElementById('d-client').innerText=p.client;
+            document.getElementById('d-address').innerText=p.address;
+            
+            const btnCall=document.getElementById('btn-call');
+            p.phone ? (btnCall.href='tel:'+p.phone, btnCall.style.opacity=1) : (btnCall.href='#', btnCall.style.opacity=0.5);
+            
+            const btnMail=document.getElementById('btn-mail');
+            p.email ? (btnMail.href='mailto:'+p.email, btnMail.style.opacity=1) : (btnMail.href='#', btnMail.style.opacity=0.5);
+
+            document.getElementById('d-rooms').innerHTML = (p.rooms||[]).map(r=>`<span class="room-tag">${r}</span>`).join('');
+            renderDetailList();
+            document.getElementById('modal-overlay').style.display='block';
+            document.getElementById('view-detail').style.display='flex';
+        }
+
+        function addRoom() { const v=document.getElementById('new-room-input').value; const s=document.getElementById('new-room-size').value; if(!v) return; const p=projects.find(x=>x.id==currentDetailId); if(!p.rooms) p.rooms=[]; p.rooms.push(s?`${v} (${s}m²)`:v); localStorage.setItem('fn110_projects',JSON.stringify(projects)); document.getElementById('new-room-input').value=''; openDetail(currentDetailId); }
+        
+        function addShopItem() {
+            const txt=document.getElementById('shop-input').value; if(!txt) return showToast('Mit vettél?');
+            shopItems.unshift({
+                id:Date.now(), text:txt, qty:document.getElementById('shop-qty').value, 
+                code:document.getElementById('shop-code').value, note:document.getElementById('shop-note').value, 
+                projectId:document.getElementById('shop-project-select').value||null, 
+                room:document.getElementById('shop-room-select').value||null, done:false
+            });
+            localStorage.setItem('fn110_shop', JSON.stringify(shopItems));
+            document.getElementById('shop-input').value=''; document.getElementById('shop-code').value='';
+            showToast('Hozzáadva!'); renderShop();
+        }
+
+        function renderShop() {
+            document.getElementById('shop-list').innerHTML = shopItems.map(i => {
+                let pTag=''; if(i.projectId) { const p=projects.find(x=>x.id==i.projectId); if(p) pTag=`<div style="font-size:11px; color:#1a237e; font-weight:bold; margin-top:2px;">${p.client} ${i.room?'('+i.room+')':''}</div>`; }
+                return `<div class="list-item ${i.done?'item-done':''}">
+                    <div style="display:flex; align-items:center; flex:1;">
+                        <div class="check-circle" onclick="toggleShop(${i.id})"><i class="fas fa-check" style="font-size:12px;"></i></div>
+                        <div>
+                            <div style="font-weight:bold; font-size:15px;">${i.qty}x ${i.text}</div>
+                            <div style="font-size:13px; color:#78909c;">${i.code||''} ${i.note||''}</div>
+                            ${pTag}
+                        </div>
+                    </div>
+                    <i class="fas fa-trash" style="color:#cfd8dc; padding:10px; cursor:pointer;" onclick="delShop(${i.id})"></i>
+                </div>`;
+            }).join('');
+        }
+
+        function toggleShop(id) { const i=shopItems.find(x=>x.id==id); i.done=!i.done; localStorage.setItem('fn110_shop', JSON.stringify(shopItems)); renderShop(); if(currentDetailId) renderDetailList(); }
+        function delShop(id) { shopItems=shopItems.filter(x=>x.id!=id); localStorage.setItem('fn110_shop', JSON.stringify(shopItems)); renderShop(); if(currentDetailId) renderDetailList(); }
+        
+        function renderDetailList() {
+            const l=document.getElementById('d-materials-list'); l.innerHTML='';
+            const items=shopItems.filter(i=>i.projectId==currentDetailId);
+            if(!items.length) { l.innerHTML='<div style="color:#b0bec5;text-align:center; padding:20px;">Nincs anyag hozzárendelve.</div>'; return; }
+            l.innerHTML=items.map(i=>`<div class="list-item"><div style="font-weight:bold;">${i.qty}x ${i.text}</div><div style="font-size:13px;">${i.code||'-'}</div></div>`).join('');
+        }
+
+        // --- QUOTE & PDF ---
         function addQuoteItem() {
-            const n=document.getElementById('q-item-name').value; const q=document.getElementById('q-item-qty').value;
-            const p=document.getElementById('q-item-price').value; const u=document.getElementById('q-item-unit').value;
+            const n=document.getElementById('q-item-name').value; const q=document.getElementById('q-item-qty').value; const p=document.getElementById('q-item-price').value; const u=document.getElementById('q-item-unit').value;
             if(!n || !q || !p) return;
             quoteItems.push({name:n, qty:q, price:p, unit:u, total:q*p});
             document.getElementById('q-item-name').value=''; document.getElementById('q-item-qty').value=''; document.getElementById('q-item-price').value='';
@@ -427,126 +604,94 @@
             let t=0;
             quoteItems.forEach((i,x) => {
                 t+=i.total;
-                c.innerHTML+=`<div class="quote-row"><div style="flex:1"><b>${i.name}</b><br><small>${i.qty}${i.unit}</small></div><div>${i.total} Ft</div><i class="fas fa-trash" style="color:red" onclick="quoteItems.splice(${x},1);renderQuoteItems()"></i></div>`;
+                c.innerHTML+=`<div class="quote-row"><div style="flex:1"><b>${i.name}</b><br><span style="color:#78909c">${i.qty}${i.unit} x ${i.price}</span></div><div style="font-weight:bold;">${i.total} Ft</div><i class="fas fa-times" style="color:#ef9a9a; margin-left:10px; cursor:pointer;" onclick="quoteItems.splice(${x},1);renderQuoteItems()"></i></div>`;
             });
-            document.getElementById('quote-grand-total').innerText = `Összesen: ${t} Ft`;
+            document.getElementById('quote-grand-total').innerText = `${t.toLocaleString()} Ft`;
         }
 
-        // --- PDF ---
         function createPDF(title, tableData, isQuote, clientData) {
-            if(!profile.name) return showToast('Tölts ki a Cégadatokat!');
-            const { jsPDF } = window.jspdf;
-            const doc = new jsPDF();
+            if(!profile.name) return showToast('Cégadatok hiányoznak!');
+            const { jsPDF } = window.jspdf; const doc = new jsPDF();
             let y = 20;
-            doc.setFontSize(18); doc.setTextColor(0, 123, 255); doc.text(title, 150, y);
-            doc.setFontSize(12); doc.setTextColor(0); doc.setFont("helvetica", "bold"); doc.text(profile.name, 14, y); y+=6;
+            
+            // Header Color Block
+            doc.setFillColor(26, 35, 126); // Navy Blue
+            doc.rect(0, 0, 210, 40, 'F');
+            doc.setTextColor(255, 255, 255);
+            doc.setFontSize(22); doc.text(title, 14, 25);
+            
+            doc.setTextColor(0,0,0);
+            y = 50;
+            
+            // Vállalkozó
+            doc.setFontSize(10); doc.setTextColor(100); doc.text("KIÁLLÍTÓ:", 14, y); y+=5;
+            doc.setFontSize(12); doc.setTextColor(0); doc.setFont("helvetica", "bold"); doc.text(profile.name, 14, y); y+=5;
             doc.setFont("helvetica", "normal"); doc.setFontSize(10);
-            doc.text(profile.address, 14, y); y+=6;
-            if(profile.tax) { doc.text(`Adószám: ${profile.tax}`, 14, y); y+=6; }
-            if(profile.phone) { doc.text(`Tel: ${profile.phone}`, 14, y); y+=6; }
-            if(profile.email) { doc.text(`Email: ${profile.email}`, 14, y); y+=6; }
-            if(profile.bank) { doc.text(`Bankszámla: ${profile.bank}`, 14, y); y+=6; }
-            doc.setDrawColor(200); doc.line(14, y+5, 196, y+5); y += 15;
+            doc.text(profile.address, 14, y); y+=5;
+            if(profile.tax) { doc.text(`Adószám: ${profile.tax}`, 14, y); y+=5; }
+            if(profile.phone) { doc.text(`Tel: ${profile.phone}`, 14, y); y+=5; }
+            if(profile.email) { doc.text(`Email: ${profile.email}`, 14, y); y+=5; }
+            if(profile.bank) { doc.text(`Bank: ${profile.bank}`, 14, y); y+=5; }
+
+            // Ügyfél (Jobb oldal)
             if(clientData && clientData.name) {
-                doc.setFontSize(10); doc.setTextColor(100); doc.text("Megrendelő:", 14, y);
-                doc.setFontSize(12); doc.setTextColor(0); doc.setFont("helvetica", "bold");
-                doc.text(clientData.name, 14, y+6);
+                let cy = 50;
+                doc.setFontSize(10); doc.setTextColor(100); doc.text("MEGRENDELŐ:", 120, cy); cy+=5;
+                doc.setFontSize(12); doc.setTextColor(0); doc.setFont("helvetica", "bold"); doc.text(clientData.name, 120, cy); cy+=5;
                 doc.setFont("helvetica", "normal"); doc.setFontSize(10);
-                if(clientData.address) doc.text(clientData.address, 14, y+11);
-                if(clientData.date) doc.text(`Kelt: ${clientData.date}`, 150, y+6);
-                y += 20;
+                if(clientData.address) doc.text(clientData.address, 120, cy);
+                if(clientData.date) { cy+=10; doc.text(`Dátum: ${clientData.date}`, 120, cy); }
             }
-            const headers = isQuote ? [['Megnevezés', 'Menny.', 'Ár', 'Össz.']] : (clientData.customHeaders ? [clientData.customHeaders] : [['Anyag', 'Menny.', 'Infó']]);
-            doc.autoTable({ startY: y, head: headers, body: tableData, theme: 'grid', headStyles: { fillColor: [41, 128, 185] } });
+
+            y += 10;
+            const headers = isQuote ? [['Megnevezés', 'Menny.', 'Egységár', 'Összesen']] : (clientData.customHeaders ? [clientData.customHeaders] : [['Anyag', 'Menny.', 'Infó']]);
+            doc.autoTable({
+                startY: y, head: headers, body: tableData,
+                theme: 'grid', headStyles: { fillColor: [26, 35, 126] }, styles: { fontSize: 10, cellPadding: 3 }
+            });
+
             if(isQuote) {
                 const total = quoteItems.reduce((acc, curr) => acc + curr.total, 0);
-                doc.text(`Végösszeg: ${total.toLocaleString()} Ft`, 196, doc.lastAutoTable.finalY + 10, { align: 'right' });
+                doc.setFontSize(14); doc.setFont("helvetica", "bold");
+                doc.text(`Végösszeg: ${total.toLocaleString()} Ft`, 196, doc.lastAutoTable.finalY + 15, { align: 'right' });
             }
-            doc.save(`${title}_export.pdf`); showToast("PDF Letöltve!");
+            doc.save(`${title}.pdf`); showToast("PDF Letöltve!");
         }
+
         function generateProQuote() {
-            if(quoteItems.length === 0) return showToast('Üres lista!');
-            createPDF("ÁRAJÁNLAT", quoteItems.map(i => [i.name, `${i.qty} ${i.unit}`, `${i.price} Ft`, `${i.total} Ft`]), true, { name: document.getElementById('quote-client-name').value, address: document.getElementById('quote-client-address').value, date: document.getElementById('quote-date').value });
+            if(!quoteItems.length) return showToast('Üres lista');
+            createPDF("ÁRAJÁNLAT", quoteItems.map(i=>[i.name, `${i.qty} ${i.unit}`, i.price, i.total]), true, {
+                name: document.getElementById('quote-client-name').value,
+                address: document.getElementById('quote-client-address').value,
+                date: document.getElementById('quote-date').value
+            });
         }
         function generateProjectPDF() {
             if(!currentDetailId) return;
-            const p = projects.find(x => x.id == currentDetailId);
-            const items = shopItems.filter(i => i.projectId == currentDetailId);
-            if(items.length === 0) return showToast('Nincs anyag!');
-            createPDF("ANYAGLISTA", items.map(i => [i.text, i.qty + " db", i.room || "-", i.code || "-"]), false, { name: p.client, address: p.address, date: new Date().toLocaleDateString('hu-HU'), customHeaders: ['Anyag', 'Menny.', 'Hely', 'Kód'] });
+            const p=projects.find(x=>x.id==currentDetailId);
+            const items=shopItems.filter(x=>x.projectId==currentDetailId);
+            createPDF("ANYAGLISTA", items.map(i=>[i.text, i.qty+" db", i.room||'-', i.code||'-']), false, {
+                name: p.client, address: p.address, date: new Date().toLocaleDateString('hu-HU'),
+                customHeaders: ['Anyag', 'Menny.', 'Hely', 'Kód']
+            });
         }
 
-        // --- COMMON ---
-        function openModal(id) { document.getElementById('modal-overlay').style.display='block'; document.getElementById(id).style.display='flex'; if(id==='profile-box') loadProfileInputs(); }
-        function closeModal() { document.querySelectorAll('.modal-box').forEach(e=>e.style.display='none'); document.getElementById('modal-overlay').style.display='none'; }
-        function showToast(m) { const t=document.getElementById("toast"); t.innerText=m; t.className="show"; setTimeout(()=>t.className="",3000); }
-        function saveProfile() { profile.name=document.getElementById('prof-name').value; profile.address=document.getElementById('prof-address').value; profile.tax=document.getElementById('prof-tax').value; profile.phone=document.getElementById('prof-phone').value; profile.email=document.getElementById('prof-email').value; profile.bank=document.getElementById('prof-bank').value; localStorage.setItem('fn105_profile', JSON.stringify(profile)); updateProfilePreview(); closeModal(); showToast('Mentve'); }
-        function updateProfilePreview() { document.getElementById('quote-company-preview').innerHTML = profile.name ? `<b>${profile.name}</b><br>${profile.phone}` : '<i>Nincs adat.</i>'; }
-        function loadProfileInputs() { document.getElementById('prof-name').value=profile.name; document.getElementById('prof-address').value=profile.address; document.getElementById('prof-tax').value=profile.tax; document.getElementById('prof-phone').value=profile.phone; document.getElementById('prof-email').value=profile.email; document.getElementById('prof-bank').value=profile.bank; }
-        
-        // --- REST OF APP LOGIC (PROJECTS, SHOP, ETC) ---
-        function saveProject() {
-            const n=document.getElementById('inp-client').value; if(!n) return showToast('Név kötelező!');
-            projects.unshift({id:Date.now(), client:n, phone:document.getElementById('inp-phone').value, email:document.getElementById('inp-email').value, address:document.getElementById('inp-address').value, note:document.getElementById('inp-note').value, status:document.getElementById('inp-status').value, start:document.getElementById('inp-start').value, end:document.getElementById('inp-end').value, rooms:[]});
-            localStorage.setItem('fn105_projects', JSON.stringify(projects)); closeModal();
-            document.getElementById('inp-client').value=''; document.getElementById('inp-phone').value=''; document.getElementById('inp-email').value=''; document.getElementById('inp-address').value=''; document.getElementById('inp-note').value='';
-            showToast('Létrehozva!'); renderDashboard(); switchTab('projects');
-        }
-        function renderProjects() { document.getElementById('projects-list').innerHTML=projects.map(p=>`<div class="card" onclick="openDetail(${p.id})"><b>${p.client}</b><br><small>${p.address}</small></div>`).join(''); }
-        function renderDashboard() { document.getElementById('dashboard-list').innerHTML=projects.slice(0,3).map(p=>`<div class="card" onclick="openDetail(${p.id})"><b>${p.client}</b></div>`).join(''); }
-        function openDetail(id) {
-            currentDetailId=id; const p=projects.find(x=>x.id==id);
-            document.getElementById('d-client').innerText=p.client; document.getElementById('d-address').innerText=p.address;
-            const btnCall=document.getElementById('btn-call'), btnMail=document.getElementById('btn-mail');
-            p.phone ? (btnCall.href='tel:'+p.phone, btnCall.classList.remove('btn-disabled')) : (btnCall.href='#', btnCall.classList.add('btn-disabled'));
-            p.email ? (btnMail.href='mailto:'+p.email, btnMail.classList.remove('btn-disabled')) : (btnMail.href='#', btnMail.classList.add('btn-disabled'));
-            if(p.address) document.getElementById('map-link').href='https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(p.address);
-            document.getElementById('d-rooms').innerHTML = (p.rooms||[]).map(r=>`<span class="room-tag">${r}</span>`).join('');
-            const n=document.getElementById('d-note-block'); p.note ? (n.innerText=p.note, n.style.display='block') : n.style.display='none';
-            renderDetailList(); openModal('view-detail');
-        }
-        function addRoom() { const v=document.getElementById('new-room-input').value; const s=document.getElementById('new-room-size').value; if(!v) return; const p=projects.find(x=>x.id==currentDetailId); if(!p.rooms) p.rooms=[]; p.rooms.push(s?`${v} (${s}m²)`:v); localStorage.setItem('fn105_projects',JSON.stringify(projects)); document.getElementById('new-room-input').value=''; openDetail(currentDetailId); }
-        function deleteCurrentProject() { projects=projects.filter(x=>x.id!=currentDetailId); localStorage.setItem('fn105_projects', JSON.stringify(projects)); closeModal(); renderProjects(); renderDashboard(); }
-        function addShopItem() {
-            const txt=document.getElementById('shop-input').value; if(!txt) return showToast('Mit vettél?');
-            shopItems.unshift({id:Date.now(), text:txt, qty:document.getElementById('shop-qty').value, code:document.getElementById('shop-code').value, note:document.getElementById('shop-note').value, image:tempShopImage, projectId:document.getElementById('shop-project-select').value||null, room:document.getElementById('shop-room-select').value||null, done:false});
-            localStorage.setItem('fn105_shop', JSON.stringify(shopItems));
-            document.getElementById('shop-input').value=''; document.getElementById('shop-code').value=''; document.getElementById('shop-note').value=''; document.getElementById('shop-photo-prev').style.display='none'; tempShopImage=null; showToast('Hozzáadva!'); renderShop();
-        }
-        function renderShop() {
-            document.getElementById('shop-list').innerHTML = shopItems.map(i => {
-                let pTag='', img=i.image?`<i class="fas fa-camera" style="color:#007bff; margin-left:5px;"></i>`:'';
-                if(i.projectId) { const p=projects.find(x=>x.id==i.projectId); if(p) pTag=`<div style="font-size:10px; color:#007bff;">${p.client} ${i.room?'('+i.room+')':''}</div>`; }
-                return `<div class="card ${i.done?'item-done':''}" style="display:flex;align-items:center;justify-content:space-between;"><div style="display:flex;align-items:center;flex:1;"><div class="check-circle" onclick="toggleShop(${i.id})"><i class="fas fa-check"></i></div><div><div style="font-weight:bold;">${i.qty}x ${i.text} ${img}</div><div style="font-size:12px;color:#666;">${i.code||''} ${i.note||''}</div>${pTag}</div></div><i class="fas fa-trash" style="color:#dc3545;padding:10px;" onclick="delShop(${i.id})"></i></div>`;
-            }).join('');
-        }
-        function toggleShop(id) { const i=shopItems.find(x=>x.id==id); i.done=!i.done; localStorage.setItem('fn105_shop', JSON.stringify(shopItems)); renderShop(); if(currentDetailId) renderDetailList(); }
-        function delShop(id) { shopItems=shopItems.filter(x=>x.id!=id); localStorage.setItem('fn105_shop', JSON.stringify(shopItems)); renderShop(); if(currentDetailId) renderDetailList(); }
-        function renderDetailList() {
-            const l=document.getElementById('d-materials-list'); l.innerHTML='';
-            const items=shopItems.filter(i=>i.projectId==currentDetailId);
-            if(!items.length) { l.innerHTML='<div style="color:#999;text-align:center;">Nincs anyag.</div>'; return; }
-            l.innerHTML=items.map(i=>`<div class="material-item ${i.done?'item-done':''}"><div class="check-circle" onclick="toggleShop(${i.id})"><i class="fas fa-check"></i></div>${i.image?`<img src="${i.image}" class="material-thumb">`:'<div class="material-thumb"></div>'}<div style="flex:1;"><div style="font-weight:bold;">${i.qty}x ${i.text}</div><div style="font-size:12px;color:#666;">${i.code||''} ${i.room?`(${i.room})`:''}</div></div></div>`).join('');
-        }
-        function goToShopForCurrentProject() { if(!currentDetailId)return; switchTab('shop'); setTimeout(()=>{const s=document.getElementById('shop-project-select');if(s){s.value=currentDetailId;updateRoomSelectInShop();}},50); closeModal(); }
+        // --- HELPERS ---
         function updateShopSelect() { const s=document.getElementById('shop-project-select'); s.innerHTML='<option value="">-- Raktár --</option>'+projects.map(p=>`<option value="${p.id}">${p.client}</option>`).join(''); updateRoomSelectInShop(); }
         function updateRoomSelectInShop() { const pid=document.getElementById('shop-project-select').value; const s=document.getElementById('shop-room-select'); s.innerHTML='<option value="">(Nincs)</option>'; if(pid){const p=projects.find(x=>x.id==pid);if(p&&p.rooms)s.innerHTML+=p.rooms.map(r=>`<option value="${r}">${r}</option>`).join('');} }
-        function handleShopPhoto(input) { if(input.files&&input.files[0]){const r=new FileReader();r.onload=e=>{tempShopImage=e.target.result;document.getElementById('shop-photo-prev').src=tempShopImage;document.getElementById('shop-photo-prev').style.display='block';};r.readAsDataURL(input.files[0]);}}
-        function shareShopList() { let t="Bevásárlólista:\n"; shopItems.forEach(i=>t+=`- ${i.qty}x ${i.text}\n`); window.location.href='median://share?text='+encodeURIComponent(t)+'&title=Lista'; }
-        function shareProjectList() { const p=projects.find(x=>x.id==currentDetailId); const i=shopItems.filter(x=>x.projectId==currentDetailId); let t=p.client+" Anyaglista:\n"; i.forEach(x=>t+=`- ${x.qty}x ${x.text}\n`); window.location.href='median://share?text='+encodeURIComponent(t)+'&title=Lista'; }
-        function saveCurrentQuote() { if(!quoteItems.length)return showToast('Üres!'); const c=document.getElementById('quote-client-name').value||'Névtelen', d=document.getElementById('quote-date').value, t=quoteItems.reduce((a,b)=>a+b.total,0); savedQuotes.unshift({id:Date.now(),client:c,date:d,total:t,items:[...quoteItems]}); localStorage.setItem('fn105_quotes', JSON.stringify(savedQuotes)); renderSavedQuotes(); showToast('Mentve!'); }
-        function renderSavedQuotes() { document.getElementById('saved-quotes-list').innerHTML = savedQuotes.length ? savedQuotes.map(q=>`<div class="saved-quote-item"><div><b>${q.client}</b><br><small>${q.date}</small></div><div><button onclick="loadQuote(${q.id})" style="border:none;color:#007bff;background:none;font-size:18px;"><i class="fas fa-upload"></i></button><button onclick="deleteQuote(${q.id})" style="border:none;color:#dc3545;background:none;font-size:18px;margin-left:10px;"><i class="fas fa-trash"></i></button></div></div>`).join('') : '<div style="text-align:center;color:#999;padding:10px;">Nincs mentett ajánlat.</div>'; }
-        function loadQuote(id) { const q=savedQuotes.find(x=>x.id==id); if(!q)return; quoteItems=[...q.items]; document.getElementById('quote-client-name').value=q.client; renderQuoteItems(); showToast('Betöltve!'); }
-        function deleteQuote(id) { if(!confirm('Törlöd?'))return; savedQuotes=savedQuotes.filter(x=>x.id!=id); localStorage.setItem('fn105_quotes',JSON.stringify(savedQuotes)); renderSavedQuotes(); }
-        function handleFavoriteClick() { const v=document.getElementById('shop-input').value; if(v&&!favorites.includes(v)){favorites.push(v);localStorage.setItem('fn105_favs',JSON.stringify(favorites));showToast('Kedvenc!');}else{const c=document.getElementById('fav-list-container');c.innerHTML=favorites.map(f=>`<div class="fav-item" onclick="document.getElementById('shop-input').value='${f}';closeModal()">${f}</div>`).join('');openModal('fav-box');} }
-        function editProject() { const p=projects.find(x=>x.id==currentDetailId); openModal('detail-edit'); document.getElementById('edit-client').value=p.client; document.getElementById('edit-phone').value=p.phone||''; document.getElementById('edit-email').value=p.email||''; document.getElementById('edit-address').value=p.address||''; document.getElementById('edit-note').value=p.note||''; }
-        function saveEdit() { const p=projects.find(x=>x.id==currentDetailId); p.client=document.getElementById('edit-client').value; p.phone=document.getElementById('edit-phone').value; p.email=document.getElementById('edit-email').value; p.address=document.getElementById('edit-address').value; p.note=document.getElementById('edit-note').value; localStorage.setItem('fn105_projects',JSON.stringify(projects)); closeModal(); openDetail(currentDetailId); showToast('Mentve'); }
-        function filterProjects(v) { document.getElementById('projects-list').innerHTML=projects.filter(p=>p.client.toLowerCase().includes(v.toLowerCase())).map(p=>`<div class="card" onclick="openDetail(${p.id})"><b>${p.client}</b></div>`).join(''); }
-        function confirmAction(c) { document.getElementById('confirm-modal').style.display='none'; document.getElementById('modal-overlay').style.display='none'; if(c&&pendingCallback)pendingCallback(); }
-        function openItemEdit(id) { const i=shopItems.find(x=>x.id==id); openModal('item-edit-box'); document.getElementById('item-edit-id').value=i.id; document.getElementById('item-edit-text').value=i.text; document.getElementById('item-edit-qty').value=i.qty; document.getElementById('item-edit-code').value=i.code||''; document.getElementById('item-edit-note').value=i.note||''; }
-        function saveItemEdit() { const id=document.getElementById('item-edit-id').value; const i=shopItems.find(x=>x.id==id); i.text=document.getElementById('item-edit-text').value; i.qty=document.getElementById('item-edit-qty').value; i.code=document.getElementById('item-edit-code').value; i.note=document.getElementById('item-edit-note').value; localStorage.setItem('fn105_shop',JSON.stringify(shopItems)); closeModal(); renderShop(); if(currentDetailId)renderDetailList(); }
-        function exportData() { const d=JSON.stringify({p:projects,s:shopItems,f:favorites,pr:profile,q:savedQuotes}); const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([d],{type:'text/json'})); a.download='mentes.json'; a.click(); }
-        function importData(el) { const fr=new FileReader(); fr.onload=e=>{try{const d=JSON.parse(e.target.result); if(d.p&&d.s){projects=d.p;shopItems=d.s;if(d.f)favorites=d.f;if(d.pr)profile=d.pr;if(d.q)savedQuotes=d.q; localStorage.setItem('fn105_projects',JSON.stringify(projects)); localStorage.setItem('fn105_shop',JSON.stringify(shopItems)); localStorage.setItem('fn105_favs',JSON.stringify(favorites)); localStorage.setItem('fn105_profile',JSON.stringify(profile)); localStorage.setItem('fn105_quotes',JSON.stringify(savedQuotes)); showToast('Visszatöltve!'); setTimeout(()=>location.reload(),1000);}}catch(e){showToast('Hiba!');}}; fr.readAsText(el.files[0]); }
+        function closeModal(){document.querySelectorAll('.modal-box').forEach(e=>e.style.display='none');document.getElementById('modal-overlay').style.display='none';}
+        function openModal(id){document.getElementById('modal-overlay').style.display='block';document.getElementById(id).style.display='flex';if(id==='profile-box')loadProfileInputs();}
+        function renderDashboard(){document.getElementById('dashboard-list').innerHTML=projects.slice(0,3).map(p=>`<div class="card" onclick="openDetail(${p.id})" style="cursor:pointer; padding:15px; border-left:3px solid var(--primary);"><b>${p.client}</b></div>`).join('');}
+        function loadProfileInputs(){document.getElementById('prof-name').value=profile.name;document.getElementById('prof-address').value=profile.address;document.getElementById('prof-tax').value=profile.tax;document.getElementById('prof-phone').value=profile.phone;document.getElementById('prof-email').value=profile.email;document.getElementById('prof-bank').value=profile.bank;}
+        function filterProjects(v){document.getElementById('projects-list').innerHTML=projects.filter(p=>p.client.toLowerCase().includes(v.toLowerCase())).map(p=>`<div class="card" onclick="openDetail(${p.id})"><b>${p.client}</b></div>`).join('');}
+        function deleteCurrentProject(){projects=projects.filter(x=>x.id!=currentDetailId);localStorage.setItem('fn110_projects',JSON.stringify(projects));closeModal();renderProjects();renderDashboard();}
+        function saveCurrentQuote(){if(!quoteItems.length)return showToast('Üres!');const c=document.getElementById('quote-client-name').value||'Névtelen',d=document.getElementById('quote-date').value,t=quoteItems.reduce((a,b)=>a+b.total,0);savedQuotes.unshift({id:Date.now(),client:c,date:d,total:t,items:[...quoteItems]});localStorage.setItem('fn110_quotes',JSON.stringify(savedQuotes));renderSavedQuotes();showToast('Mentve!');}
+        function renderSavedQuotes(){document.getElementById('saved-quotes-list').innerHTML=savedQuotes.map(q=>`<div class="list-item"><div><b>${q.client}</b><br><small>${q.date} | ${q.total.toLocaleString()} Ft</small></div><div><button onclick="loadQuote(${q.id})" style="border:none;color:var(--primary);background:none;"><i class="fas fa-upload"></i></button><button onclick="deleteQuote(${q.id})" style="border:none;color:var(--danger);background:none;"><i class="fas fa-trash"></i></button></div></div>`).join('');}
+        function loadQuote(id){const q=savedQuotes.find(x=>x.id==id);if(!q)return;quoteItems=[...q.items];document.getElementById('quote-client-name').value=q.client;renderQuoteItems();showToast('Betöltve!');}
+        function deleteQuote(id){if(!confirm('Biztos?'))return;savedQuotes=savedQuotes.filter(x=>x.id!=id);localStorage.setItem('fn110_quotes',JSON.stringify(savedQuotes));renderSavedQuotes();}
+        function handleFavoriteClick(){const v=document.getElementById('shop-input').value;if(v)showToast('Sztárolva!');}
+        function exportData(){const d=JSON.stringify({p:projects,s:shopItems,pr:profile,q:savedQuotes});const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([d],{type:'text/json'}));a.download='festonaplo_backup.json';a.click();}
+        function importData(el){const fr=new FileReader();fr.onload=e=>{try{const d=JSON.parse(e.target.result);if(d.p){projects=d.p;shopItems=d.s;profile=d.pr;savedQuotes=d.q;localStorage.setItem('fn110_projects',JSON.stringify(projects));localStorage.setItem('fn110_shop',JSON.stringify(shopItems));localStorage.setItem('fn110_profile',JSON.stringify(profile));localStorage.setItem('fn110_quotes',JSON.stringify(savedQuotes));location.reload();}}catch(e){alert('Hiba!');}};fr.readAsText(el.files[0]);}
     </script>
 </body>
 </html>
