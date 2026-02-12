@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>FestőNapló v11.4 Stable</title>
+    <title>FestőNapló v11.5 Final</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
@@ -38,9 +38,10 @@
         .fab { width: 54px; height: 54px; background: var(--accent); border-radius: 50%; color: #fff; border: none; font-size: 22px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center; margin-top: -30px; }
 
         .list-item { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid #eee; }
-        .check-circle { width: 24px; height: 24px; border-radius: 4px; border: 2px solid #b0bec5; display: flex; align-items: center; justify-content: center; margin-right: 15px; flex-shrink: 0; }
+        /* CHECKBOX STYLES */
+        .check-circle { width: 30px; height: 30px; border-radius: 4px; border: 2px solid #b0bec5; display: flex; align-items: center; justify-content: center; margin-right: 15px; flex-shrink: 0; cursor: pointer; }
         .item-done .check-circle { background-color: var(--success); border-color: var(--success); color: white; }
-        .item-done .item-content { text-decoration: line-through; color: #b0bec5; }
+        .item-done .item-text { text-decoration: line-through; color: #b0bec5; }
         
         .photo-btn { border: 2px dashed var(--primary); color: var(--primary); background: #e8eaf6; padding: 15px; border-radius: var(--radius); text-align: center; font-weight: bold; display: block; margin-bottom: 10px; }
         .photo-preview { width: 100%; height: 200px; object-fit: contain; background: #fff; border: 1px solid #ddd; display: none; margin-bottom: 10px; }
@@ -184,28 +185,8 @@
         <button class="nav-btn" onclick="switchTab('shop')" id="btn-shop"><i class="fas fa-shopping-cart"></i>Bolt</button>
     </nav>
 
-    <div id="profile-box" class="modal-box">
-        <h3>Vállalkozás Adatai</h3>
-        <div class="input-group"><label>Cégnév</label><input type="text" id="prof-name"></div>
-        <div class="input-group"><label>Cím</label><input type="text" id="prof-address"></div>
-        <div class="input-group"><label>Adószám</label><input type="text" id="prof-tax"></div>
-        <div class="input-group"><label>Telefon</label><input type="text" id="prof-phone"></div>
-        <div class="input-group"><label>Email</label><input type="text" id="prof-email"></div>
-        <div class="input-group"><label>Bankszámla</label><input type="text" id="prof-bank"></div>
-        <button onclick="saveProfile()" class="success">MENTÉS</button>
-        <button onclick="closeModal()" class="secondary">BEZÁRÁS</button>
-    </div>
-
-    <div id="new-project-box" class="modal-box">
-        <h3>Új Ügyfél</h3>
-        <div class="input-group"><label>Név</label><input type="text" id="inp-client"></div>
-        <div class="input-group"><label>Telefon</label><input type="tel" id="inp-phone"></div>
-        <div class="input-group"><label>Email</label><input type="email" id="inp-email"></div>
-        <div class="input-group"><label>Cím</label><input type="text" id="inp-address"></div>
-        <div class="input-group"><label>Jegyzet</label><textarea id="inp-note"></textarea></div>
-        <button onclick="saveProject()" class="primary">LÉTREHOZÁS</button>
-        <button onclick="closeModal()" class="secondary">MÉGSE</button>
-    </div>
+    <div id="profile-box" class="modal-box"><h3>Vállalkozás Adatai</h3><div class="input-group"><label>Cégnév</label><input type="text" id="prof-name"></div><div class="input-group"><label>Cím</label><input type="text" id="prof-address"></div><div class="input-group"><label>Adószám</label><input type="text" id="prof-tax"></div><div class="input-group"><label>Telefon</label><input type="text" id="prof-phone"></div><div class="input-group"><label>Email</label><input type="text" id="prof-email"></div><div class="input-group"><label>Bankszámla</label><input type="text" id="prof-bank"></div><button onclick="saveProfile()" class="success">MENTÉS</button><button onclick="closeModal()" class="secondary">BEZÁRÁS</button></div>
+    <div id="new-project-box" class="modal-box"><h3>Új Ügyfél</h3><div class="input-group"><label>Név</label><input type="text" id="inp-client"></div><div class="input-group"><label>Telefon</label><input type="tel" id="inp-phone"></div><div class="input-group"><label>Email</label><input type="email" id="inp-email"></div><div class="input-group"><label>Cím</label><input type="text" id="inp-address"></div><div class="input-group"><label>Jegyzet</label><textarea id="inp-note"></textarea></div><button onclick="saveProject()" class="primary">LÉTREHOZÁS</button><button onclick="closeModal()" class="secondary">MÉGSE</button></div>
 
     <div id="view-detail" class="modal-box" style="width:100%; height:100%; max-height:100%; border-radius:0; padding:0; display:none; background:#eceff1;">
         <div style="background:white; padding:15px; border-bottom:1px solid #e0e0e0; display:flex; justify-content:space-between; align-items:center;">
@@ -254,21 +235,20 @@
     <div id="fav-box" class="modal-box"><h3>Gyorslista</h3><div id="fav-list-container"></div><button onclick="closeModal()" class="secondary">Bezárás</button></div>
 
     <script>
-        // CORE DATA INITIALIZATION - SAFE LOAD
+        // CORE DATA INITIALIZATION
         let projects=[], shopItems=[], profile={}, savedQuotes=[], favorites=[];
         try {
-            projects = JSON.parse(localStorage.getItem('fn114_projects')) || JSON.parse(localStorage.getItem('fn113_projects')) || [];
-            shopItems = JSON.parse(localStorage.getItem('fn114_shop')) || JSON.parse(localStorage.getItem('fn113_shop')) || [];
-            profile = JSON.parse(localStorage.getItem('fn114_profile')) || JSON.parse(localStorage.getItem('fn113_profile')) || {name:'',address:'',tax:'',phone:'',email:'',bank:''};
-            savedQuotes = JSON.parse(localStorage.getItem('fn114_quotes')) || [];
-            favorites = JSON.parse(localStorage.getItem('fn114_favs')) || ["Dulux", "Héra", "Rigips", "Ceresit", "Mapei"];
+            projects = JSON.parse(localStorage.getItem('fn115_projects')) || JSON.parse(localStorage.getItem('fn114_projects')) || [];
+            shopItems = JSON.parse(localStorage.getItem('fn115_shop')) || JSON.parse(localStorage.getItem('fn114_shop')) || [];
+            profile = JSON.parse(localStorage.getItem('fn115_profile')) || JSON.parse(localStorage.getItem('fn114_profile')) || {name:'',address:'',tax:'',phone:'',email:'',bank:''};
+            savedQuotes = JSON.parse(localStorage.getItem('fn115_quotes')) || [];
+            favorites = JSON.parse(localStorage.getItem('fn115_favs')) || ["Dulux", "Héra", "Rigips", "Ceresit", "Mapei"];
         } catch(e) { console.error("Data load error", e); }
 
         let quoteItems = [];
         let currentDetailId = null;
         let tempShopImage = null;
 
-        // INIT APP
         window.onload = function() {
             renderDashboard();
             updateShopSelect();
@@ -278,7 +258,6 @@
             renderCalcInputs();
         };
 
-        // --- NAVIGATION ---
         function switchTab(id) {
             document.querySelectorAll('.view').forEach(e => e.classList.remove('active'));
             document.getElementById('view-'+id).classList.add('active');
@@ -289,14 +268,17 @@
         }
         function showToast(msg) { const t=document.getElementById("toast"); t.innerText=msg; t.className="show"; setTimeout(()=>t.className="",3000); }
 
-        // --- SHOP & LINKING ---
+        // --- SHOP & LINKING & CHECKING ---
         function updateShopSelect() { const s=document.getElementById('shop-project-select'); s.innerHTML='<option value="">-- Raktár --</option>'+projects.map(p=>`<option value="${p.id}">${p.client}</option>`).join(''); }
         function updateRoomSelectInShop() { const pid=document.getElementById('shop-project-select').value; const s=document.getElementById('shop-room-select'); s.innerHTML='<option value="">(Nincs)</option>'; if(pid){const p=projects.find(x=>x.id==pid);if(p&&p.rooms)s.innerHTML+=p.rooms.map(r=>`<option value="${r}">${r}</option>`).join('');} }
         function goToShopForCurrentProject() { if(!currentDetailId) return; switchTab('shop'); setTimeout(()=>{const s=document.getElementById('shop-project-select'); if(s){s.value=currentDetailId; updateRoomSelectInShop();}},100); closeModal(); }
-        function addShopItem() { const txt=document.getElementById('shop-input').value; if(!txt)return showToast('Mit?'); shopItems.unshift({id:Date.now(),text:txt,qty:document.getElementById('shop-qty').value,code:document.getElementById('shop-code').value,note:document.getElementById('shop-note').value,image:tempShopImage,projectId:document.getElementById('shop-project-select').value||null,room:document.getElementById('shop-room-select').value||null,done:false}); localStorage.setItem('fn114_shop',JSON.stringify(shopItems)); document.getElementById('shop-input').value=''; document.getElementById('shop-photo-prev').style.display='none'; tempShopImage=null; showToast('Hozzáadva'); renderShop(); }
-        function renderShop() { document.getElementById('shop-list').innerHTML=shopItems.map(i=>{let pTag='';if(i.projectId){const p=projects.find(x=>x.id==i.projectId);if(p)pTag=`<div style="font-size:11px;color:#1a237e;margin-top:2px;">${p.client} ${i.room?'• '+i.room:''}</div>`;}return `<div class="list-item ${i.done?'item-done':''}"><div style="display:flex;align-items:center;flex:1;"><div class="check-circle" onclick="toggleShop(${i.id})"><i class="fas fa-check" style="font-size:12px;"></i></div><div><div style="font-weight:bold;">${i.qty}x ${i.text} ${i.image?'📷':''}</div><div style="font-size:13px;color:#78909c;">${i.code||''} ${i.note||''}</div>${pTag}</div></div><i class="fas fa-trash" style="color:#cfd8dc;padding:10px;" onclick="delShop(${i.id})"></i></div>`;}).join(''); }
-        function toggleShop(id) { const i=shopItems.find(x=>x.id==id); i.done=!i.done; localStorage.setItem('fn114_shop',JSON.stringify(shopItems)); renderShop(); if(currentDetailId)renderDetailList(); }
-        function delShop(id) { shopItems=shopItems.filter(x=>x.id!=id); localStorage.setItem('fn114_shop',JSON.stringify(shopItems)); renderShop(); if(currentDetailId)renderDetailList(); }
+        
+        function addShopItem() { const txt=document.getElementById('shop-input').value; if(!txt)return showToast('Mit?'); shopItems.unshift({id:Date.now(),text:txt,qty:document.getElementById('shop-qty').value,code:document.getElementById('shop-code').value,note:document.getElementById('shop-note').value,image:tempShopImage,projectId:document.getElementById('shop-project-select').value||null,room:document.getElementById('shop-room-select').value||null,done:false}); localStorage.setItem('fn115_shop',JSON.stringify(shopItems)); document.getElementById('shop-input').value=''; document.getElementById('shop-photo-prev').style.display='none'; tempShopImage=null; showToast('Hozzáadva'); renderShop(); }
+        
+        function renderShop() { document.getElementById('shop-list').innerHTML=shopItems.map(i=>{let pTag='';if(i.projectId){const p=projects.find(x=>x.id==i.projectId);if(p)pTag=`<div style="font-size:11px;color:#1a237e;margin-top:2px;">${p.client} ${i.room?'• '+i.room:''}</div>`;}return `<div class="list-item ${i.done?'item-done':''}"><div style="display:flex;align-items:center;flex:1;"><div class="check-circle" onclick="toggleShop(${i.id})"><i class="fas fa-check" style="font-size:12px;"></i></div><div><div class="item-text" style="font-weight:bold;">${i.qty}x ${i.text} ${i.image?'📷':''}</div><div style="font-size:13px;color:#78909c;">${i.code||''} ${i.note||''}</div>${pTag}</div></div><i class="fas fa-trash" style="color:#cfd8dc;padding:10px;" onclick="delShop(${i.id})"></i></div>`;}).join(''); }
+        
+        function toggleShop(id) { const i=shopItems.find(x=>x.id==id); i.done=!i.done; localStorage.setItem('fn115_shop',JSON.stringify(shopItems)); renderShop(); if(currentDetailId)renderDetailList(); }
+        function delShop(id) { shopItems=shopItems.filter(x=>x.id!=id); localStorage.setItem('fn115_shop',JSON.stringify(shopItems)); renderShop(); if(currentDetailId)renderDetailList(); }
         function handleShopPhoto(i) { if(i.files&&i.files[0]){const r=new FileReader();r.onload=e=>{tempShopImage=e.target.result;document.getElementById('shop-photo-prev').src=tempShopImage;document.getElementById('shop-photo-prev').style.display='block';};r.readAsDataURL(i.files[0]);} }
 
         // --- CALCULATOR PRO (kg/m2/mm) ---
@@ -309,9 +291,7 @@
             } else {
                 let thickDef="3", consDef="1.5", packDef="25", tLbl="Vastagság (mm)";
                 if(type==='adhesive'){thickDef="4";consDef="1.4";}
-                if(type==='screed'){thickDef="50";consDef="0.02";tLbl="Vastagság (mm)";} 
-                // Fix logic: Esztrich 20kg/cm -> 2kg/mm. 
-                if(type==='screed') { consDef="2"; }
+                if(type==='screed'){thickDef="50";consDef="2";} // 2kg/m2/mm
                 html += `<div class="input-group"><label>${tLbl}</label><input type="number" id="calc-thick" value="${thickDef}"></div><div class="input-group"><label>Anyagigény (kg / $m^2$ / 1mm)</label><input type="number" id="calc-cons" value="${consDef}"></div><div class="input-group"><label>Zsák mérete (kg)</label><input type="number" id="calc-pack" value="${packDef}"></div>`;
             }
             c.innerHTML = html; document.getElementById('calc-result-box').style.display='none';
@@ -327,46 +307,54 @@
             document.getElementById('calc-result-box').style.display='block';
         }
 
+        // --- SHARE (FORCE INTENT + MEDIAN + FALLBACK) ---
+        async function shareText(title, text) {
+            // 1. Native
+            if (navigator.share) { try { await navigator.share({ title: title, text: text }); return; } catch (err) {} }
+            // 2. Median App
+            try { window.location.href = "median://share?text=" + encodeURIComponent(text) + "&title=" + encodeURIComponent(title); } catch(e){}
+            // 3. Android Intent
+            try { window.location.href = "intent:#Intent;action=android.intent.action.SEND;type=text/plain;S.android.intent.extra.TEXT=" + encodeURIComponent(text) + ";end"; return; } catch (e) {}
+            // 4. Clipboard
+            const el = document.createElement('textarea'); el.value = text; document.body.appendChild(el); el.select(); document.execCommand('copy'); document.body.removeChild(el); alert("Vágólapra másolva!");
+        }
+        function shareShopList() { let t="BEVÁSÁRLÓLISTA:\n\n"; shopItems.forEach(i=>{if(!i.done)t+=`[ ] ${i.qty}x ${i.text} ${i.code?'('+i.code+')':''}\n`;}); shareText("Bevásárlólista",t); }
+        function shareProjectList() { const p=projects.find(x=>x.id==currentDetailId); const i=shopItems.filter(x=>x.projectId==currentDetailId); let t=`${p.client.toUpperCase()} - ANYAGOK:\n\n`; i.forEach(x=>t+=`- ${x.qty}x ${x.text} ${x.code?'('+x.code+')':''}\n`); shareText("Anyaglista",t); }
+
         // --- PROJECTS ---
-        function saveProject(){ const n=document.getElementById('inp-client').value; if(!n) return showToast('Név kötelező!'); projects.unshift({id:Date.now(),client:n,phone:document.getElementById('inp-phone').value,email:document.getElementById('inp-email').value,address:document.getElementById('inp-address').value,note:document.getElementById('inp-note').value,rooms:[]}); localStorage.setItem('fn114_projects',JSON.stringify(projects)); closeModal(); document.getElementById('inp-client').value=''; renderDashboard(); switchTab('projects'); }
+        function saveProject(){ const n=document.getElementById('inp-client').value; if(!n) return showToast('Név kötelező!'); projects.unshift({id:Date.now(),client:n,phone:document.getElementById('inp-phone').value,email:document.getElementById('inp-email').value,address:document.getElementById('inp-address').value,note:document.getElementById('inp-note').value,rooms:[]}); localStorage.setItem('fn115_projects',JSON.stringify(projects)); closeModal(); document.getElementById('inp-client').value=''; renderDashboard(); switchTab('projects'); showToast('Mentve'); }
         function renderProjects(){ document.getElementById('projects-list').innerHTML=projects.map(p=>`<div class="card" onclick="openDetail(${p.id})" style="cursor:pointer;"><b>${p.client}</b><br><small>${p.address||''}</small></div>`).join(''); }
         function renderDashboard(){ document.getElementById('dashboard-list').innerHTML=projects.slice(0,3).map(p=>`<div class="card" onclick="openDetail(${p.id})" style="cursor:pointer;"><b>${p.client}</b></div>`).join(''); }
         function openDetail(id){ currentDetailId=id; const p=projects.find(x=>x.id==id); document.getElementById('d-client').innerText=p.client; document.getElementById('d-address').innerText=p.address; document.getElementById('btn-call').href=p.phone?'tel:'+p.phone:'#'; document.getElementById('btn-mail').href=p.email?'mailto:'+p.email:'#'; 
-        if(p.address){document.getElementById('map-link').href=`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(p.address)}`;}
+        if(p.address){document.getElementById('map-link').href=`https://www.google.com/maps/dir//...{encodeURIComponent(p.address)}`;}
         document.getElementById('d-rooms').innerHTML=(p.rooms||[]).map(r=>`<span class="room-tag">${r} <i class="fas fa-times" onclick="deleteRoom('${r}')"></i></span>`).join(''); renderDetailList(); openModal('view-detail'); }
-        function addRoom(){ const v=document.getElementById('new-room-input').value; const s=document.getElementById('new-room-size').value; if(!v)return; const p=projects.find(x=>x.id==currentDetailId); if(!p.rooms)p.rooms=[]; p.rooms.push(s?`${v} (${s}m²)`:v); localStorage.setItem('fn114_projects',JSON.stringify(projects)); document.getElementById('new-room-input').value=''; openDetail(currentDetailId); }
-        function deleteRoom(r){ if(!confirm('Törlöd?'))return; const p=projects.find(x=>x.id==currentDetailId); p.rooms=p.rooms.filter(x=>x!==r); localStorage.setItem('fn114_projects',JSON.stringify(projects)); openDetail(currentDetailId); }
-        function deleteCurrentProject(){ if(!confirm('Törlöd?'))return; projects=projects.filter(x=>x.id!=currentDetailId); localStorage.setItem('fn114_projects',JSON.stringify(projects)); closeModal(); renderProjects(); renderDashboard(); }
+        // NEW: Render Detail List with Checkboxes
+        function renderDetailList(){ const l=document.getElementById('d-materials-list'); l.innerHTML=''; const items=shopItems.filter(i=>i.projectId==currentDetailId); if(!items.length){l.innerHTML='<div style="text-align:center;color:#b0bec5;padding:10px;">Nincs anyag.</div>';return;} l.innerHTML=items.map(i=>`<div class="list-item ${i.done?'item-done':''}"><div style="display:flex;align-items:center;flex:1;"><div class="check-circle" onclick="toggleShop(${i.id})"><i class="fas fa-check" style="font-size:12px;"></i></div><div><div class="item-text" style="font-weight:bold;">${i.qty}x ${i.text}</div><div>${i.code||''}</div></div></div><i class="fas fa-pen" style="color:#78909c;" onclick="openItemEdit(${i.id})"></i></div>`).join(''); }
+        function addRoom(){ const v=document.getElementById('new-room-input').value; const s=document.getElementById('new-room-size').value; if(!v)return; const p=projects.find(x=>x.id==currentDetailId); if(!p.rooms)p.rooms=[]; p.rooms.push(s?`${v} (${s}m²)`:v); localStorage.setItem('fn115_projects',JSON.stringify(projects)); document.getElementById('new-room-input').value=''; openDetail(currentDetailId); }
+        function deleteRoom(r){ if(!confirm('Törlöd?'))return; const p=projects.find(x=>x.id==currentDetailId); p.rooms=p.rooms.filter(x=>x!==r); localStorage.setItem('fn115_projects',JSON.stringify(projects)); openDetail(currentDetailId); }
+        function deleteCurrentProject(){ if(!confirm('Törlöd?'))return; projects=projects.filter(x=>x.id!=currentDetailId); localStorage.setItem('fn115_projects',JSON.stringify(projects)); closeModal(); renderProjects(); renderDashboard(); }
         function filterProjects(v){ document.getElementById('projects-list').innerHTML=projects.filter(p=>p.client.toLowerCase().includes(v.toLowerCase())).map(p=>`<div class="card" onclick="openDetail(${p.id})"><b>${p.client}</b></div>`).join(''); }
-        function renderDetailList(){ const l=document.getElementById('d-materials-list'); l.innerHTML=''; const items=shopItems.filter(i=>i.projectId==currentDetailId); if(!items.length){l.innerHTML='<div style="text-align:center;color:#b0bec5;padding:10px;">Nincs anyag.</div>';return;} l.innerHTML=items.map(i=>`<div class="list-item"><div style="font-weight:bold;">${i.qty}x ${i.text}</div><div>${i.code||''}</div></div>`).join(''); }
         function editProject(){ const p=projects.find(x=>x.id==currentDetailId); openModal('detail-edit'); document.getElementById('edit-client').value=p.client; document.getElementById('edit-phone').value=p.phone||''; document.getElementById('edit-email').value=p.email||''; document.getElementById('edit-address').value=p.address||''; document.getElementById('edit-note').value=p.note||''; }
-        function saveEdit(){ const p=projects.find(x=>x.id==currentDetailId); p.client=document.getElementById('edit-client').value; p.phone=document.getElementById('edit-phone').value; p.email=document.getElementById('edit-email').value; p.address=document.getElementById('edit-address').value; p.note=document.getElementById('edit-note').value; localStorage.setItem('fn114_projects',JSON.stringify(projects)); closeModal(); openDetail(currentDetailId); showToast('Mentve'); }
+        function saveEdit(){ const p=projects.find(x=>x.id==currentDetailId); p.client=document.getElementById('edit-client').value; p.phone=document.getElementById('edit-phone').value; p.email=document.getElementById('edit-email').value; p.address=document.getElementById('edit-address').value; p.note=document.getElementById('edit-note').value; localStorage.setItem('fn115_projects',JSON.stringify(projects)); closeModal(); openDetail(currentDetailId); showToast('Mentve'); }
 
-        // --- QUOTE ---
-        function addQuoteItem(){ const n=document.getElementById('q-item-name').value; const q=document.getElementById('q-item-qty').value; const p=document.getElementById('q-item-price').value; const u=document.getElementById('q-item-unit').value; if(!n||!q||!p)return; quoteItems.push({name:n,qty:q,price:p,unit:u,total:q*p}); document.getElementById('q-item-name').value=''; document.getElementById('q-item-qty').value=''; document.getElementById('q-item-price').value=''; renderQuoteItems(); }
-        function renderQuoteItems(){ const c=document.getElementById('quote-items-container'); c.innerHTML=''; let t=0; quoteItems.forEach((i,x)=>{t+=i.total;c.innerHTML+=`<div class="quote-row"><div style="flex:1"><b>${i.name}</b> ${i.qty}${i.unit}</div><div>${i.total} Ft</div><i class="fas fa-times" style="color:red;margin-left:10px;" onclick="quoteItems.splice(${x},1);renderQuoteItems()"></i></div>`;}); document.getElementById('quote-grand-total').innerText=`${t.toLocaleString()} Ft`; }
-        function saveCurrentQuote(){ if(!quoteItems.length)return; const c=document.getElementById('quote-client-name').value||'Névtelen'; savedQuotes.unshift({id:Date.now(),client:c,date:document.getElementById('quote-date').value,total:quoteItems.reduce((a,b)=>a+b.total,0),items:[...quoteItems]}); localStorage.setItem('fn114_quotes',JSON.stringify(savedQuotes)); renderSavedQuotes(); showToast('Mentve'); }
-        function renderSavedQuotes(){ document.getElementById('saved-quotes-list').innerHTML=savedQuotes.map(q=>`<div class="list-item"><div><b>${q.client}</b> ${q.total} Ft</div><div><button onclick="loadQuote(${q.id})" style="border:none;"><i class="fas fa-upload"></i></button><button onclick="deleteQuote(${q.id})" style="border:none;"><i class="fas fa-trash"></i></button></div></div>`).join(''); }
-        function loadQuote(id){ const q=savedQuotes.find(x=>x.id==id); if(!q)return; quoteItems=[...q.items]; document.getElementById('quote-client-name').value=q.client; renderQuoteItems(); showToast('Betöltve'); }
-        function deleteQuote(id){ if(!confirm('?'))return; savedQuotes=savedQuotes.filter(x=>x.id!=id); localStorage.setItem('fn114_quotes',JSON.stringify(savedQuotes)); renderSavedQuotes(); }
-        function generateProQuote(){ if(!quoteItems.length)return; createPDF("ÁRAJÁNLAT",quoteItems.map(i=>[i.name,i.qty+" "+i.unit,i.price,i.total]),true,{name:document.getElementById('quote-client-name').value,address:document.getElementById('quote-client-address').value,date:document.getElementById('quote-date').value}); }
-        function generateProjectPDF(){ if(!currentDetailId)return; const p=projects.find(x=>x.id==currentDetailId); const i=shopItems.filter(x=>x.projectId==currentDetailId); if(!i.length)return showToast('Üres'); createPDF("ANYAGLISTA",i.map(x=>[x.text,x.qty+" db",x.room||'-',x.code||'-']),false,{name:p.client,address:p.address,date:new Date().toLocaleDateString('hu-HU'),customHeaders:['Anyag','Menny.','Hely','Kód']}); }
-        
-        // --- PDF ENGINE ---
-        function createPDF(title,table,isQ,client){ if(!profile.name)return showToast('Cégadat!'); const {jsPDF}=window.jspdf; const doc=new jsPDF(); let y=20; doc.setFillColor(26,35,126); doc.rect(0,0,210,40,'F'); doc.setTextColor(255,255,255); doc.setFontSize(22); doc.text(title,14,25); doc.setTextColor(0,0,0); y=50; doc.setFontSize(10); doc.text("KIÁLLÍTÓ:",14,y); y+=5; doc.setFontSize(12); doc.setFont("helvetica","bold"); doc.text(profile.name,14,y); y+=5; doc.setFont("helvetica","normal"); doc.setFontSize(10); doc.text(profile.address,14,y); y+=5; if(profile.tax){doc.text("Adószám: "+profile.tax,14,y);y+=5;} if(client&&client.name){let cy=50; doc.text("MEGRENDELŐ:",120,cy); cy+=5; doc.setFontSize(12); doc.setFont("helvetica","bold"); doc.text(client.name,120,cy); cy+=5; doc.setFont("helvetica","normal"); doc.setFontSize(10); if(client.address)doc.text(client.address,120,cy); if(client.date){cy+=10;doc.text("Dátum: "+client.date,120,cy);}} y=Math.max(y,100); doc.autoTable({startY:y,head:isQ?[['Tétel','Menny.','Ár','Össz.']]:client.customHeaders?[client.customHeaders]:[['Anyag','Menny.','Infó']],body:table,theme:'grid',headStyles:{fillColor:[26,35,126]}}); if(isQ){const t=quoteItems.reduce((a,b)=>a+b.total,0); doc.text("Végösszeg: "+t.toLocaleString()+" Ft",196,doc.lastAutoTable.finalY+15,{align:'right'});} doc.save(title+".pdf"); showToast('Letöltve'); }
-
-        // --- EXTRAS ---
-        function saveProfile(){ profile.name=document.getElementById('prof-name').value; profile.address=document.getElementById('prof-address').value; profile.tax=document.getElementById('prof-tax').value; profile.phone=document.getElementById('prof-phone').value; profile.email=document.getElementById('prof-email').value; profile.bank=document.getElementById('prof-bank').value; localStorage.setItem('fn114_profile',JSON.stringify(profile)); updateProfilePreview(); closeModal(); showToast('Mentve'); }
+        // --- OTHERS ---
+        function saveProfile(){ profile.name=document.getElementById('prof-name').value; profile.address=document.getElementById('prof-address').value; profile.tax=document.getElementById('prof-tax').value; profile.phone=document.getElementById('prof-phone').value; profile.email=document.getElementById('prof-email').value; profile.bank=document.getElementById('prof-bank').value; localStorage.setItem('fn115_profile',JSON.stringify(profile)); updateProfilePreview(); closeModal(); showToast('Mentve'); }
         function updateProfilePreview(){ document.getElementById('quote-company-preview').innerHTML=profile.name?`<b>${profile.name}</b><br>${profile.phone}`:'<i>Nincs adat.</i>'; }
         function loadProfileInputs(){ document.getElementById('prof-name').value=profile.name; document.getElementById('prof-address').value=profile.address; document.getElementById('prof-tax').value=profile.tax; document.getElementById('prof-phone').value=profile.phone; document.getElementById('prof-email').value=profile.email; document.getElementById('prof-bank').value=profile.bank; }
-        function shareText(t,txt){ if(navigator.share){navigator.share({title:t,text:txt}).catch(()=>{});}else{ const e=document.createElement('textarea');e.value=txt;document.body.appendChild(e);e.select();document.execCommand('copy');document.body.removeChild(e);alert("Bemásolhatod (Vágólapon)");} }
-        function shareShopList(){ let t="Lista:\n"; shopItems.forEach(i=>{if(!i.done)t+=`- ${i.qty}x ${i.text}\n`}); shareText("Lista",t); }
-        function shareProjectList(){ const i=shopItems.filter(x=>x.projectId==currentDetailId); let t="Anyagok:\n"; i.forEach(x=>t+=`- ${x.qty}x ${x.text}\n`); shareText("Lista",t); }
-        function handleFavoriteClick(){const v=document.getElementById('shop-input').value;if(v&&!favorites.includes(v)){favorites.push(v);localStorage.setItem('fn114_favs',JSON.stringify(favorites));showToast('Kedvenc!');}else{document.getElementById('fav-list-container').innerHTML=favorites.map(f=>`<div style="padding:10px;" onclick="document.getElementById('shop-input').value='${f}';closeModal()">${f}</div>`).join('');openModal('fav-box');}}
-        function openModal(id){document.getElementById('modal-overlay').style.display='block';document.getElementById(id).style.display='flex';if(id==='profile-box')loadProfileInputs();}
-        function closeModal(){document.querySelectorAll('.modal-box').forEach(e=>e.style.display='none');document.getElementById('modal-overlay').style.display='none';}
+        function addQuoteItem(){ const n=document.getElementById('q-item-name').value; const q=document.getElementById('q-item-qty').value; const p=document.getElementById('q-item-price').value; const u=document.getElementById('q-item-unit').value; if(!n||!q||!p)return; quoteItems.push({name:n,qty:q,price:p,unit:u,total:q*p}); document.getElementById('q-item-name').value=''; document.getElementById('q-item-qty').value=''; document.getElementById('q-item-price').value=''; renderQuoteItems(); }
+        function renderQuoteItems(){ const c=document.getElementById('quote-items-container'); c.innerHTML=''; let t=0; quoteItems.forEach((i,x)=>{t+=i.total;c.innerHTML+=`<div class="quote-row"><div style="flex:1"><b>${i.name}</b> ${i.qty}${i.unit}</div><div>${i.total} Ft</div><i class="fas fa-times" style="color:red;margin-left:10px;" onclick="quoteItems.splice(${x},1);renderQuoteItems()"></i></div>`;}); document.getElementById('quote-grand-total').innerText=`${t.toLocaleString()} Ft`; }
+        function createPDF(title,table,isQ,client){ if(!profile.name)return showToast('Cégadat!'); const {jsPDF}=window.jspdf; const doc=new jsPDF(); let y=20; doc.setFillColor(26,35,126); doc.rect(0,0,210,40,'F'); doc.setTextColor(255,255,255); doc.setFontSize(22); doc.text(title,14,25); doc.setTextColor(0,0,0); y=50; doc.setFontSize(10); doc.text("KIÁLLÍTÓ:",14,y); y+=5; doc.setFontSize(12); doc.setFont("helvetica","bold"); doc.text(profile.name,14,y); y+=5; doc.setFont("helvetica","normal"); doc.setFontSize(10); doc.text(profile.address,14,y); y+=5; if(profile.tax){doc.text("Adószám: "+profile.tax,14,y);y+=5;} if(client&&client.name){let cy=50; doc.text("MEGRENDELŐ:",120,cy); cy+=5; doc.setFontSize(12); doc.setFont("helvetica","bold"); doc.text(client.name,120,cy); cy+=5; doc.setFont("helvetica","normal"); doc.setFontSize(10); if(client.address)doc.text(client.address,120,cy); if(client.date){cy+=10;doc.text("Dátum: "+client.date,120,cy);}} y=Math.max(y,100); doc.autoTable({startY:y,head:isQ?[['Tétel','Menny.','Ár','Össz.']]:client.customHeaders?[client.customHeaders]:[['Anyag','Menny.','Infó']],body:table,theme:'grid',headStyles:{fillColor:[26,35,126]}}); if(isQ){const t=quoteItems.reduce((a,b)=>a+b.total,0); doc.setFontSize(14); doc.setFont("helvetica","bold"); doc.text("Végösszeg: "+t.toLocaleString()+" Ft",196,doc.lastAutoTable.finalY+15,{align:'right'});} doc.save(title+".pdf"); showToast('Letöltve'); }
+        function generateProQuote(){ if(!quoteItems.length)return; createPDF("ÁRAJÁNLAT",quoteItems.map(i=>[i.name,i.qty+" "+i.unit,i.price,i.total]),true,{name:document.getElementById('quote-client-name').value,address:document.getElementById('quote-client-address').value,date:document.getElementById('quote-date').value}); }
+        function generateProjectPDF(){ if(!currentDetailId)return; const p=projects.find(x=>x.id==currentDetailId); const i=shopItems.filter(x=>x.projectId==currentDetailId); if(!i.length)return showToast('Üres'); createPDF("ANYAGLISTA",i.map(x=>[x.text,x.qty+" db",x.room||'-',x.code||'-']),false,{name:p.client,address:p.address,date:new Date().toLocaleDateString('hu-HU'),customHeaders:['Anyag','Menny.','Hely','Kód']}); }
+        function saveCurrentQuote(){ if(!quoteItems.length)return; const c=document.getElementById('quote-client-name').value||'Névtelen'; savedQuotes.unshift({id:Date.now(),client:c,date:document.getElementById('quote-date').value,total:quoteItems.reduce((a,b)=>a+b.total,0),items:[...quoteItems]}); localStorage.setItem('fn115_quotes',JSON.stringify(savedQuotes)); renderSavedQuotes(); showToast('Mentve'); }
+        function renderSavedQuotes(){ document.getElementById('saved-quotes-list').innerHTML=savedQuotes.map(q=>`<div class="list-item"><div><b>${q.client}</b> ${q.total} Ft</div><div><button onclick="loadQuote(${q.id})" style="border:none;"><i class="fas fa-upload"></i></button><button onclick="deleteQuote(${q.id})" style="border:none;"><i class="fas fa-trash"></i></button></div></div>`).join(''); }
+        function loadQuote(id){ const q=savedQuotes.find(x=>x.id==id); if(!q)return; quoteItems=[...q.items]; document.getElementById('quote-client-name').value=q.client; renderQuoteItems(); showToast('Betöltve'); }
+        function deleteQuote(id){ if(!confirm('?'))return; savedQuotes=savedQuotes.filter(x=>x.id!=id); localStorage.setItem('fn115_quotes',JSON.stringify(savedQuotes)); renderSavedQuotes(); }
+        function handleFavoriteClick(){const v=document.getElementById('shop-input').value;if(v&&!favorites.includes(v)){favorites.push(v);localStorage.setItem('fn115_favs',JSON.stringify(favorites));showToast('Kedvenc!');}else{document.getElementById('fav-list-container').innerHTML=favorites.map(f=>`<div style="padding:10px;" onclick="document.getElementById('shop-input').value='${f}';closeModal()">${f}</div>`).join('');openModal('fav-box');}}
+        function openItemEdit(id){const i=shopItems.find(x=>x.id==id);openModal('item-edit-box');document.getElementById('item-edit-id').value=i.id;document.getElementById('item-edit-text').value=i.text;document.getElementById('item-edit-qty').value=i.qty;document.getElementById('item-edit-code').value=i.code||'';document.getElementById('item-edit-note').value=i.note||'';}
+        function saveItemEdit(){const id=document.getElementById('item-edit-id').value;const i=shopItems.find(x=>x.id==id);i.text=document.getElementById('item-edit-text').value;i.qty=document.getElementById('item-edit-qty').value;i.code=document.getElementById('item-edit-code').value;i.note=document.getElementById('item-edit-note').value;localStorage.setItem('fn115_shop',JSON.stringify(shopItems));closeModal();renderShop();if(currentDetailId)renderDetailList();}
         function exportData(){const d=JSON.stringify({p:projects,s:shopItems,pr:profile,q:savedQuotes});const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([d],{type:'text/json'}));a.download='festonaplo_backup.json';a.click();}
-        function importData(el){const fr=new FileReader();fr.onload=e=>{try{const d=JSON.parse(e.target.result);if(d.p){projects=d.p;shopItems=d.s;profile=d.pr;savedQuotes=d.q;localStorage.setItem('fn114_projects',JSON.stringify(projects));localStorage.setItem('fn114_shop',JSON.stringify(shopItems));localStorage.setItem('fn114_profile',JSON.stringify(profile));localStorage.setItem('fn114_quotes',JSON.stringify(savedQuotes));location.reload();}}catch(e){alert('Hiba!');}};fr.readAsText(el.files[0]);}
+        function importData(el){const fr=new FileReader();fr.onload=e=>{try{const d=JSON.parse(e.target.result);if(d.p){projects=d.p;shopItems=d.s;profile=d.pr;savedQuotes=d.q;localStorage.setItem('fn115_projects',JSON.stringify(projects));localStorage.setItem('fn115_shop',JSON.stringify(shopItems));localStorage.setItem('fn115_profile',JSON.stringify(profile));localStorage.setItem('fn115_quotes',JSON.stringify(savedQuotes));location.reload();}}catch(e){alert('Hiba!');}};fr.readAsText(el.files[0]);}
     </script>
 </body>
 </html>
