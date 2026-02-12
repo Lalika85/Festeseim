@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>FestőNapló v10.2 Business</title>
+    <title>FestőNapló v10.3</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
@@ -90,7 +90,7 @@
 <body>
 
     <header>
-        <div><div style="font-size:10px;font-weight:bold;color:#888;">FESTŐNAPLÓ v10.2</div><h1 id="page-title">Áttekintés</h1></div>
+        <div><div style="font-size:10px;font-weight:bold;color:#888;">FESTŐNAPLÓ v10.3</div><h1 id="page-title">Áttekintés</h1></div>
         <div class="header-actions">
             <button id="header-share-btn" onclick="shareCurrentShopList()" style="display:none;"><i class="fas fa-share-alt"></i></button>
             <button onclick="openModal('backup-box')"><i class="fas fa-save"></i></button>
@@ -154,7 +154,7 @@
             </div>
 
             <div style="display:flex; gap:10px;">
-                <button onclick="saveCurrentQuote()" class="secondary" style="margin-bottom:20px; flex:1;"><i class="fas fa-save"></i> MENTÉS LISTÁBA</button>
+                <button onclick="saveCurrentQuote()" class="secondary" style="margin-bottom:20px; flex:1;"><i class="fas fa-save"></i> MENTÉS</button>
                 <button onclick="generateProQuote()" class="primary" style="margin-bottom:20px; flex:2; background: linear-gradient(45deg, #1e3c72, #2a5298);"><i class="fas fa-file-pdf"></i> PDF LETÖLTÉS</button>
             </div>
 
@@ -307,16 +307,16 @@
     <div id="backup-box" class="modal-box"><h2>Mentés</h2><button onclick="exportData()" class="primary" style="margin-bottom:10px; background:#28a745;">Letöltés</button><label class="primary" style="background:#007bff; text-align:center; display:block;">Visszatöltés<input type="file" style="display:none;" onchange="importData(this)"></label><button onclick="closeModal()" class="secondary">Bezárás</button></div>
 
     <script>
-        // --- ADATBÁZIS & MIGRÁCIÓ ---
-        let projects = JSON.parse(localStorage.getItem('fn102_projects')) || [];
-        if(projects.length === 0 && localStorage.getItem('fn101_projects')) projects = JSON.parse(localStorage.getItem('fn101_projects'));
+        // --- ADATBÁZIS ---
+        let projects = JSON.parse(localStorage.getItem('fn103_projects')) || [];
+        if(projects.length===0 && localStorage.getItem('fn102_projects')) projects=JSON.parse(localStorage.getItem('fn102_projects'));
         
-        let shopItems = JSON.parse(localStorage.getItem('fn102_shop')) || [];
-        if(shopItems.length === 0 && localStorage.getItem('fn101_shop')) shopItems = JSON.parse(localStorage.getItem('fn101_shop'));
+        let shopItems = JSON.parse(localStorage.getItem('fn103_shop')) || [];
+        if(shopItems.length===0 && localStorage.getItem('fn102_shop')) shopItems=JSON.parse(localStorage.getItem('fn102_shop'));
 
-        let profile = JSON.parse(localStorage.getItem('fn102_profile')) || {name:'', address:'', tax:'', phone:'', email:'', bank:''};
-        let favorites = JSON.parse(localStorage.getItem('fn102_favs')) || ["Héra Gold", "Dulux", "Glett", "Szalag", "Fólia", "Henger"];
-        let savedQuotes = JSON.parse(localStorage.getItem('fn102_quotes')) || [];
+        let profile = JSON.parse(localStorage.getItem('fn103_profile')) || {name:'', address:'', tax:'', phone:'', email:'', bank:''};
+        let favorites = JSON.parse(localStorage.getItem('fn103_favs')) || ["Héra Gold", "Dulux", "Glett", "Szalag", "Fólia", "Henger"];
+        let savedQuotes = JSON.parse(localStorage.getItem('fn103_quotes')) || [];
         
         let quoteItems = [];
         let currentDetailId = null;
@@ -354,6 +354,118 @@
             setTimeout(()=> t.className = t.className.replace("show", ""), 3000);
         }
 
+        // --- PDF GENERATOR (JAVÍTOTT ÜGYFÉL ADATOKKAL) ---
+        function createPDF(title, tableData, isQuote, clientData) {
+            if(!profile.name) return showToast('Tölts ki a Cégadatokat!');
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            
+            // 1. CÉG ADATOK (BAL FELSŐ)
+            let y = 20;
+            doc.setFontSize(18); doc.text(title, 150, y); // Cím jobbra
+            
+            doc.setFontSize(12); doc.setFont("helvetica", "bold"); 
+            doc.text(profile.name, 14, y); y+=6;
+            
+            doc.setFont("helvetica", "normal"); doc.setFontSize(10);
+            doc.text(profile.address, 14, y); y+=6;
+            if(profile.tax) { doc.text(`Adószám: ${profile.tax}`, 14, y); y+=6; }
+            if(profile.phone) { doc.text(`Tel: ${profile.phone}`, 14, y); y+=6; }
+            if(profile.email) { doc.text(`Email: ${profile.email}`, 14, y); y+=6; }
+            if(profile.bank) { doc.text(`Bankszámla: ${profile.bank}`, 14, y); y+=6; }
+
+            // 2. VONAL & ÜGYFÉL ADATOK (FEJLÉC ALATT)
+            doc.setDrawColor(200); doc.line(14, y+5, 196, y+5);
+            y += 15;
+
+            // ITT A JAVÍTÁS: Ügyfél adatok kiírása
+            if(clientData && clientData.name) {
+                doc.setFontSize(10); doc.setTextColor(100); doc.text("Megrendelő:", 14, y);
+                doc.setFontSize(12); doc.setTextColor(0); doc.setFont("helvetica", "bold");
+                doc.text(clientData.name, 14, y+6);
+                
+                doc.setFont("helvetica", "normal"); doc.setFontSize(10);
+                if(clientData.address) doc.text(clientData.address, 14, y+11);
+                
+                // Dátum jobbra
+                if(clientData.date) doc.text(`Kelt: ${clientData.date}`, 150, y+6);
+                
+                y += 20; // Helyet hagyunk a táblázatnak
+            }
+
+            // 3. TÁBLÁZAT
+            const headers = isQuote ? [['Megnevezés', 'Menny.', 'Ár', 'Össz.']] : (clientData.customHeaders ? [clientData.customHeaders] : [['Anyag', 'Menny.', 'Infó']]);
+            doc.autoTable({
+                startY: y,
+                head: headers,
+                body: tableData,
+                theme: 'grid',
+                headStyles: { fillColor: [41, 128, 185] }
+            });
+
+            if(isQuote) {
+                const total = quoteItems.reduce((acc, curr) => acc + curr.total, 0);
+                doc.text(`Végösszeg: ${total.toLocaleString()} Ft`, 196, doc.lastAutoTable.finalY + 10, { align: 'right' });
+            }
+
+            doc.save(`${title}_export.pdf`);
+            showToast("PDF Letöltve!");
+        }
+
+        // --- ÁRAJÁNLAT FUNKCIÓK ---
+        function generateProQuote() {
+            if(quoteItems.length === 0) return showToast('Üres lista!');
+            const cName = document.getElementById('quote-client-name').value;
+            const cAddr = document.getElementById('quote-client-address').value;
+            const cDate = document.getElementById('quote-date').value;
+            
+            createPDF("ÁRAJÁNLAT", 
+                quoteItems.map(i => [i.name, `${i.qty} ${i.unit}`, `${i.price} Ft`, `${i.total} Ft`]), 
+                true, 
+                { name: cName, address: cAddr, date: cDate }
+            );
+        }
+
+        function addQuoteItem() {
+            const n=document.getElementById('q-item-name').value; const q=document.getElementById('q-item-qty').value;
+            const p=document.getElementById('q-item-price').value; const u=document.getElementById('q-item-unit').value;
+            if(!n || !q || !p) return;
+            quoteItems.push({name:n, qty:q, price:p, unit:u, total:q*p});
+            
+            // JAVÍTÁS: Mezők törlése hozzáadás után
+            document.getElementById('q-item-name').value='';
+            document.getElementById('q-item-qty').value='';
+            document.getElementById('q-item-price').value='';
+            
+            renderQuoteItems();
+        }
+
+        function renderQuoteItems() {
+            const c=document.getElementById('quote-items-container'); c.innerHTML='';
+            let t=0;
+            quoteItems.forEach((i,x) => {
+                t+=i.total;
+                c.innerHTML+=`<div class="quote-row"><div style="flex:1"><b>${i.name}</b><br><small>${i.qty}${i.unit}</small></div><div>${i.total} Ft</div><i class="fas fa-trash" style="color:red" onclick="quoteItems.splice(${x},1);renderQuoteItems()"></i></div>`;
+            });
+            document.getElementById('quote-grand-total').innerText = `Összesen: ${t} Ft`;
+        }
+
+        // --- PROJEKT PDF ---
+        function generateProjectPDF() {
+            if(!currentDetailId) return;
+            const p = projects.find(x => x.id == currentDetailId);
+            const items = shopItems.filter(i => i.projectId == currentDetailId);
+            if(items.length === 0) return showToast('Nincs anyag!');
+            
+            const tableData = items.map(i => [i.text, i.qty + " db", i.room || "-", i.code || "-"]);
+            createPDF("ANYAGLISTA", tableData, false, { 
+                name: p.client, 
+                address: p.address, 
+                date: new Date().toLocaleDateString('hu-HU'),
+                customHeaders: ['Anyag', 'Menny.', 'Hely', 'Kód']
+            });
+        }
+
         // --- SHOP & MATERIALS ---
         function addShopItem() {
             const txt = document.getElementById('shop-input').value;
@@ -369,7 +481,7 @@
                 done: false
             };
             shopItems.unshift(item);
-            localStorage.setItem('fn102_shop', JSON.stringify(shopItems));
+            localStorage.setItem('fn103_shop', JSON.stringify(shopItems));
             document.getElementById('shop-input').value = '';
             document.getElementById('shop-code').value = '';
             document.getElementById('shop-note').value = '';
@@ -425,67 +537,14 @@
             closeModal();
         }
 
-        // --- PDF GENERATOR (Javított Fejléccel) ---
-        function createPDF(title, tableData, isQuote, customHeaders) {
-            if(!profile.name) return showToast('Tölts ki a Cégadatokat!');
-            const { jsPDF } = window.jspdf;
-            const doc = new jsPDF();
-            
-            // JAVÍTOTT FEJLÉC (Minden adat)
-            let y = 20;
-            doc.setFontSize(18); doc.text(title, 150, y);
-            
-            doc.setFontSize(12); doc.setFont("helvetica", "bold"); 
-            doc.text(profile.name, 14, y); y+=6;
-            
-            doc.setFont("helvetica", "normal"); doc.setFontSize(10);
-            doc.text(profile.address, 14, y); y+=6;
-            if(profile.tax) { doc.text(`Adószám: ${profile.tax}`, 14, y); y+=6; }
-            if(profile.phone) { doc.text(`Tel: ${profile.phone}`, 14, y); y+=6; }
-            if(profile.email) { doc.text(`Email: ${profile.email}`, 14, y); y+=6; }
-            if(profile.bank) { doc.text(`Bankszámla: ${profile.bank}`, 14, y); y+=6; }
-
-            // Táblázat
-            const headers = isQuote ? [['Megnevezés', 'Menny.', 'Ár', 'Össz.']] : (customHeaders ? [customHeaders] : [['Anyag', 'Menny.', 'Infó']]);
-            doc.autoTable({
-                startY: y + 10,
-                head: headers,
-                body: tableData,
-                theme: 'grid',
-                headStyles: { fillColor: [41, 128, 185] }
-            });
-
-            if(isQuote) {
-                const total = quoteItems.reduce((acc, curr) => acc + curr.total, 0);
-                doc.text(`Végösszeg: ${total.toLocaleString()} Ft`, 196, doc.lastAutoTable.finalY + 10, { align: 'right' });
-            }
-
-            doc.save(`${title}_export.pdf`);
-            showToast("PDF Letöltve!");
-        }
-
-        function generateProQuote() {
-            if(quoteItems.length === 0) return showToast('Üres lista!');
-            createPDF("ÁRAJÁNLAT", quoteItems.map(i => [i.name, `${i.qty} ${i.unit}`, `${i.price} Ft`, `${i.total} Ft`]), true);
-        }
-
-        function generateProjectPDF() {
-            if(!currentDetailId) return;
-            const items = shopItems.filter(i => i.projectId == currentDetailId);
-            if(items.length === 0) return showToast('Nincs anyag!');
-            const tableData = items.map(i => [i.text, i.qty + " db", i.room || "-", i.code || "-"]);
-            createPDF("ANYAGLISTA", tableData, false, ['Anyag', 'Menny.', 'Hely', 'Kód']);
-        }
-
         // --- SAVED QUOTES LOGIC ---
         function saveCurrentQuote() {
             if(quoteItems.length === 0) return showToast('Üres lista!');
             const client = document.getElementById('quote-client-name').value || 'Névtelen';
             const date = document.getElementById('quote-date').value;
             const total = quoteItems.reduce((acc,curr)=>acc+curr.total,0);
-            
             savedQuotes.unshift({ id: Date.now(), client, date, total, items: [...quoteItems] });
-            localStorage.setItem('fn102_quotes', JSON.stringify(savedQuotes));
+            localStorage.setItem('fn103_quotes', JSON.stringify(savedQuotes));
             renderSavedQuotes(); showToast('Ajánlat mentve!');
         }
 
@@ -513,11 +572,11 @@
         function deleteQuote(id) {
             if(!confirm('Törlöd?')) return;
             savedQuotes = savedQuotes.filter(x=>x.id!=id);
-            localStorage.setItem('fn102_quotes', JSON.stringify(savedQuotes));
+            localStorage.setItem('fn103_quotes', JSON.stringify(savedQuotes));
             renderSavedQuotes();
         }
 
-        // --- PROFILE LOGIC ---
+        // --- STANDARD LOGIC ---
         function saveProfile() {
             profile.name = document.getElementById('prof-name').value;
             profile.address = document.getElementById('prof-address').value;
@@ -525,7 +584,7 @@
             profile.phone = document.getElementById('prof-phone').value;
             profile.email = document.getElementById('prof-email').value;
             profile.bank = document.getElementById('prof-bank').value;
-            localStorage.setItem('fn102_profile', JSON.stringify(profile));
+            localStorage.setItem('fn103_profile', JSON.stringify(profile));
             updateProfilePreview(); closeModal(); showToast('Mentve');
         }
         function updateProfilePreview() {
@@ -541,14 +600,13 @@
             document.getElementById('prof-bank').value = profile.bank;
         }
 
-        // --- PROJECT LOGIC (BŐVÍTETT) ---
         function saveProject() {
             const name = document.getElementById('inp-client').value;
             if(!name) return showToast('Név kötelező!');
             const p = {
                 id: Date.now(), client: name,
-                phone: document.getElementById('inp-phone').value, // ÚJ
-                email: document.getElementById('inp-email').value, // ÚJ
+                phone: document.getElementById('inp-phone').value,
+                email: document.getElementById('inp-email').value,
                 address: document.getElementById('inp-address').value,
                 note: document.getElementById('inp-note').value,
                 status: document.getElementById('inp-status').value,
@@ -557,9 +615,8 @@
                 rooms: []
             };
             projects.unshift(p);
-            localStorage.setItem('fn102_projects', JSON.stringify(projects));
+            localStorage.setItem('fn103_projects', JSON.stringify(projects));
             closeModal();
-            // Reset fields
             document.getElementById('inp-client').value = ''; 
             document.getElementById('inp-phone').value = ''; 
             document.getElementById('inp-email').value = '';
@@ -569,24 +626,6 @@
             renderDashboard(); switchTab('projects');
         }
 
-        // --- (STANDARD FÜGGVÉNYEK MARADTAK) ---
-        function addQuoteItem() {
-            const n=document.getElementById('q-item-name').value; const q=document.getElementById('q-item-qty').value;
-            const p=document.getElementById('q-item-price').value; const u=document.getElementById('q-item-unit').value;
-            if(!n || !q || !p) return;
-            quoteItems.push({name:n, qty:q, price:p, unit:u, total:q*p});
-            document.getElementById('q-item-name').value='';
-            renderQuoteItems();
-        }
-        function renderQuoteItems() {
-            const c=document.getElementById('quote-items-container'); c.innerHTML='';
-            let t=0;
-            quoteItems.forEach((i,x) => {
-                t+=i.total;
-                c.innerHTML+=`<div class="quote-row"><div style="flex:1"><b>${i.name}</b><br><small>${i.qty}${i.unit}</small></div><div>${i.total} Ft</div><i class="fas fa-trash" style="color:red" onclick="quoteItems.splice(${x},1);renderQuoteItems()"></i></div>`;
-            });
-            document.getElementById('quote-grand-total').innerText = `Összesen: ${t} Ft`;
-        }
         function renderProjects() {
             const l=document.getElementById('projects-list'); l.innerHTML='';
             projects.forEach(p => l.innerHTML+=`<div class="card" onclick="openDetail(${p.id})"><b>${p.client}</b><br><small>${p.address}</small></div>`);
@@ -625,16 +664,16 @@
             const p=projects.find(x=>x.id==currentDetailId);
             if(!p.rooms) p.rooms=[];
             p.rooms.push(s ? `${v} (${s}m²)` : v);
-            localStorage.setItem('fn102_projects', JSON.stringify(projects));
+            localStorage.setItem('fn103_projects', JSON.stringify(projects));
             document.getElementById('new-room-input').value=''; openDetail(currentDetailId);
         }
         function deleteCurrentProject() {
             projects=projects.filter(x=>x.id!=currentDetailId);
-            localStorage.setItem('fn102_projects', JSON.stringify(projects));
+            localStorage.setItem('fn103_projects', JSON.stringify(projects));
             closeModal(); renderProjects(); renderDashboard();
         }
-        function toggleShop(id) { const i=shopItems.find(x=>x.id==id); i.done=!i.done; localStorage.setItem('fn102_shop', JSON.stringify(shopItems)); renderShop(); if(currentDetailId) renderDetailList(); }
-        function delShop(id) { shopItems=shopItems.filter(x=>x.id!=id); localStorage.setItem('fn102_shop', JSON.stringify(shopItems)); renderShop(); if(currentDetailId) renderDetailList(); }
+        function toggleShop(id) { const i=shopItems.find(x=>x.id==id); i.done=!i.done; localStorage.setItem('fn103_shop', JSON.stringify(shopItems)); renderShop(); if(currentDetailId) renderDetailList(); }
+        function delShop(id) { shopItems=shopItems.filter(x=>x.id!=id); localStorage.setItem('fn103_shop', JSON.stringify(shopItems)); renderShop(); if(currentDetailId) renderDetailList(); }
         function updateShopSelect() {
             const s=document.getElementById('shop-project-select'); s.innerHTML='<option value="">-- Raktár --</option>';
             projects.forEach(p => s.innerHTML+=`<option value="${p.id}">${p.client}</option>`);
@@ -684,7 +723,7 @@
             p.email = document.getElementById('edit-email').value;
             p.address = document.getElementById('edit-address').value;
             p.note = document.getElementById('edit-note').value;
-            localStorage.setItem('fn102_projects', JSON.stringify(projects));
+            localStorage.setItem('fn103_projects', JSON.stringify(projects));
             closeModal(); openDetail(currentDetailId); showToast('Mentve');
         }
         function confirmAction(choice) {
@@ -699,7 +738,7 @@
         }
         function handleFavoriteClick() {
             const v=document.getElementById('shop-input').value;
-            if(v && !favorites.includes(v)) { favorites.push(v); localStorage.setItem('fn102_favs', JSON.stringify(favorites)); showToast('Kedvenc!'); }
+            if(v && !favorites.includes(v)) { favorites.push(v); localStorage.setItem('fn103_favs', JSON.stringify(favorites)); showToast('Kedvenc!'); }
             else { 
                 const c=document.getElementById('fav-list-container'); c.innerHTML='';
                 favorites.forEach(f=>c.innerHTML+=`<div class="fav-item" onclick="document.getElementById('shop-input').value='${f}';closeModal()">${f}</div>`);
@@ -722,7 +761,7 @@
             i.qty=document.getElementById('item-edit-qty').value;
             i.code=document.getElementById('item-edit-code').value;
             i.note=document.getElementById('item-edit-note').value;
-            localStorage.setItem('fn102_shop', JSON.stringify(shopItems));
+            localStorage.setItem('fn103_shop', JSON.stringify(shopItems));
             closeModal(); renderShop(); if(currentDetailId) renderDetailList();
         }
         function filterProjects(v) {
@@ -746,11 +785,11 @@
                     const d = JSON.parse(e.target.result);
                     if(d.p && d.s) {
                         projects = d.p; shopItems = d.s; if(d.f) favorites = d.f; if(d.pr) profile = d.pr; if(d.q) savedQuotes = d.q;
-                        localStorage.setItem('fn102_projects', JSON.stringify(projects));
-                        localStorage.setItem('fn102_shop', JSON.stringify(shopItems));
-                        localStorage.setItem('fn102_favs', JSON.stringify(favorites));
-                        localStorage.setItem('fn102_profile', JSON.stringify(profile));
-                        localStorage.setItem('fn102_quotes', JSON.stringify(savedQuotes));
+                        localStorage.setItem('fn103_projects', JSON.stringify(projects));
+                        localStorage.setItem('fn103_shop', JSON.stringify(shopItems));
+                        localStorage.setItem('fn103_favs', JSON.stringify(favorites));
+                        localStorage.setItem('fn103_profile', JSON.stringify(profile));
+                        localStorage.setItem('fn103_quotes', JSON.stringify(savedQuotes));
                         showToast('Visszatöltve!'); setTimeout(()=>location.reload(), 1000);
                     }
                 } catch(e) { showToast('Hibás fájl!'); }
