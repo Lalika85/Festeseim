@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>FestőNapló v10.4 Master</title>
+    <title>FestőNapló v10.5</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
@@ -17,10 +17,10 @@
             display: flex; flex-direction: column; height: 100vh; overflow: hidden;
         }
 
-        /* --- HEADER --- */
-        header { flex: 0 0 70px; background: #fff; border-bottom: 1px solid #ddd; display: flex; justify-content: space-between; align-items: center; padding: 0 20px; z-index: 10; }
-        h1 { margin: 0; font-size: 20px; color: #333; }
-        .header-actions button { margin-left: 10px; font-size: 20px; color: #555; background: none; border: none; padding: 10px; }
+        /* --- HEADER (ÚJ DIZÁJN HOGY LÁSD A VÁLTOZÁST) --- */
+        header { flex: 0 0 70px; background: #007bff; border-bottom: 1px solid #0056b3; display: flex; justify-content: space-between; align-items: center; padding: 0 20px; z-index: 10; color: white; }
+        h1 { margin: 0; font-size: 20px; color: white; }
+        .header-actions button { margin-left: 10px; font-size: 20px; color: white; background: none; border: none; padding: 10px; }
 
         /* --- CONTENT --- */
         #main-container { flex: 1; overflow-y: auto; padding: 20px; padding-bottom: 80px; background-color: #f0f2f5; }
@@ -94,7 +94,10 @@
 <body>
 
     <header>
-        <div><div style="font-size:10px;font-weight:bold;color:#888;">FESTŐNAPLÓ v10.4</div><h1 id="page-title">Áttekintés</h1></div>
+        <div>
+            <div style="font-size:10px;font-weight:bold;color:#e3f2fd;">FESTŐNAPLÓ</div>
+            <h1 id="page-title">v10.5 Áttekintés</h1>
+        </div>
         <div class="header-actions">
             <button id="header-share-btn" onclick="shareCurrentShopList()" style="display:none;"><i class="fas fa-share-alt"></i></button>
             <button onclick="openModal('backup-box')"><i class="fas fa-save"></i></button>
@@ -227,6 +230,7 @@
         <button class="fab" onclick="openModal('new-project-box')"><i class="fas fa-plus"></i></button>
         <button class="nav-btn" onclick="switchTab('quote')" id="btn-quote"><i class="fas fa-file-invoice"></i></button>
         <button class="nav-btn" onclick="switchTab('shop')" id="btn-shop"><i class="fas fa-shopping-basket"></i></button>
+        <button class="nav-btn" onclick="switchTab('calc')" id="btn-calc"><i class="fas fa-calculator"></i></button>
     </nav>
 
     <div id="profile-box" class="modal-box">
@@ -324,18 +328,18 @@
     <div id="backup-box" class="modal-box"><h2>Mentés</h2><button onclick="exportData()" class="primary" style="margin-bottom:10px; background:#28a745;">Letöltés</button><label class="primary" style="background:#007bff; text-align:center; display:block;">Visszatöltés<input type="file" style="display:none;" onchange="importData(this)"></label><button onclick="closeModal()" class="secondary">Bezárás</button></div>
 
     <script>
-        // --- ADATBÁZIS & MIGRÁCIÓ ---
-        let projects = JSON.parse(localStorage.getItem('fn104_projects')) || [];
-        if(projects.length === 0 && localStorage.getItem('fn103_projects')) projects = JSON.parse(localStorage.getItem('fn103_projects'));
+        // --- ADATBÁZIS & MIGRÁCIÓ (v10.5) ---
+        let projects = JSON.parse(localStorage.getItem('fn105_projects')) || [];
+        if(projects.length === 0 && localStorage.getItem('fn104_projects')) projects = JSON.parse(localStorage.getItem('fn104_projects'));
         
-        let shopItems = JSON.parse(localStorage.getItem('fn104_shop')) || [];
-        if(shopItems.length === 0 && localStorage.getItem('fn103_shop')) shopItems = JSON.parse(localStorage.getItem('fn103_shop'));
+        let shopItems = JSON.parse(localStorage.getItem('fn105_shop')) || [];
+        if(shopItems.length === 0 && localStorage.getItem('fn104_shop')) shopItems = JSON.parse(localStorage.getItem('fn104_shop'));
 
-        let profile = JSON.parse(localStorage.getItem('fn104_profile')) || {name:'', address:'', tax:'', phone:'', email:'', bank:''};
-        if(localStorage.getItem('fn103_profile')) profile = JSON.parse(localStorage.getItem('fn103_profile'));
+        let profile = JSON.parse(localStorage.getItem('fn105_profile')) || {name:'', address:'', tax:'', phone:'', email:'', bank:''};
+        if(localStorage.getItem('fn104_profile')) profile = JSON.parse(localStorage.getItem('fn104_profile'));
 
-        let favorites = JSON.parse(localStorage.getItem('fn104_favs')) || ["Héra Gold", "Dulux", "Glett", "Szalag", "Fólia", "Henger"];
-        let savedQuotes = JSON.parse(localStorage.getItem('fn104_quotes')) || [];
+        let favorites = JSON.parse(localStorage.getItem('fn105_favs')) || ["Héra Gold", "Dulux", "Glett", "Szalag", "Fólia", "Henger"];
+        let savedQuotes = JSON.parse(localStorage.getItem('fn105_quotes')) || [];
         
         let quoteItems = [];
         let currentDetailId = null;
@@ -348,196 +352,76 @@
         updateProfilePreview();
         renderSavedQuotes();
         document.getElementById('quote-date').valueAsDate = new Date();
-        renderCalcInputs(); // Set default calc
+        renderCalcInputs();
 
         function switchTab(id) {
             document.querySelectorAll('.view').forEach(e => e.classList.remove('active'));
             document.getElementById('view-'+id).classList.add('active');
             document.querySelectorAll('.nav-btn').forEach(e => e.classList.remove('active'));
             if(document.getElementById('btn-'+id)) document.getElementById('btn-'+id).classList.add('active');
-            document.getElementById('page-title').innerText = (id==='quote'?'Árajánlat':(id==='shop'?'Bolt/Anyagok':(id==='calc'?'Kalkulátor':'Áttekintés')));
+            document.getElementById('page-title').innerText = (id==='quote'?'Árajánlat':(id==='shop'?'Bolt/Anyagok':(id==='calc'?'Kalkulátor':'v10.5 Áttekintés')));
             document.getElementById('header-share-btn').style.display = (id === 'shop') ? 'block' : 'none';
             if(id==='projects') renderProjects();
             if(id==='shop') renderShop();
         }
 
-        // --- NEW MULTI-CALCULATOR LOGIC ---
+        // --- CALC LOGIC ---
         function renderCalcInputs() {
             const type = document.getElementById('calc-type').value;
             const container = document.getElementById('calc-inputs-container');
-            let html = '';
-
-            // Common field: Area
-            html += `<div class="input-group"><label>Falfelület ($m^2$)</label><input type="number" id="calc-area" placeholder="pl. 50"></div>`;
-
+            let html = '<div class="input-group"><label>Falfelület ($m^2$)</label><input type="number" id="calc-area" placeholder="pl. 50"></div>';
             if(type === 'paint') {
-                html += `<div class="input-group"><label>Rétegek száma</label><input type="number" id="calc-param1" value="2"></div>`;
-                html += `<div class="input-group"><label>Kiadósság ($m^2$/liter)</label><input type="number" id="calc-param2" value="10"></div>`;
+                html += '<div class="input-group"><label>Rétegek száma</label><input type="number" id="calc-param1" value="2"></div><div class="input-group"><label>Kiadósság ($m^2$/l)</label><input type="number" id="calc-param2" value="10"></div>';
             } else if (type === 'adhesive') {
-                html += `<div class="input-group"><label>Anyagigény (kg/$m^2$)</label><input type="number" id="calc-param1" value="4" placeholder="Átlag: 3-5"></div>`;
+                html += '<div class="input-group"><label>Anyagigény (kg/$m^2$)</label><input type="number" id="calc-param1" value="4"></div>';
             } else if (type === 'plaster') {
-                html += `<div class="input-group"><label>Rétegek száma</label><input type="number" id="calc-param1" value="2"></div>`;
-                html += `<div class="input-group"><label>Anyagigény (kg/$m^2$/réteg)</label><input type="number" id="calc-param2" value="1.5"></div>`;
+                html += '<div class="input-group"><label>Rétegek</label><input type="number" id="calc-param1" value="2"></div><div class="input-group"><label>Anyag/réteg (kg/$m^2$)</label><input type="number" id="calc-param2" value="1.5"></div>';
             } else if (type === 'screed') {
-                html += `<div class="input-group"><label>Vastagság (cm)</label><input type="number" id="calc-param1" value="5"></div>`;
-                html += `<div class="input-group"><label>Anyagigény (kg/$m^2$/cm)</label><input type="number" id="calc-param2" value="20"></div>`;
+                html += '<div class="input-group"><label>Vastagság (cm)</label><input type="number" id="calc-param1" value="5"></div><div class="input-group"><label>Anyag (kg/$m^2$/cm)</label><input type="number" id="calc-param2" value="20"></div>';
             } else if (type === 'primer') {
-                html += `<div class="input-group"><label>Kiadósság ($m^2$/liter)</label><input type="number" id="calc-param1" value="7"></div>`;
+                html += '<div class="input-group"><label>Kiadósság ($m^2$/l)</label><input type="number" id="calc-param1" value="7"></div>';
             }
-
             container.innerHTML = html;
             document.getElementById('calc-result-box').style.display = 'none';
         }
-
         function calculateMaterial() {
             const type = document.getElementById('calc-type').value;
             const area = parseFloat(document.getElementById('calc-area').value);
             if(!area) return showToast('Add meg a felületet!');
-
-            let result = 0;
-            let unit = '';
-            let desc = '';
-
+            let r=0, u='', d='';
             if(type === 'paint') {
-                const layers = parseFloat(document.getElementById('calc-param1').value) || 2;
-                const coverage = parseFloat(document.getElementById('calc-param2').value) || 10;
-                result = Math.ceil((area * layers) / coverage);
-                unit = 'Liter';
-                desc = `(${layers} rétegben, ${coverage} $m^2$/l kiadóssággal)`;
+                const l=parseFloat(document.getElementById('calc-param1').value)||2;
+                const c=parseFloat(document.getElementById('calc-param2').value)||10;
+                r=Math.ceil((area*l)/c); u='Liter'; d=`${l} rétegben`;
             } else if (type === 'adhesive') {
-                const consumption = parseFloat(document.getElementById('calc-param1').value) || 4;
-                result = Math.ceil(area * consumption);
-                unit = 'Kg';
-                desc = `Kb. ${Math.ceil(result/25)} zsák (25kg)`;
+                const c=parseFloat(document.getElementById('calc-param1').value)||4;
+                r=Math.ceil(area*c); u='Kg'; d=`Kb. ${Math.ceil(r/25)} zsák (25kg)`;
             } else if (type === 'plaster') {
-                const layers = parseFloat(document.getElementById('calc-param1').value) || 2;
-                const consumption = parseFloat(document.getElementById('calc-param2').value) || 1.5;
-                result = Math.ceil(area * layers * consumption);
-                unit = 'Kg';
-                desc = `Kb. ${Math.ceil(result/20)} zsák (20kg)`;
+                const l=parseFloat(document.getElementById('calc-param1').value)||2;
+                const c=parseFloat(document.getElementById('calc-param2').value)||1.5;
+                r=Math.ceil(area*l*c); u='Kg'; d=`Kb. ${Math.ceil(r/20)} zsák (20kg)`;
             } else if (type === 'screed') {
-                const thick = parseFloat(document.getElementById('calc-param1').value) || 5;
-                const consumption = parseFloat(document.getElementById('calc-param2').value) || 20;
-                result = Math.ceil(area * thick * consumption);
-                unit = 'Kg';
-                desc = `Kb. ${Math.ceil(result/40)} zsák (40kg)`;
+                const t=parseFloat(document.getElementById('calc-param1').value)||5;
+                const c=parseFloat(document.getElementById('calc-param2').value)||20;
+                r=Math.ceil(area*t*c); u='Kg'; d=`Kb. ${Math.ceil(r/40)} zsák (40kg)`;
             } else if (type === 'primer') {
-                const coverage = parseFloat(document.getElementById('calc-param1').value) || 7;
-                result = Math.ceil(area / coverage);
-                unit = 'Liter';
+                const c=parseFloat(document.getElementById('calc-param1').value)||7;
+                r=Math.ceil(area/c); u='Liter';
             }
-
-            document.getElementById('calc-result-num').innerText = `${result} ${unit}`;
-            document.getElementById('calc-result-desc').innerText = desc;
+            document.getElementById('calc-result-num').innerText = `${r} ${u}`;
+            document.getElementById('calc-result-desc').innerText = d;
             document.getElementById('calc-result-box').style.display = 'block';
         }
 
-        // --- STANDARD APP LOGIC ---
-        function openModal(id) {
-            document.getElementById('modal-overlay').style.display = 'block';
-            document.getElementById(id).style.display = 'flex';
-            if(id === 'profile-box') loadProfileInputs();
-        }
-        function closeModal() {
-            document.querySelectorAll('.modal-box').forEach(e => e.style.display = 'none');
-            document.getElementById('modal-overlay').style.display = 'none';
-        }
-        function showToast(msg) {
-            const t = document.getElementById("toast"); t.innerText = msg; t.className = "show";
-            setTimeout(()=> t.className = t.className.replace("show", ""), 3000);
-        }
-
-        // --- PDF GENERATOR (JAVÍTOTT ÜGYFÉL ADATOKKAL) ---
-        function createPDF(title, tableData, isQuote, clientData) {
-            if(!profile.name) return showToast('Tölts ki a Cégadatokat!');
-            const { jsPDF } = window.jspdf;
-            const doc = new jsPDF();
-            
-            let y = 20;
-            doc.setFontSize(18); doc.text(title, 150, y);
-            
-            doc.setFontSize(12); doc.setFont("helvetica", "bold"); 
-            doc.text(profile.name, 14, y); y+=6;
-            
-            doc.setFont("helvetica", "normal"); doc.setFontSize(10);
-            doc.text(profile.address, 14, y); y+=6;
-            if(profile.tax) { doc.text(`Adószám: ${profile.tax}`, 14, y); y+=6; }
-            if(profile.phone) { doc.text(`Tel: ${profile.phone}`, 14, y); y+=6; }
-            if(profile.email) { doc.text(`Email: ${profile.email}`, 14, y); y+=6; }
-            if(profile.bank) { doc.text(`Bankszámla: ${profile.bank}`, 14, y); y+=6; }
-
-            doc.setDrawColor(200); doc.line(14, y+5, 196, y+5);
-            y += 15;
-
-            if(clientData && clientData.name) {
-                doc.setFontSize(10); doc.setTextColor(100); doc.text("Megrendelő:", 14, y);
-                doc.setFontSize(12); doc.setTextColor(0); doc.setFont("helvetica", "bold");
-                doc.text(clientData.name, 14, y+6);
-                doc.setFont("helvetica", "normal"); doc.setFontSize(10);
-                if(clientData.address) doc.text(clientData.address, 14, y+11);
-                if(clientData.date) doc.text(`Kelt: ${clientData.date}`, 150, y+6);
-                y += 20;
-            }
-
-            const headers = isQuote ? [['Megnevezés', 'Menny.', 'Ár', 'Össz.']] : (clientData.customHeaders ? [clientData.customHeaders] : [['Anyag', 'Menny.', 'Infó']]);
-            doc.autoTable({
-                startY: y,
-                head: headers,
-                body: tableData,
-                theme: 'grid',
-                headStyles: { fillColor: [41, 128, 185] }
-            });
-
-            if(isQuote) {
-                const total = quoteItems.reduce((acc, curr) => acc + curr.total, 0);
-                doc.text(`Végösszeg: ${total.toLocaleString()} Ft`, 196, doc.lastAutoTable.finalY + 10, { align: 'right' });
-            }
-
-            doc.save(`${title}_export.pdf`);
-            showToast("PDF Letöltve!");
-        }
-
-        function generateProQuote() {
-            if(quoteItems.length === 0) return showToast('Üres lista!');
-            const cName = document.getElementById('quote-client-name').value;
-            const cAddr = document.getElementById('quote-client-address').value;
-            const cDate = document.getElementById('quote-date').value;
-            
-            createPDF("ÁRAJÁNLAT", 
-                quoteItems.map(i => [i.name, `${i.qty} ${i.unit}`, `${i.price} Ft`, `${i.total} Ft`]), 
-                true, 
-                { name: cName, address: cAddr, date: cDate }
-            );
-        }
-
-        function generateProjectPDF() {
-            if(!currentDetailId) return;
-            const p = projects.find(x => x.id == currentDetailId);
-            const items = shopItems.filter(i => i.projectId == currentDetailId);
-            if(items.length === 0) return showToast('Nincs anyag!');
-            
-            const tableData = items.map(i => [i.text, i.qty + " db", i.room || "-", i.code || "-"]);
-            createPDF("ANYAGLISTA", tableData, false, { 
-                name: p.client, 
-                address: p.address, 
-                date: new Date().toLocaleDateString('hu-HU'),
-                customHeaders: ['Anyag', 'Menny.', 'Hely', 'Kód']
-            });
-        }
-
+        // --- QUOTE ---
         function addQuoteItem() {
             const n=document.getElementById('q-item-name').value; const q=document.getElementById('q-item-qty').value;
             const p=document.getElementById('q-item-price').value; const u=document.getElementById('q-item-unit').value;
             if(!n || !q || !p) return;
             quoteItems.push({name:n, qty:q, price:p, unit:u, total:q*p});
-            
-            document.getElementById('q-item-name').value='';
-            document.getElementById('q-item-qty').value='';
-            document.getElementById('q-item-price').value='';
-            
+            document.getElementById('q-item-name').value=''; document.getElementById('q-item-qty').value=''; document.getElementById('q-item-price').value='';
             renderQuoteItems();
         }
-
         function renderQuoteItems() {
             const c=document.getElementById('quote-items-container'); c.innerHTML='';
             let t=0;
@@ -548,300 +432,121 @@
             document.getElementById('quote-grand-total').innerText = `Összesen: ${t} Ft`;
         }
 
-        // --- SHOP & PROJECTS ---
-        function addShopItem() {
-            const txt = document.getElementById('shop-input').value; if(!txt) return showToast('Mit vettél?');
-            const item = {
-                id: Date.now(), text: txt,
-                qty: document.getElementById('shop-qty').value,
-                code: document.getElementById('shop-code').value,
-                note: document.getElementById('shop-note').value,
-                image: tempShopImage,
-                projectId: document.getElementById('shop-project-select').value || null,
-                room: document.getElementById('shop-room-select').value || null,
-                done: false
-            };
-            shopItems.unshift(item);
-            localStorage.setItem('fn104_shop', JSON.stringify(shopItems));
-            document.getElementById('shop-input').value = '';
-            document.getElementById('shop-code').value = '';
-            document.getElementById('shop-note').value = '';
-            document.getElementById('shop-photo-prev').style.display = 'none';
-            tempShopImage = null;
-            showToast('Hozzáadva!'); renderShop();
+        // --- PDF ---
+        function createPDF(title, tableData, isQuote, clientData) {
+            if(!profile.name) return showToast('Tölts ki a Cégadatokat!');
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            let y = 20;
+            doc.setFontSize(18); doc.setTextColor(0, 123, 255); doc.text(title, 150, y);
+            doc.setFontSize(12); doc.setTextColor(0); doc.setFont("helvetica", "bold"); doc.text(profile.name, 14, y); y+=6;
+            doc.setFont("helvetica", "normal"); doc.setFontSize(10);
+            doc.text(profile.address, 14, y); y+=6;
+            if(profile.tax) { doc.text(`Adószám: ${profile.tax}`, 14, y); y+=6; }
+            if(profile.phone) { doc.text(`Tel: ${profile.phone}`, 14, y); y+=6; }
+            if(profile.email) { doc.text(`Email: ${profile.email}`, 14, y); y+=6; }
+            if(profile.bank) { doc.text(`Bankszámla: ${profile.bank}`, 14, y); y+=6; }
+            doc.setDrawColor(200); doc.line(14, y+5, 196, y+5); y += 15;
+            if(clientData && clientData.name) {
+                doc.setFontSize(10); doc.setTextColor(100); doc.text("Megrendelő:", 14, y);
+                doc.setFontSize(12); doc.setTextColor(0); doc.setFont("helvetica", "bold");
+                doc.text(clientData.name, 14, y+6);
+                doc.setFont("helvetica", "normal"); doc.setFontSize(10);
+                if(clientData.address) doc.text(clientData.address, 14, y+11);
+                if(clientData.date) doc.text(`Kelt: ${clientData.date}`, 150, y+6);
+                y += 20;
+            }
+            const headers = isQuote ? [['Megnevezés', 'Menny.', 'Ár', 'Össz.']] : (clientData.customHeaders ? [clientData.customHeaders] : [['Anyag', 'Menny.', 'Infó']]);
+            doc.autoTable({ startY: y, head: headers, body: tableData, theme: 'grid', headStyles: { fillColor: [41, 128, 185] } });
+            if(isQuote) {
+                const total = quoteItems.reduce((acc, curr) => acc + curr.total, 0);
+                doc.text(`Végösszeg: ${total.toLocaleString()} Ft`, 196, doc.lastAutoTable.finalY + 10, { align: 'right' });
+            }
+            doc.save(`${title}_export.pdf`); showToast("PDF Letöltve!");
         }
-
-        function renderShop() {
-            const list = document.getElementById('shop-list'); list.innerHTML = '';
-            shopItems.forEach(i => {
-                const doneClass = i.done ? 'item-done' : '';
-                let projectTag = '';
-                if(i.projectId) {
-                    const p = projects.find(x => x.id == i.projectId);
-                    if(p) projectTag = `<div style="font-size:10px; color:#007bff;">${p.client} ${i.room ? '('+i.room+')' : ''}</div>`;
-                }
-                let img = i.image ? `<i class="fas fa-camera" style="color:#007bff; margin-left:5px;"></i>` : '';
-                list.innerHTML += `<div class="card ${doneClass}" style="display:flex; align-items:center; justify-content:space-between;">
-                    <div style="display:flex; align-items:center; flex:1;">
-                        <div class="check-circle" onclick="toggleShop(${i.id})"><i class="fas fa-check"></i></div>
-                        <div><div style="font-weight:bold;">${i.qty}x ${i.text} ${img}</div><div style="font-size:12px; color:#666;">${i.code||''} ${i.note||''}</div>${projectTag}</div>
-                    </div>
-                    <i class="fas fa-trash" style="color:#dc3545; padding:10px;" onclick="delShop(${i.id})"></i>
-                </div>`;
-            });
-        }
-
-        function renderDetailList() {
-            const list = document.getElementById('d-materials-list'); list.innerHTML = '';
-            const items = shopItems.filter(i => i.projectId == currentDetailId);
-            if(!items.length) { list.innerHTML = '<div style="color:#999; text-align:center;">Nincs anyag.</div>'; return; }
-            items.forEach(i => {
-                const room = i.room ? `(${i.room})` : '';
-                const doneClass = i.done ? 'item-done' : '';
-                const img = i.image ? `<img src="${i.image}" class="material-thumb" onclick="openImg('${i.image}')">` : '<div class="material-thumb"></div>';
-                list.innerHTML += `<div class="material-item ${doneClass}"><div class="check-circle" onclick="toggleShop(${i.id})"><i class="fas fa-check"></i></div>${img}<div style="flex:1;"><div style="font-weight:bold;">${i.qty}x ${i.text}</div><div style="font-size:12px; color:#666;">${i.code||''} ${room}</div></div><button class="icon-btn btn-edit" onclick="openItemEdit(${i.id})"><i class="fas fa-pen"></i></button></div>`;
-            });
-        }
-
-        function saveCurrentQuote() {
+        function generateProQuote() {
             if(quoteItems.length === 0) return showToast('Üres lista!');
-            const client = document.getElementById('quote-client-name').value || 'Névtelen';
-            const date = document.getElementById('quote-date').value;
-            const total = quoteItems.reduce((acc,curr)=>acc+curr.total,0);
-            savedQuotes.unshift({ id: Date.now(), client, date, total, items: [...quoteItems] });
-            localStorage.setItem('fn104_quotes', JSON.stringify(savedQuotes));
-            renderSavedQuotes(); showToast('Ajánlat mentve!');
+            createPDF("ÁRAJÁNLAT", quoteItems.map(i => [i.name, `${i.qty} ${i.unit}`, `${i.price} Ft`, `${i.total} Ft`]), true, { name: document.getElementById('quote-client-name').value, address: document.getElementById('quote-client-address').value, date: document.getElementById('quote-date').value });
+        }
+        function generateProjectPDF() {
+            if(!currentDetailId) return;
+            const p = projects.find(x => x.id == currentDetailId);
+            const items = shopItems.filter(i => i.projectId == currentDetailId);
+            if(items.length === 0) return showToast('Nincs anyag!');
+            createPDF("ANYAGLISTA", items.map(i => [i.text, i.qty + " db", i.room || "-", i.code || "-"]), false, { name: p.client, address: p.address, date: new Date().toLocaleDateString('hu-HU'), customHeaders: ['Anyag', 'Menny.', 'Hely', 'Kód'] });
         }
 
-        function renderSavedQuotes() {
-            const c = document.getElementById('saved-quotes-list'); c.innerHTML='';
-            if(savedQuotes.length===0) c.innerHTML='<div style="text-align:center;color:#999;padding:10px;">Nincs mentett ajánlat.</div>';
-            savedQuotes.forEach(q => {
-                c.innerHTML += `<div class="saved-quote-item">
-                    <div><b>${q.client}</b><br><small>${q.date} | ${q.total.toLocaleString()} Ft</small></div>
-                    <div><button onclick="loadQuote(${q.id})" style="border:none;background:#e3f2fd;color:#007bff;padding:5px 10px;border-radius:5px;"><i class="fas fa-upload"></i></button><button onclick="deleteQuote(${q.id})" style="border:none;background:#ffebee;color:#dc3545;padding:5px 10px;border-radius:5px;"><i class="fas fa-trash"></i></button></div>
-                </div>`;
-            });
-        }
-
-        function loadQuote(id) {
-            const q = savedQuotes.find(x=>x.id==id);
-            if(!q) return;
-            quoteItems = [...q.items];
-            document.getElementById('quote-client-name').value = q.client;
-            renderQuoteItems(); showToast('Ajánlat betöltve!');
-        }
-        function deleteQuote(id) { if(!confirm('Törlöd?')) return; savedQuotes = savedQuotes.filter(x=>x.id!=id); localStorage.setItem('fn104_quotes', JSON.stringify(savedQuotes)); renderSavedQuotes(); }
-
-        function saveProfile() {
-            profile.name = document.getElementById('prof-name').value;
-            profile.address = document.getElementById('prof-address').value;
-            profile.tax = document.getElementById('prof-tax').value;
-            profile.phone = document.getElementById('prof-phone').value;
-            profile.email = document.getElementById('prof-email').value;
-            profile.bank = document.getElementById('prof-bank').value;
-            localStorage.setItem('fn104_profile', JSON.stringify(profile));
-            updateProfilePreview(); closeModal(); showToast('Mentve');
-        }
-        function updateProfilePreview() {
-            const p = document.getElementById('quote-company-preview');
-            p.innerHTML = profile.name ? `<b>${profile.name}</b><br>${profile.phone}` : '<i>Nincs adat.</i>';
-        }
-        function loadProfileInputs() {
-            document.getElementById('prof-name').value = profile.name;
-            document.getElementById('prof-address').value = profile.address;
-            document.getElementById('prof-tax').value = profile.tax;
-            document.getElementById('prof-phone').value = profile.phone;
-            document.getElementById('prof-email').value = profile.email;
-            document.getElementById('prof-bank').value = profile.bank;
-        }
-
+        // --- COMMON ---
+        function openModal(id) { document.getElementById('modal-overlay').style.display='block'; document.getElementById(id).style.display='flex'; if(id==='profile-box') loadProfileInputs(); }
+        function closeModal() { document.querySelectorAll('.modal-box').forEach(e=>e.style.display='none'); document.getElementById('modal-overlay').style.display='none'; }
+        function showToast(m) { const t=document.getElementById("toast"); t.innerText=m; t.className="show"; setTimeout(()=>t.className="",3000); }
+        function saveProfile() { profile.name=document.getElementById('prof-name').value; profile.address=document.getElementById('prof-address').value; profile.tax=document.getElementById('prof-tax').value; profile.phone=document.getElementById('prof-phone').value; profile.email=document.getElementById('prof-email').value; profile.bank=document.getElementById('prof-bank').value; localStorage.setItem('fn105_profile', JSON.stringify(profile)); updateProfilePreview(); closeModal(); showToast('Mentve'); }
+        function updateProfilePreview() { document.getElementById('quote-company-preview').innerHTML = profile.name ? `<b>${profile.name}</b><br>${profile.phone}` : '<i>Nincs adat.</i>'; }
+        function loadProfileInputs() { document.getElementById('prof-name').value=profile.name; document.getElementById('prof-address').value=profile.address; document.getElementById('prof-tax').value=profile.tax; document.getElementById('prof-phone').value=profile.phone; document.getElementById('prof-email').value=profile.email; document.getElementById('prof-bank').value=profile.bank; }
+        
+        // --- REST OF APP LOGIC (PROJECTS, SHOP, ETC) ---
         function saveProject() {
-            const name = document.getElementById('inp-client').value;
-            if(!name) return showToast('Név kötelező!');
-            const p = {
-                id: Date.now(), client: name,
-                phone: document.getElementById('inp-phone').value,
-                email: document.getElementById('inp-email').value,
-                address: document.getElementById('inp-address').value,
-                note: document.getElementById('inp-note').value,
-                status: document.getElementById('inp-status').value,
-                start: document.getElementById('inp-start').value,
-                end: document.getElementById('inp-end').value,
-                rooms: []
-            };
-            projects.unshift(p);
-            localStorage.setItem('fn104_projects', JSON.stringify(projects));
-            closeModal();
-            document.getElementById('inp-client').value = ''; 
-            document.getElementById('inp-phone').value = ''; 
-            document.getElementById('inp-email').value = '';
-            document.getElementById('inp-address').value = '';
-            document.getElementById('inp-note').value = '';
-            showToast('Projekt létrehozva!');
-            renderDashboard(); switchTab('projects');
+            const n=document.getElementById('inp-client').value; if(!n) return showToast('Név kötelező!');
+            projects.unshift({id:Date.now(), client:n, phone:document.getElementById('inp-phone').value, email:document.getElementById('inp-email').value, address:document.getElementById('inp-address').value, note:document.getElementById('inp-note').value, status:document.getElementById('inp-status').value, start:document.getElementById('inp-start').value, end:document.getElementById('inp-end').value, rooms:[]});
+            localStorage.setItem('fn105_projects', JSON.stringify(projects)); closeModal();
+            document.getElementById('inp-client').value=''; document.getElementById('inp-phone').value=''; document.getElementById('inp-email').value=''; document.getElementById('inp-address').value=''; document.getElementById('inp-note').value='';
+            showToast('Létrehozva!'); renderDashboard(); switchTab('projects');
         }
-
-        function renderProjects() {
-            const l=document.getElementById('projects-list'); l.innerHTML='';
-            projects.forEach(p => l.innerHTML+=`<div class="card" onclick="openDetail(${p.id})"><b>${p.client}</b><br><small>${p.address}</small></div>`);
-        }
-        function renderDashboard() {
-            const l=document.getElementById('dashboard-list'); l.innerHTML='';
-            projects.slice(0,3).forEach(p => l.innerHTML+=`<div class="card" onclick="openDetail(${p.id})"><b>${p.client}</b></div>`);
-        }
+        function renderProjects() { document.getElementById('projects-list').innerHTML=projects.map(p=>`<div class="card" onclick="openDetail(${p.id})"><b>${p.client}</b><br><small>${p.address}</small></div>`).join(''); }
+        function renderDashboard() { document.getElementById('dashboard-list').innerHTML=projects.slice(0,3).map(p=>`<div class="card" onclick="openDetail(${p.id})"><b>${p.client}</b></div>`).join(''); }
         function openDetail(id) {
             currentDetailId=id; const p=projects.find(x=>x.id==id);
-            document.getElementById('d-client').innerText=p.client;
-            document.getElementById('d-address').innerText=p.address;
-            const btnCall = document.getElementById('btn-call');
-            const btnMail = document.getElementById('btn-mail');
-            if(p.phone) { btnCall.href = 'tel:'+p.phone; btnCall.classList.remove('btn-disabled'); } 
-            else { btnCall.href = '#'; btnCall.classList.add('btn-disabled'); }
-            if(p.email) { btnMail.href = 'mailto:'+p.email; btnMail.classList.remove('btn-disabled'); }
-            else { btnMail.href = '#'; btnMail.classList.add('btn-disabled'); }
-            const mapLink = document.getElementById('map-link');
-            if(p.address) { mapLink.href = 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(p.address); }
-            const dRooms=document.getElementById('d-rooms'); dRooms.innerHTML='';
-            if(p.rooms) p.rooms.forEach(r => dRooms.innerHTML+=`<span class="room-tag">${r}</span>`);
-            const note=document.getElementById('d-note-block');
-            if(p.note) { note.innerText=p.note; note.style.display='block'; } else { note.style.display='none'; }
-            renderDetailList();
-            openModal('view-detail');
+            document.getElementById('d-client').innerText=p.client; document.getElementById('d-address').innerText=p.address;
+            const btnCall=document.getElementById('btn-call'), btnMail=document.getElementById('btn-mail');
+            p.phone ? (btnCall.href='tel:'+p.phone, btnCall.classList.remove('btn-disabled')) : (btnCall.href='#', btnCall.classList.add('btn-disabled'));
+            p.email ? (btnMail.href='mailto:'+p.email, btnMail.classList.remove('btn-disabled')) : (btnMail.href='#', btnMail.classList.add('btn-disabled'));
+            if(p.address) document.getElementById('map-link').href='https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(p.address);
+            document.getElementById('d-rooms').innerHTML = (p.rooms||[]).map(r=>`<span class="room-tag">${r}</span>`).join('');
+            const n=document.getElementById('d-note-block'); p.note ? (n.innerText=p.note, n.style.display='block') : n.style.display='none';
+            renderDetailList(); openModal('view-detail');
         }
-        function addRoom() {
-            const v=document.getElementById('new-room-input').value; const s=document.getElementById('new-room-size').value;
-            if(!v) return;
-            const p=projects.find(x=>x.id==currentDetailId);
-            if(!p.rooms) p.rooms=[];
-            p.rooms.push(s ? `${v} (${s}m²)` : v);
-            localStorage.setItem('fn104_projects', JSON.stringify(projects));
-            document.getElementById('new-room-input').value=''; openDetail(currentDetailId);
+        function addRoom() { const v=document.getElementById('new-room-input').value; const s=document.getElementById('new-room-size').value; if(!v) return; const p=projects.find(x=>x.id==currentDetailId); if(!p.rooms) p.rooms=[]; p.rooms.push(s?`${v} (${s}m²)`:v); localStorage.setItem('fn105_projects',JSON.stringify(projects)); document.getElementById('new-room-input').value=''; openDetail(currentDetailId); }
+        function deleteCurrentProject() { projects=projects.filter(x=>x.id!=currentDetailId); localStorage.setItem('fn105_projects', JSON.stringify(projects)); closeModal(); renderProjects(); renderDashboard(); }
+        function addShopItem() {
+            const txt=document.getElementById('shop-input').value; if(!txt) return showToast('Mit vettél?');
+            shopItems.unshift({id:Date.now(), text:txt, qty:document.getElementById('shop-qty').value, code:document.getElementById('shop-code').value, note:document.getElementById('shop-note').value, image:tempShopImage, projectId:document.getElementById('shop-project-select').value||null, room:document.getElementById('shop-room-select').value||null, done:false});
+            localStorage.setItem('fn105_shop', JSON.stringify(shopItems));
+            document.getElementById('shop-input').value=''; document.getElementById('shop-code').value=''; document.getElementById('shop-note').value=''; document.getElementById('shop-photo-prev').style.display='none'; tempShopImage=null; showToast('Hozzáadva!'); renderShop();
         }
-        function deleteCurrentProject() {
-            projects=projects.filter(x=>x.id!=currentDetailId);
-            localStorage.setItem('fn104_projects', JSON.stringify(projects));
-            closeModal(); renderProjects(); renderDashboard();
+        function renderShop() {
+            document.getElementById('shop-list').innerHTML = shopItems.map(i => {
+                let pTag='', img=i.image?`<i class="fas fa-camera" style="color:#007bff; margin-left:5px;"></i>`:'';
+                if(i.projectId) { const p=projects.find(x=>x.id==i.projectId); if(p) pTag=`<div style="font-size:10px; color:#007bff;">${p.client} ${i.room?'('+i.room+')':''}</div>`; }
+                return `<div class="card ${i.done?'item-done':''}" style="display:flex;align-items:center;justify-content:space-between;"><div style="display:flex;align-items:center;flex:1;"><div class="check-circle" onclick="toggleShop(${i.id})"><i class="fas fa-check"></i></div><div><div style="font-weight:bold;">${i.qty}x ${i.text} ${img}</div><div style="font-size:12px;color:#666;">${i.code||''} ${i.note||''}</div>${pTag}</div></div><i class="fas fa-trash" style="color:#dc3545;padding:10px;" onclick="delShop(${i.id})"></i></div>`;
+            }).join('');
         }
-        function toggleShop(id) { const i=shopItems.find(x=>x.id==id); i.done=!i.done; localStorage.setItem('fn104_shop', JSON.stringify(shopItems)); renderShop(); if(currentDetailId) renderDetailList(); }
-        function delShop(id) { shopItems=shopItems.filter(x=>x.id!=id); localStorage.setItem('fn104_shop', JSON.stringify(shopItems)); renderShop(); if(currentDetailId) renderDetailList(); }
-        function updateShopSelect() {
-            const s=document.getElementById('shop-project-select'); s.innerHTML='<option value="">-- Raktár --</option>';
-            projects.forEach(p => s.innerHTML+=`<option value="${p.id}">${p.client}</option>`);
-            updateRoomSelectInShop();
+        function toggleShop(id) { const i=shopItems.find(x=>x.id==id); i.done=!i.done; localStorage.setItem('fn105_shop', JSON.stringify(shopItems)); renderShop(); if(currentDetailId) renderDetailList(); }
+        function delShop(id) { shopItems=shopItems.filter(x=>x.id!=id); localStorage.setItem('fn105_shop', JSON.stringify(shopItems)); renderShop(); if(currentDetailId) renderDetailList(); }
+        function renderDetailList() {
+            const l=document.getElementById('d-materials-list'); l.innerHTML='';
+            const items=shopItems.filter(i=>i.projectId==currentDetailId);
+            if(!items.length) { l.innerHTML='<div style="color:#999;text-align:center;">Nincs anyag.</div>'; return; }
+            l.innerHTML=items.map(i=>`<div class="material-item ${i.done?'item-done':''}"><div class="check-circle" onclick="toggleShop(${i.id})"><i class="fas fa-check"></i></div>${i.image?`<img src="${i.image}" class="material-thumb">`:'<div class="material-thumb"></div>'}<div style="flex:1;"><div style="font-weight:bold;">${i.qty}x ${i.text}</div><div style="font-size:12px;color:#666;">${i.code||''} ${i.room?`(${i.room})`:''}</div></div></div>`).join('');
         }
-        function updateRoomSelectInShop() {
-            const pid=document.getElementById('shop-project-select').value;
-            const s=document.getElementById('shop-room-select'); s.innerHTML='<option value="">(Nincs)</option>';
-            if(pid) {
-                const p=projects.find(x=>x.id==pid);
-                if(p && p.rooms) p.rooms.forEach(r => s.innerHTML+=`<option value="${r}">${r}</option>`);
-            }
-        }
-        function handleShopPhoto(input) {
-            if(input.files && input.files[0]) {
-                const r = new FileReader();
-                r.onload = function(e) {
-                    tempShopImage = e.target.result;
-                    const img = document.getElementById('shop-photo-prev');
-                    img.src = tempShopImage; img.style.display = 'block';
-                }; r.readAsDataURL(input.files[0]);
-            }
-        }
-        function shareShopList() {
-            let txt="Bevásárlólista:\n"; shopItems.forEach(i=>txt+=`- ${i.qty}x ${i.text}\n`);
-            window.location.href = 'median://share?text=' + encodeURIComponent(txt) + '&title=Lista';
-        }
-        function shareProjectList() {
-            const p=projects.find(x=>x.id==currentDetailId);
-            const items=shopItems.filter(x=>x.projectId==currentDetailId);
-            let txt=p.client+" Anyaglista:\n"; items.forEach(i=>txt+=`- ${i.qty}x ${i.text}\n`);
-            window.location.href = 'median://share?text=' + encodeURIComponent(txt) + '&title=Lista';
-        }
-        function editProject() {
-             const p = projects.find(x => x.id == currentDetailId);
-             openModal('detail-edit');
-             document.getElementById('edit-client').value = p.client;
-             document.getElementById('edit-phone').value = p.phone || '';
-             document.getElementById('edit-email').value = p.email || '';
-             document.getElementById('edit-address').value = p.address || '';
-             document.getElementById('edit-note').value = p.note || '';
-        }
-        function saveEdit() {
-            const p = projects.find(x => x.id == currentDetailId);
-            p.client = document.getElementById('edit-client').value;
-            p.phone = document.getElementById('edit-phone').value;
-            p.email = document.getElementById('edit-email').value;
-            p.address = document.getElementById('edit-address').value;
-            p.note = document.getElementById('edit-note').value;
-            localStorage.setItem('fn104_projects', JSON.stringify(projects));
-            closeModal(); openDetail(currentDetailId); showToast('Mentve');
-        }
-        function confirmAction(choice) {
-            document.getElementById('confirm-modal').style.display='none';
-            document.getElementById('modal-overlay').style.display='none';
-            if(choice && pendingCallback) pendingCallback();
-        }
-        function askConfirm(msg, cb) {
-            document.getElementById('confirm-msg').innerText=msg; pendingCallback=cb;
-            document.getElementById('modal-overlay').style.display='block';
-            document.getElementById('confirm-modal').style.display='flex';
-        }
-        function handleFavoriteClick() {
-            const v=document.getElementById('shop-input').value;
-            if(v && !favorites.includes(v)) { favorites.push(v); localStorage.setItem('fn104_favs', JSON.stringify(favorites)); showToast('Kedvenc!'); }
-            else { 
-                const c=document.getElementById('fav-list-container'); c.innerHTML='';
-                favorites.forEach(f=>c.innerHTML+=`<div class="fav-item" onclick="document.getElementById('shop-input').value='${f}';closeModal()">${f}</div>`);
-                openModal('fav-box');
-            }
-        }
-        function openItemEdit(id) {
-            const i=shopItems.find(x=>x.id==id);
-            openModal('item-edit-box');
-            document.getElementById('item-edit-id').value=i.id;
-            document.getElementById('item-edit-text').value=i.text;
-            document.getElementById('item-edit-qty').value=i.qty;
-            document.getElementById('item-edit-code').value=i.code||'';
-            document.getElementById('item-edit-note').value=i.note||'';
-        }
-        function saveItemEdit() {
-            const id=document.getElementById('item-edit-id').value;
-            const i=shopItems.find(x=>x.id==id);
-            i.text=document.getElementById('item-edit-text').value;
-            i.qty=document.getElementById('item-edit-qty').value;
-            i.code=document.getElementById('item-edit-code').value;
-            i.note=document.getElementById('item-edit-note').value;
-            localStorage.setItem('fn104_shop', JSON.stringify(shopItems));
-            closeModal(); renderShop(); if(currentDetailId) renderDetailList();
-        }
-        function filterProjects(v) {
-            const l=document.getElementById('projects-list'); l.innerHTML='';
-            projects.filter(p=>p.client.toLowerCase().includes(v.toLowerCase())).forEach(p=>l.innerHTML+=`<div class="card" onclick="openDetail(${p.id})"><b>${p.client}</b></div>`);
-        }
-        function openImg(src) { showToast('Kép megtekintése nem támogatott'); }
-        function exportData() {
-            const d = JSON.stringify({p:projects, s:shopItems, f:favorites, pr:profile, q:savedQuotes});
-            const b = new Blob([d],{type:'text/json'});
-            const a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download='mentes.json'; a.click();
-        }
-        function importData(el) {
-            const fr = new FileReader();
-            fr.onload = (e) => {
-                try {
-                    const d = JSON.parse(e.target.result);
-                    if(d.p && d.s) {
-                        projects = d.p; shopItems = d.s; if(d.f) favorites = d.f; if(d.pr) profile = d.pr; if(d.q) savedQuotes = d.q;
-                        localStorage.setItem('fn104_projects', JSON.stringify(projects));
-                        localStorage.setItem('fn104_shop', JSON.stringify(shopItems));
-                        localStorage.setItem('fn104_favs', JSON.stringify(favorites));
-                        localStorage.setItem('fn104_profile', JSON.stringify(profile));
-                        localStorage.setItem('fn104_quotes', JSON.stringify(savedQuotes));
-                        showToast('Visszatöltve!'); setTimeout(()=>location.reload(), 1000);
-                    }
-                } catch(e) { showToast('Hibás fájl!'); }
-            }; fr.readAsText(el.files[0]);
-        }
+        function goToShopForCurrentProject() { if(!currentDetailId)return; switchTab('shop'); setTimeout(()=>{const s=document.getElementById('shop-project-select');if(s){s.value=currentDetailId;updateRoomSelectInShop();}},50); closeModal(); }
+        function updateShopSelect() { const s=document.getElementById('shop-project-select'); s.innerHTML='<option value="">-- Raktár --</option>'+projects.map(p=>`<option value="${p.id}">${p.client}</option>`).join(''); updateRoomSelectInShop(); }
+        function updateRoomSelectInShop() { const pid=document.getElementById('shop-project-select').value; const s=document.getElementById('shop-room-select'); s.innerHTML='<option value="">(Nincs)</option>'; if(pid){const p=projects.find(x=>x.id==pid);if(p&&p.rooms)s.innerHTML+=p.rooms.map(r=>`<option value="${r}">${r}</option>`).join('');} }
+        function handleShopPhoto(input) { if(input.files&&input.files[0]){const r=new FileReader();r.onload=e=>{tempShopImage=e.target.result;document.getElementById('shop-photo-prev').src=tempShopImage;document.getElementById('shop-photo-prev').style.display='block';};r.readAsDataURL(input.files[0]);}}
+        function shareShopList() { let t="Bevásárlólista:\n"; shopItems.forEach(i=>t+=`- ${i.qty}x ${i.text}\n`); window.location.href='median://share?text='+encodeURIComponent(t)+'&title=Lista'; }
+        function shareProjectList() { const p=projects.find(x=>x.id==currentDetailId); const i=shopItems.filter(x=>x.projectId==currentDetailId); let t=p.client+" Anyaglista:\n"; i.forEach(x=>t+=`- ${x.qty}x ${x.text}\n`); window.location.href='median://share?text='+encodeURIComponent(t)+'&title=Lista'; }
+        function saveCurrentQuote() { if(!quoteItems.length)return showToast('Üres!'); const c=document.getElementById('quote-client-name').value||'Névtelen', d=document.getElementById('quote-date').value, t=quoteItems.reduce((a,b)=>a+b.total,0); savedQuotes.unshift({id:Date.now(),client:c,date:d,total:t,items:[...quoteItems]}); localStorage.setItem('fn105_quotes', JSON.stringify(savedQuotes)); renderSavedQuotes(); showToast('Mentve!'); }
+        function renderSavedQuotes() { document.getElementById('saved-quotes-list').innerHTML = savedQuotes.length ? savedQuotes.map(q=>`<div class="saved-quote-item"><div><b>${q.client}</b><br><small>${q.date}</small></div><div><button onclick="loadQuote(${q.id})" style="border:none;color:#007bff;background:none;font-size:18px;"><i class="fas fa-upload"></i></button><button onclick="deleteQuote(${q.id})" style="border:none;color:#dc3545;background:none;font-size:18px;margin-left:10px;"><i class="fas fa-trash"></i></button></div></div>`).join('') : '<div style="text-align:center;color:#999;padding:10px;">Nincs mentett ajánlat.</div>'; }
+        function loadQuote(id) { const q=savedQuotes.find(x=>x.id==id); if(!q)return; quoteItems=[...q.items]; document.getElementById('quote-client-name').value=q.client; renderQuoteItems(); showToast('Betöltve!'); }
+        function deleteQuote(id) { if(!confirm('Törlöd?'))return; savedQuotes=savedQuotes.filter(x=>x.id!=id); localStorage.setItem('fn105_quotes',JSON.stringify(savedQuotes)); renderSavedQuotes(); }
+        function handleFavoriteClick() { const v=document.getElementById('shop-input').value; if(v&&!favorites.includes(v)){favorites.push(v);localStorage.setItem('fn105_favs',JSON.stringify(favorites));showToast('Kedvenc!');}else{const c=document.getElementById('fav-list-container');c.innerHTML=favorites.map(f=>`<div class="fav-item" onclick="document.getElementById('shop-input').value='${f}';closeModal()">${f}</div>`).join('');openModal('fav-box');} }
+        function editProject() { const p=projects.find(x=>x.id==currentDetailId); openModal('detail-edit'); document.getElementById('edit-client').value=p.client; document.getElementById('edit-phone').value=p.phone||''; document.getElementById('edit-email').value=p.email||''; document.getElementById('edit-address').value=p.address||''; document.getElementById('edit-note').value=p.note||''; }
+        function saveEdit() { const p=projects.find(x=>x.id==currentDetailId); p.client=document.getElementById('edit-client').value; p.phone=document.getElementById('edit-phone').value; p.email=document.getElementById('edit-email').value; p.address=document.getElementById('edit-address').value; p.note=document.getElementById('edit-note').value; localStorage.setItem('fn105_projects',JSON.stringify(projects)); closeModal(); openDetail(currentDetailId); showToast('Mentve'); }
+        function filterProjects(v) { document.getElementById('projects-list').innerHTML=projects.filter(p=>p.client.toLowerCase().includes(v.toLowerCase())).map(p=>`<div class="card" onclick="openDetail(${p.id})"><b>${p.client}</b></div>`).join(''); }
+        function confirmAction(c) { document.getElementById('confirm-modal').style.display='none'; document.getElementById('modal-overlay').style.display='none'; if(c&&pendingCallback)pendingCallback(); }
+        function openItemEdit(id) { const i=shopItems.find(x=>x.id==id); openModal('item-edit-box'); document.getElementById('item-edit-id').value=i.id; document.getElementById('item-edit-text').value=i.text; document.getElementById('item-edit-qty').value=i.qty; document.getElementById('item-edit-code').value=i.code||''; document.getElementById('item-edit-note').value=i.note||''; }
+        function saveItemEdit() { const id=document.getElementById('item-edit-id').value; const i=shopItems.find(x=>x.id==id); i.text=document.getElementById('item-edit-text').value; i.qty=document.getElementById('item-edit-qty').value; i.code=document.getElementById('item-edit-code').value; i.note=document.getElementById('item-edit-note').value; localStorage.setItem('fn105_shop',JSON.stringify(shopItems)); closeModal(); renderShop(); if(currentDetailId)renderDetailList(); }
+        function exportData() { const d=JSON.stringify({p:projects,s:shopItems,f:favorites,pr:profile,q:savedQuotes}); const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([d],{type:'text/json'})); a.download='mentes.json'; a.click(); }
+        function importData(el) { const fr=new FileReader(); fr.onload=e=>{try{const d=JSON.parse(e.target.result); if(d.p&&d.s){projects=d.p;shopItems=d.s;if(d.f)favorites=d.f;if(d.pr)profile=d.pr;if(d.q)savedQuotes=d.q; localStorage.setItem('fn105_projects',JSON.stringify(projects)); localStorage.setItem('fn105_shop',JSON.stringify(shopItems)); localStorage.setItem('fn105_favs',JSON.stringify(favorites)); localStorage.setItem('fn105_profile',JSON.stringify(profile)); localStorage.setItem('fn105_quotes',JSON.stringify(savedQuotes)); showToast('Visszatöltve!'); setTimeout(()=>location.reload(),1000);}}catch(e){showToast('Hiba!');}}; fr.readAsText(el.files[0]); }
     </script>
 </body>
 </html>
