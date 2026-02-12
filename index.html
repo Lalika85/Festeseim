@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>FestőNapló v9.9 Pro</title>
+    <title>FestőNapló v10.0 Pro Max</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
@@ -17,22 +17,21 @@
             display: flex; flex-direction: column; height: 100vh; overflow: hidden;
         }
 
-        /* --- HEADER --- */
+        /* --- HEADER & NAV --- */
         header { flex: 0 0 70px; background: #fff; border-bottom: 1px solid #ddd; display: flex; justify-content: space-between; align-items: center; padding: 0 20px; z-index: 10; }
         h1 { margin: 0; font-size: 20px; color: #333; }
         .header-actions button { margin-left: 10px; font-size: 20px; color: #555; background: none; border: none; padding: 10px; }
 
-        /* --- CONTENT --- */
-        #main-container { flex: 1; overflow-y: auto; padding: 20px; padding-bottom: 80px; background-color: #f0f2f5; }
-
-        /* --- NAVBAR --- */
         .navbar { flex: 0 0 80px; background: #fff; border-top: 1px solid #eee; display: flex; justify-content: space-around; align-items: flex-start; padding-top: 10px; z-index: 10; }
         .nav-btn { background: none; border: none; display: flex; flex-direction: column; align-items: center; color: #bbb; font-size: 10px; font-weight: bold; width: 60px; }
         .nav-btn i { font-size: 24px; margin-bottom: 5px; }
         .nav-btn.active { color: #007bff; }
         .fab { width: 56px; height: 56px; background: #007bff; border-radius: 50%; color: white; border: none; font-size: 24px; box-shadow: 0 4px 15px rgba(0,123,255,0.5); display: flex; align-items: center; justify-content: center; margin-top: -30px; }
 
-        /* --- CARDS & INPUTS --- */
+        /* --- CONTENT --- */
+        #main-container { flex: 1; overflow-y: auto; padding: 20px; padding-bottom: 80px; background-color: #f0f2f5; }
+
+        /* --- UI ELEMEK --- */
         .card { background: #fff; border-radius: 12px; padding: 15px; margin-bottom: 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.03); border: 1px solid #eef0f2; }
         .input-group { margin-bottom: 15px; }
         label { display: block; font-size: 11px; font-weight: bold; color: #666; margin-bottom: 5px; text-transform: uppercase; }
@@ -41,175 +40,115 @@
         
         button.primary { width: 100%; background: #007bff; color: white; border: none; padding: 16px; border-radius: 12px; font-size: 16px; font-weight: bold; }
         button.secondary { width: 100%; background: #f0f0f0; color: #333; border: none; padding: 16px; border-radius: 12px; font-size: 14px; font-weight: bold; margin-top: 10px; }
-        button.pro-btn { width: 100%; background: linear-gradient(45deg, #1e3c72, #2a5298); color: white; border: none; padding: 16px; border-radius: 12px; font-size: 16px; font-weight: bold; margin-top: 10px; display: flex; align-items: center; justify-content: center; gap: 10px; }
+        button.success { width: 100%; background: #28a745; color: white; border: none; padding: 16px; border-radius: 12px; font-size: 16px; font-weight: bold; margin-top:10px; }
         
         .icon-btn { border: none; background: none; padding: 10px; font-size: 18px; }
-        .btn-edit { color: #007bff; }
         .btn-delete { color: #dc3545; }
 
-        .contact-row { display: flex; gap: 10px; margin: 10px 0 20px 0; }
-        .contact-btn { flex: 1; padding: 12px; border-radius: 8px; text-decoration: none; font-weight: bold; color: white; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 14px; }
-        .btn-call { background-color: #28a745; }
-        .btn-email { background-color: #17a2b8; }
-        .btn-disabled { background-color: #ddd; color: #888; pointer-events: none; }
+        /* --- QUOTE BUILDER STYLES --- */
+        .quote-row { display: flex; gap: 5px; margin-bottom: 10px; align-items: center; border-bottom: 1px solid #eee; padding-bottom: 10px; }
+        .quote-total { font-size: 20px; font-weight: bold; color: #007bff; text-align: right; margin-top: 20px; border-top: 2px solid #eee; padding-top: 10px; }
+        .quote-header { background: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 15px; border: 1px solid #e9ecef; }
 
-        .nav-map-link { background-color: #4285f4; color: white; text-decoration: none; padding: 8px 12px; border-radius: 6px; font-weight: bold; font-size: 14px; display: flex; gap: 5px; align-items: center; }
-
-        .check-circle { width: 28px; height: 28px; border-radius: 50%; border: 2px solid #ccc; display: flex; align-items: center; justify-content: center; margin-right: 15px; }
-        .item-done .check-circle { background-color: #28a745; border-color: #28a745; color: white; }
-        .item-done .item-content { text-decoration: line-through; color: #aaa; }
-        .material-item { display: flex; gap: 15px; border-bottom: 1px solid #f0f0f0; padding: 15px 0; align-items: center; }
-        
-        .room-tag { background: #6c757d; color: white; padding: 4px 8px; border-radius: 4px; font-size: 12px; margin-right: 5px; display: inline-block; margin-bottom: 5px; }
-        .status-badge { display: inline-block; padding: 4px 8px; border-radius: 6px; font-size: 11px; font-weight: bold; text-transform: uppercase; margin-bottom: 5px; }
-        .st-active { background: #e3f2fd; color: #0d47a1; } .st-pending { background: #fff3e0; color: #e65100; } .st-done { background: #e8f5e9; color: #1b5e20; }
-
-        .photo-btn { border: 2px dashed #007bff; color: #007bff; background: #f0f8ff; padding: 20px; border-radius: 10px; text-align: center; font-weight: bold; display: block; margin-bottom: 10px; }
-        .photo-preview { width: 100%; height: 200px; object-fit: contain; background: #f9f9f9; border-radius: 8px; display: none; margin-bottom: 10px; border: 1px solid #ddd; }
-        
-        .note-block { background: #fff3cd; padding: 15px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid #ffc107; color: #856404; font-size: 14px; line-height: 1.4; display: none; }
-        .fav-item { padding: 15px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; }
-
-        /* --- MODALOK --- */
+        /* --- MODALOK & TOAST --- */
         .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; display: none; }
-        .modal-box { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 85%; max-height: 80%; background: #fff; border-radius: 15px; z-index: 1001; display: none; flex-direction: column; padding: 20px; box-shadow: 0 10px 40px rgba(0,0,0,0.4); overflow-y: auto; }
+        .modal-box { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 90%; max-height: 90%; background: #fff; border-radius: 15px; z-index: 1001; display: none; flex-direction: column; padding: 20px; box-shadow: 0 10px 40px rgba(0,0,0,0.4); overflow-y: auto; }
         
         #toast { visibility: hidden; min-width: 250px; background-color: #333; color: #fff; text-align: center; border-radius: 50px; padding: 16px; position: fixed; z-index: 3000; left: 50%; bottom: 30px; transform: translateX(-50%); font-size: 14px; opacity: 0; transition: opacity 0.3s; }
         #toast.show { visibility: visible; opacity: 1; }
 
-        #confirm-modal { z-index: 2000; text-align: center; }
-        .confirm-btn-group { display: flex; gap: 10px; margin-top: 20px; }
-
         .view { display: none; }
         .view.active { display: block; }
-        #view-detail { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #fff; z-index: 500; display: none; flex-direction: column; }
-        #view-detail.show { display: flex; }
-        .detail-top-bar { padding: 15px; border-bottom: 1px solid #eee; background: #fff; display: flex; justify-content: space-between; align-items: center; }
-        .detail-content { flex: 1; overflow-y: auto; padding: 20px; padding-bottom: 100px; }
+        
+        /* HELYISÉG CÍMKÉK */
+        .room-tag { background: #6c757d; color: white; padding: 4px 8px; border-radius: 4px; font-size: 12px; margin-right: 5px; display: inline-block; margin-bottom: 5px; }
+
+        /* SHOP ITEMS */
+        .check-circle { width: 28px; height: 28px; border-radius: 50%; border: 2px solid #ccc; display: flex; align-items: center; justify-content: center; margin-right: 15px; }
+        .item-done .check-circle { background-color: #28a745; border-color: #28a745; color: white; }
+        .item-done .item-content { text-decoration: line-through; color: #aaa; }
     </style>
 </head>
 <body>
 
     <header>
-        <div><div style="font-size:10px;font-weight:bold;color:#888;">FESTŐNAPLÓ v9.9</div><h1 id="page-title">Áttekintés</h1></div>
-        <div class="header-actions">
-            <button id="header-share-btn" onclick="shareCurrentShopList()" style="display:none;"><i class="fas fa-share-alt"></i></button>
-            <button onclick="openModal('backup-box')"><i class="fas fa-save"></i></button>
-        </div>
+        <div><div style="font-size:10px;font-weight:bold;color:#888;">FESTŐNAPLÓ v10.0</div><h1 id="page-title">Áttekintés</h1></div>
     </header>
 
     <div id="main-container">
         <div id="view-dashboard" class="view active">
+            <h3 style="color:#666;">Gyorsmenü</h3>
+            <div class="card" onclick="switchTab('quote')" style="cursor:pointer; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color:white;">
+                <div style="font-size:18px; font-weight:bold;"><i class="fas fa-file-invoice-dollar"></i> Új Árajánlat</div>
+                <div style="font-size:12px; opacity:0.8; margin-top:5px;">Profi PDF készítése ügyfeleknek</div>
+            </div>
+            
             <h3 style="color:#666;">Legutóbbi munkák</h3>
             <div id="dashboard-list"></div>
         </div>
+
         <div id="view-projects" class="view">
             <div class="input-group"><input type="text" placeholder="Keresés..." onkeyup="filterProjects(this.value)"></div>
             <div id="projects-list"></div>
         </div>
-        <div id="view-shop" class="view">
+
+        <div id="view-quote" class="view">
+            <div class="card quote-header">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <h3 style="margin:0; color:#333;">Cégadatok (Fejléc)</h3>
+                    <button onclick="openModal('profile-box')" style="background:#e9ecef; border:none; padding:8px 12px; border-radius:6px; font-weight:bold; color:#333;"><i class="fas fa-cog"></i> Beállítás</button>
+                </div>
+                <div id="quote-company-preview" style="font-size:13px; color:#666; margin-top:10px;">
+                    <i>Még nincsenek adatok. Kattints a beállításra!</i>
+                </div>
+            </div>
+
             <div class="card">
-                <h3>Új anyag</h3>
-                <div style="display:flex; gap:10px; margin-bottom:10px;">
-                    <input type="number" id="shop-qty" value="1" style="width:70px;" placeholder="Db">
-                    <div style="flex:1; display:flex; gap:5px;">
-                        <input type="text" id="shop-input" placeholder="Pl. Dulux Latex" style="margin-bottom:0;">
-                        <button onclick="handleFavoriteClick()" style="background:#ffc107; border:none; border-radius:8px; width:50px; color:#fff; font-size:18px;"><i class="fas fa-star"></i></button>
+                <h3 style="margin-top:0;">Ügyfél adatai</h3>
+                <div class="input-group"><input type="text" id="quote-client-name" placeholder="Ügyfél neve"></div>
+                <div class="input-group"><input type="text" id="quote-client-address" placeholder="Ügyfél címe / Munka helyszíne"></div>
+                <div class="input-group"><input type="date" id="quote-date"></div>
+            </div>
+
+            <div class="card">
+                <h3 style="margin-top:0;">Tételek</h3>
+                <div id="quote-items-container"></div>
+                
+                <div style="background:#f8f9fa; padding:10px; border-radius:8px; margin-top:10px; border:1px dashed #ccc;">
+                    <div style="display:flex; gap:5px; margin-bottom:5px;">
+                        <input type="text" id="q-item-name" placeholder="Munka megnevezése (pl. Glettelés)" style="flex:2;">
+                        <input type="number" id="q-item-qty" placeholder="Menny." style="flex:1;">
+                    </div>
+                    <div style="display:flex; gap:5px;">
+                        <select id="q-item-unit" style="flex:1;">
+                            <option value="m²">m²</option>
+                            <option value="db">db</option>
+                            <option value="fm">fm</option>
+                            <option value="óra">óra</option>
+                            <option value="alkalom">alkalom</option>
+                        </select>
+                        <input type="number" id="q-item-price" placeholder="Ár/egység (Ft)" style="flex:2;">
+                        <button onclick="addQuoteItem()" style="background:#28a745; color:white; border:none; border-radius:8px; width:50px; font-size:20px;">+</button>
                     </div>
                 </div>
-                <div class="input-group"><input type="text" id="shop-code" placeholder="Színkód"></div>
-                <div class="input-group"><input type="text" id="shop-note" placeholder="Megjegyzés"></div>
-                <label class="photo-btn"><i class="fas fa-camera"></i> FOTÓZÁS<input type="file" id="shop-photo" accept="image/*" style="display:none;" onchange="handleShopPhoto(this)"></label>
-                <img id="shop-photo-prev" class="photo-preview">
-                <div style="display:flex; gap:10px;">
-                    <div style="flex:1"><label>Ügyfél</label><select id="shop-project-select" onchange="updateRoomSelectInShop()" style="background:#f9f9f9;"><option value="">-- Raktár --</option></select></div>
-                    <div style="flex:1"><label>Helyiség</label><select id="shop-room-select" style="background:#f9f9f9;"><option value="">(Nincs)</option></select></div>
-                </div>
-                <button onclick="addShopItem()" class="primary" style="margin-top:10px;">RÖGZÍTÉS</button>
+
+                <div class="quote-total" id="quote-grand-total">Végösszeg: 0 Ft</div>
             </div>
-            <h3>Bevásárlólista</h3>
-            <div id="shop-list"></div>
+
+            <button onclick="generateProQuote()" class="primary" style="margin-bottom:20px; background: linear-gradient(45deg, #1e3c72, #2a5298);"><i class="fas fa-file-pdf"></i> PDF ÁRAJÁNLAT LETÖLTÉSE</button>
         </div>
-        <div id="view-calc" class="view">
+
+        <div id="view-shop" class="view">
             <div class="card">
-                <h3>Festék Számolás</h3>
-                <div class="input-group"><label>Falfelület (nm)</label><input type="number" id="calc-area"></div>
-                <div style="display:flex; gap:15px;">
-                    <div class="input-group"><label>Rétegek</label><input type="number" id="calc-layers" value="2"></div>
-                    <div class="input-group"><label>Kiadósság</label><input type="number" id="calc-coverage" value="10"></div>
+                <h3>Bevásárlólista</h3>
+                <div style="display:flex; gap:10px; margin-bottom:10px;">
+                    <input type="number" id="shop-qty" value="1" style="width:70px;" placeholder="Db">
+                    <input type="text" id="shop-input" placeholder="Anyag neve..." style="flex:1;">
+                    <button onclick="addShopItem()" class="primary" style="width:50px;">+</button>
                 </div>
-                <button onclick="calculatePaint()" class="primary">SZÁMOLÁS</button>
-                <div id="calc-result-box" class="calc-result-box" style="display:none; text-align:center; padding:15px; margin-top:10px; background:#e3f2fd; border-radius:10px;"><div style="font-size:32px; font-weight:bold; color:#0d47a1;" id="calc-result-num"></div></div>
+                <div id="shop-list"></div>
+                <button onclick="shareShopList()" class="secondary" style="width:100%"><i class="fas fa-share-alt"></i> Lista küldése</button>
             </div>
-        </div>
-    </div>
-
-    <div id="view-detail">
-        <div class="detail-top-bar">
-            <button onclick="closeDetail()" style="background:none; border:none; color:#007bff; font-weight:bold; font-size:16px;"><i class="fas fa-chevron-left"></i> Vissza</button>
-            <div>
-                <button onclick="editProject()" style="background:none; border:none; color:#555; font-size:20px; margin-right:10px;"><i class="fas fa-pen"></i></button>
-                <button onclick="askConfirm('Biztosan törlöd a projektet?', deleteCurrentProject)" style="background:none; border:none; color:#dc3545; font-size:20px;"><i class="fas fa-trash"></i></button>
-            </div>
-        </div>
-        <div class="detail-content" id="detail-display">
-            <div id="d-status-badge" style="margin-bottom:15px;"></div>
-            <div class="detail-block"><label>Ügyfél</label><div class="detail-value" id="d-client"></div></div>
-            
-            <div id="d-note-block" class="note-block"></div>
-
-            <div class="contact-row">
-                <a href="#" id="btn-call" class="contact-btn btn-call"><i class="fas fa-phone"></i> Hívás</a>
-                <a href="#" id="btn-mail" class="contact-btn btn-email"><i class="fas fa-envelope"></i> Email</a>
-            </div>
-            <div class="detail-block">
-                <label>Cím</label>
-                <div style="display:flex; align-items:center; gap:10px;">
-                    <div class="detail-value" id="d-address" style="flex:1;"></div>
-                    <a href="#" id="map-link" target="_blank" class="nav-map-link"><i class="fas fa-location-arrow"></i> Útvonal</a>
-                </div>
-            </div>
-
-            <button onclick="generatePDF()" class="pro-btn"><i class="fas fa-file-pdf"></i> Árajánlat / PDF Letöltés</button>
-
-            <div style="display:flex; gap:20px; margin-top:20px;">
-                <div class="detail-block" style="flex:1;"><label>Kezdés</label><div class="detail-value" id="d-start"></div></div>
-                <div class="detail-block" style="flex:1;"><label>Vége</label><div class="detail-value" id="d-end"></div></div>
-            </div>
-            <div class="card" style="background:#f9f9f9; border:none;">
-                <label>Helyiségek hozzáadása</label>
-                <div style="display:flex; gap:10px; margin-bottom:5px;">
-                    <input type="text" id="new-room-input" placeholder="Helyiség (pl. Konyha)" style="flex:2;">
-                    <input type="number" id="new-room-size" placeholder="m²" style="flex:1;">
-                </div>
-                <button onclick="addRoomToProject()" class="primary" style="padding:10px;">Hozzáadás</button>
-                <div id="d-room-tags" style="margin-top:15px;"></div>
-            </div>
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-top:20px; margin-bottom:10px;">
-                <h3 style="margin:0;">Anyagok</h3>
-                <div>
-                    <button onclick="shareProjectList()" style="background:#eee; padding:8px 12px; border:none; border-radius:6px; margin-right:5px;"><i class="fas fa-share-alt"></i></button>
-                    <button onclick="goToShopForCurrentProject()" style="background:#e3f2fd; color:#007bff; padding:8px 12px; border:none; border-radius:6px;"><i class="fas fa-plus"></i></button>
-                </div>
-            </div>
-            <div id="d-materials-list"></div>
-        </div>
-
-        <div class="detail-content" id="detail-edit" style="display:none;">
-            <h2>Szerkesztés</h2>
-            <input type="hidden" id="edit-id">
-            <div class="input-group"><label>Név</label><input type="text" id="edit-client"></div>
-            <div class="input-group"><label>Telefon</label><input type="tel" id="edit-phone"></div>
-            <div class="input-group"><label>Email</label><input type="email" id="edit-email"></div>
-            <div class="input-group"><label>Cím</label><input type="text" id="edit-address"></div>
-            <div class="input-group"><label>Jegyzet</label><textarea id="edit-note" placeholder="Fontos infók..."></textarea></div>
-            <div class="input-group"><label>Státusz</label><select id="edit-status"><option value="active">Folyamatban</option><option value="pending">Függő</option><option value="done">Kész</option></select></div>
-            <div style="display:flex; gap:10px;">
-                <div class="input-group" style="flex:1"><label>Kezdés</label><input type="date" id="edit-start"></div>
-                <div class="input-group" style="flex:1"><label>Vége</label><input type="date" id="edit-end"></div>
-            </div>
-            <button onclick="saveEdit()" class="primary">Mentés</button>
-            <button onclick="cancelEdit()" class="secondary">Mégse</button>
         </div>
     </div>
 
@@ -217,468 +156,307 @@
         <button class="nav-btn active" onclick="switchTab('dashboard')" id="btn-dash"><i class="fas fa-home"></i></button>
         <button class="nav-btn" onclick="switchTab('projects')" id="btn-proj"><i class="fas fa-list"></i></button>
         <button class="fab" onclick="openModal('new-project-box')"><i class="fas fa-plus"></i></button>
-        <button class="nav-btn" onclick="switchTab('calc')" id="btn-calc"><i class="fas fa-calculator"></i></button>
+        <button class="nav-btn" onclick="switchTab('quote')" id="btn-quote"><i class="fas fa-file-invoice"></i></button>
         <button class="nav-btn" onclick="switchTab('shop')" id="btn-shop"><i class="fas fa-shopping-basket"></i></button>
     </nav>
 
-    <div id="toast">Üzenet</div>
-    <div id="confirm-modal" class="modal-box" style="display:none;">
-        <h3 id="confirm-msg">Biztos?</h3>
-        <div class="confirm-btn-group">
-            <button onclick="confirmAction(true)" class="primary" style="background:#dc3545;">Igen</button>
-            <button onclick="confirmAction(false)" class="secondary" style="margin-top:0;">Nem</button>
-        </div>
+    <div id="profile-box" class="modal-box">
+        <h2>Vállalkozás Adatai</h2>
+        <p style="font-size:12px; color:#666;">Ezek az adatok kerülnek az árajánlat fejlécére.</p>
+        <div class="input-group"><label>Cégnév / Név</label><input type="text" id="prof-name" placeholder="Pl. Kiss János E.V."></div>
+        <div class="input-group"><label>Cím</label><input type="text" id="prof-address" placeholder="Pl. 1011 Budapest, Fő u. 1."></div>
+        <div class="input-group"><label>Adószám</label><input type="text" id="prof-tax" placeholder="Pl. 12345678-1-42"></div>
+        <div class="input-group"><label>Telefon</label><input type="text" id="prof-phone" placeholder="Pl. +36 30 123 4567"></div>
+        <div class="input-group"><label>Email</label><input type="text" id="prof-email" placeholder="Pl. janos@festo.hu"></div>
+        <div class="input-group"><label>Bankszámlaszám</label><input type="text" id="prof-bank" placeholder="Pl. 11773333-..."></div>
+        <button onclick="saveProfile()" class="success">Mentés</button>
+        <button onclick="closeModal()" class="secondary">Bezárás</button>
     </div>
-    <div id="modal-overlay" class="modal-overlay"></div>
 
     <div id="new-project-box" class="modal-box">
-        <h2>Új Ügyfél</h2>
-        <div class="input-group"><label>Név</label><input type="text" id="inp-client"></div>
-        <div class="input-group"><label>Telefon</label><input type="tel" id="inp-phone"></div>
-        <div class="input-group"><label>Email</label><input type="email" id="inp-email"></div>
+        <h2>Új Munka</h2>
+        <div class="input-group"><label>Ügyfél</label><input type="text" id="inp-client"></div>
         <div class="input-group"><label>Cím</label><input type="text" id="inp-address"></div>
-        <div class="input-group"><label>Jegyzet</label><textarea id="inp-note" placeholder="Pl. kapukód, kutya neve..."></textarea></div>
-        <div class="input-group"><label>Státusz</label><select id="inp-status"><option value="active">Folyamatban</option><option value="pending">Függő</option></select></div>
-        <div style="display:flex; gap:10px;">
-            <div class="input-group" style="flex:1"><label>Kezdés</label><input type="date" id="inp-start"></div>
-            <div class="input-group" style="flex:1"><label>Vége</label><input type="date" id="inp-end"></div>
-        </div>
         <button onclick="saveProject()" class="primary">Létrehozás</button>
         <button onclick="closeModal()" class="secondary">Mégse</button>
     </div>
 
-    <div id="backup-box" class="modal-box">
-        <h2>Mentés</h2>
-        <button onclick="exportData()" class="primary" style="margin-bottom:10px; background:#28a745;">Letöltés</button>
-        <label class="primary" style="background:#007bff; text-align:center; display:block;">Visszatöltés<input type="file" style="display:none;" onchange="importData(this)"></label>
-        <button onclick="closeModal()" class="secondary">Bezárás</button>
+    <div id="view-detail" class="modal-box" style="width:100%; height:100%; max-height:100%; top:0; left:0; transform:none; border-radius:0;">
+        <div style="display:flex; justify-content:space-between; margin-bottom:20px;">
+            <button onclick="closeModal()" style="border:none; background:none; font-weight:bold; color:#007bff;"><i class="fas fa-arrow-left"></i> Vissza</button>
+            <button onclick="deleteCurrentProject()" style="border:none; background:none; color:#dc3545;"><i class="fas fa-trash"></i></button>
+        </div>
+        <h2 id="d-client"></h2>
+        <p id="d-address" style="color:#666;"></p>
+        <div class="card" style="background:#f9f9f9;">
+            <label>Helyiségek</label>
+            <div style="display:flex; gap:5px; margin-bottom:5px;">
+                <input type="text" id="new-room-input" placeholder="Pl. Nappali" style="flex:2;">
+                <input type="number" id="new-room-size" placeholder="m²" style="flex:1;">
+            </div>
+            <button onclick="addRoom()" class="primary" style="padding:10px;">Hozzáadás</button>
+            <div id="d-rooms" style="margin-top:10px;"></div>
+        </div>
     </div>
 
-    <div id="fav-box" class="modal-box">
-        <h2>Gyorslista</h2>
-        <div id="fav-list-container"></div>
-        <button onclick="closeModal()" class="secondary">Bezárás</button>
-    </div>
-
-    <div id="item-edit-box" class="modal-box">
-        <h2>Szerkesztés</h2>
-        <input type="hidden" id="item-edit-id">
-        <div class="input-group"><label>Db</label><input type="number" id="item-edit-qty"></div>
-        <div class="input-group"><label>Név</label><input type="text" id="item-edit-text"></div>
-        <div class="input-group"><label>Kód</label><input type="text" id="item-edit-code"></div>
-        <div class="input-group"><label>Jegyzet</label><input type="text" id="item-edit-note"></div>
-        <button onclick="saveItemEdit()" class="primary">Mentés</button>
-        <button onclick="closeModal()" class="secondary">Mégse</button>
-    </div>
+    <div id="modal-overlay" class="modal-overlay"></div>
+    <div id="toast">Üzenet</div>
 
     <script>
-        // --- CORE & INIT ---
-        let projects = JSON.parse(localStorage.getItem('fn99_projects')) || [];
-        if(projects.length === 0 && localStorage.getItem('fn97_projects')) { projects = JSON.parse(localStorage.getItem('fn97_projects')); }
+        // --- ADATBÁZIS ---
+        let projects = JSON.parse(localStorage.getItem('fn10_projects')) || [];
+        let shopItems = JSON.parse(localStorage.getItem('fn10_shop')) || [];
+        let profile = JSON.parse(localStorage.getItem('fn10_profile')) || {name:'', address:'', tax:'', phone:'', email:'', bank:''};
         
-        let shopItems = JSON.parse(localStorage.getItem('fn99_shop')) || [];
-        if(shopItems.length === 0 && localStorage.getItem('fn97_shop')) { shopItems = JSON.parse(localStorage.getItem('fn97_shop')); }
-        
-        let favorites = JSON.parse(localStorage.getItem('fn99_favs')) || ["Héra Gold", "Dulux", "Glett", "Szalag", "Fólia", "Henger"];
-        
+        let quoteItems = [];
         let currentDetailId = null;
-        let tempShopImage = null;
-        let pendingCallback = null;
 
+        // INIT
         renderDashboard();
-        updateShopSelect();
+        updateProfilePreview();
+        document.getElementById('quote-date').valueAsDate = new Date();
 
+        // --- NAVIGATION ---
         function switchTab(id) {
             document.querySelectorAll('.view').forEach(e => e.classList.remove('active'));
             document.getElementById('view-'+id).classList.add('active');
             document.querySelectorAll('.nav-btn').forEach(e => e.classList.remove('active'));
-            if(id==='dashboard') document.getElementById('btn-dash').classList.add('active');
-            if(id==='projects') document.getElementById('btn-proj').classList.add('active');
-            if(id==='shop') { document.getElementById('btn-shop').classList.add('active'); updateShopSelect(); renderShop(); }
-            if(id==='calc') document.getElementById('btn-calc').classList.add('active');
-            document.getElementById('header-share-btn').style.display = (id === 'shop') ? 'block' : 'none';
-            document.getElementById('page-title').innerText = (id==='dashboard'?'Áttekintés':(id==='projects'?'Munkák':(id==='shop'?'Bolt':'Kalkulátor')));
+            if(document.getElementById('btn-'+id)) document.getElementById('btn-'+id).classList.add('active');
+            document.getElementById('page-title').innerText = (id==='quote' ? 'Árajánlat Készítő' : 'Áttekintés');
             if(id==='projects') renderProjects();
-            if(id==='dashboard') renderDashboard();
+            if(id==='shop') renderShop();
         }
 
-        function showToast(msg) {
-            const t = document.getElementById("toast"); t.innerText = msg; t.className = "show";
-            setTimeout(function(){ t.className = t.className.replace("show", ""); }, 3000);
-        }
-        function askConfirm(msg, callback) {
-            document.getElementById('confirm-msg').innerText = msg;
-            pendingCallback = callback;
-            document.getElementById('modal-overlay').style.display = 'block';
-            document.getElementById('confirm-modal').style.display = 'flex';
-        }
-        function confirmAction(choice) {
-            document.getElementById('confirm-modal').style.display = 'none';
-            document.getElementById('modal-overlay').style.display = 'none';
-            if(choice && pendingCallback) pendingCallback();
-            pendingCallback = null;
-        }
         function openModal(id) {
             document.getElementById('modal-overlay').style.display = 'block';
             document.getElementById(id).style.display = 'flex';
+            if(id === 'profile-box') loadProfileInputs();
         }
         function closeModal() {
             document.querySelectorAll('.modal-box').forEach(e => e.style.display = 'none');
             document.getElementById('modal-overlay').style.display = 'none';
         }
+        function showToast(msg) {
+            const t = document.getElementById("toast"); t.innerText = msg; t.className = "show";
+            setTimeout(()=> t.className = t.className.replace("show", ""), 3000);
+        }
 
-        // --- PDF GENERATOR (PRO FEATURE) ---
-        function generatePDF() {
-            if(!currentDetailId) return;
-            const p = projects.find(x => x.id == currentDetailId);
-            const items = shopItems.filter(i => i.projectId == currentDetailId);
-            const { jsPDF } = window.jspdf;
-            const doc = new jsPDF();
+        // --- PROFILE LOGIC ---
+        function loadProfileInputs() {
+            document.getElementById('prof-name').value = profile.name;
+            document.getElementById('prof-address').value = profile.address;
+            document.getElementById('prof-tax').value = profile.tax;
+            document.getElementById('prof-phone').value = profile.phone;
+            document.getElementById('prof-email').value = profile.email;
+            document.getElementById('prof-bank').value = profile.bank;
+        }
+        function saveProfile() {
+            profile.name = document.getElementById('prof-name').value;
+            profile.address = document.getElementById('prof-address').value;
+            profile.tax = document.getElementById('prof-tax').value;
+            profile.phone = document.getElementById('prof-phone').value;
+            profile.email = document.getElementById('prof-email').value;
+            profile.bank = document.getElementById('prof-bank').value;
+            localStorage.setItem('fn10_profile', JSON.stringify(profile));
+            updateProfilePreview();
+            closeModal();
+            showToast('Cégadatok mentve!');
+        }
+        function updateProfilePreview() {
+            const p = document.getElementById('quote-company-preview');
+            if(profile.name) {
+                p.innerHTML = `<b>${profile.name}</b><br>${profile.address}<br>Tel: ${profile.phone}`;
+            } else {
+                p.innerHTML = '<i>Még nincsenek adatok. Kattints a beállításra!</i>';
+            }
+        }
 
-            // Címsor
-            doc.setFontSize(22);
-            doc.text("Árajánlat / Anyaglista", 20, 20);
+        // --- QUOTE LOGIC (AZ ÁRAJÁNLAT MOTOR) ---
+        function addQuoteItem() {
+            const name = document.getElementById('q-item-name').value;
+            const qty = parseFloat(document.getElementById('q-item-qty').value);
+            const unit = document.getElementById('q-item-unit').value;
+            const price = parseFloat(document.getElementById('q-item-price').value);
+
+            if(!name || !qty || !price) return showToast('Tölts ki minden mezőt!');
+
+            quoteItems.push({ name, qty, unit, price, total: qty * price });
             
-            // Ügyfél adatok
-            doc.setFontSize(12);
-            doc.text(`Ügyfél: ${p.client}`, 20, 40);
-            doc.text(`Cím: ${p.address || '-'}`, 20, 50);
-            doc.text(`Dátum: ${new Date().toLocaleDateString('hu-HU')}`, 20, 60);
+            // Törlés inputok
+            document.getElementById('q-item-name').value = '';
+            document.getElementById('q-item-qty').value = '';
+            document.getElementById('q-item-price').value = '';
+            
+            renderQuoteItems();
+        }
 
-            // Táblázat
-            const tableData = items.map(i => [i.qty, i.text, i.room || '-']);
-            doc.autoTable({
-                head: [['Menny.', 'Anyag', 'Helyiség']],
-                body: tableData,
-                startY: 70,
+        function renderQuoteItems() {
+            const c = document.getElementById('quote-items-container');
+            c.innerHTML = '';
+            let grandTotal = 0;
+
+            quoteItems.forEach((item, idx) => {
+                grandTotal += item.total;
+                c.innerHTML += `
+                <div class="quote-row">
+                    <div style="flex:3;">
+                        <div style="font-weight:bold;">${item.name}</div>
+                        <div style="font-size:12px; color:#666;">${item.qty} ${item.unit} x ${item.price.toLocaleString()} Ft</div>
+                    </div>
+                    <div style="flex:2; text-align:right; font-weight:bold;">${item.total.toLocaleString()} Ft</div>
+                    <button onclick="removeQuoteItem(${idx})" style="border:none; background:none; color:#dc3545;"><i class="fas fa-trash"></i></button>
+                </div>`;
             });
 
-            // Lábjegyzet
-            doc.text("Készült a FestőNapló alkalmazással.", 20, doc.lastAutoTable.finalY + 20);
+            document.getElementById('quote-grand-total').innerText = `Végösszeg: ${grandTotal.toLocaleString()} Ft`;
+        }
+
+        function removeQuoteItem(idx) {
+            quoteItems.splice(idx, 1);
+            renderQuoteItems();
+        }
+
+        // --- PRO PDF GENERATOR ---
+        function generateProQuote() {
+            if(quoteItems.length === 0) return showToast('A lista üres!');
+            if(!profile.name) return showToast('Előbb töltsd ki a cégadatokat!');
+
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            const clientName = document.getElementById('quote-client-name').value || "Tisztelt Megrendelő";
+            const clientAddress = document.getElementById('quote-client-address').value || "";
+            const quoteDate = document.getElementById('quote-date').value;
+
+            // Header (Vállalkozó)
+            doc.setFontSize(18);
+            doc.text("ÁRAJÁNLAT", 150, 20);
             
-            // Mentés
-            doc.save(`${p.client}_ajanlat.pdf`);
+            doc.setFontSize(12);
+            doc.setFont("helvetica", "bold");
+            doc.text(profile.name, 14, 20);
+            doc.setFont("helvetica", "normal");
+            doc.setFontSize(10);
+            doc.text(profile.address, 14, 26);
+            doc.text(`Adószám: ${profile.tax}`, 14, 32);
+            doc.text(`Tel: ${profile.phone}`, 14, 38);
+            doc.text(`Email: ${profile.email}`, 14, 44);
+
+            // Vonal
+            doc.setDrawColor(200);
+            doc.line(14, 50, 196, 50);
+
+            // Ügyfél
+            doc.setFontSize(11);
+            doc.text("Megrendelő:", 14, 60);
+            doc.setFont("helvetica", "bold");
+            doc.text(clientName, 14, 66);
+            doc.setFont("helvetica", "normal");
+            doc.text(clientAddress, 14, 72);
+
+            // Dátum
+            doc.text(`Kelt: ${quoteDate}`, 150, 60);
+
+            // Táblázat
+            const tableData = quoteItems.map(i => [
+                i.name,
+                `${i.qty} ${i.unit}`,
+                `${i.price.toLocaleString()} Ft`,
+                `${i.total.toLocaleString()} Ft`
+            ]);
+
+            doc.autoTable({
+                startY: 85,
+                head: [['Megnevezés', 'Menny.', 'Egységár', 'Összesen']],
+                body: tableData,
+                theme: 'grid',
+                headStyles: { fillColor: [41, 128, 185] }, // Kék fejléc
+                columnStyles: { 3: { halign: 'right' }, 2: { halign: 'right' } }
+            });
+
+            // Végösszeg
+            const finalY = doc.lastAutoTable.finalY + 10;
+            const totalSum = quoteItems.reduce((acc, curr) => acc + curr.total, 0);
+
+            doc.setFontSize(14);
+            doc.setFont("helvetica", "bold");
+            doc.text(`Végösszeg: ${totalSum.toLocaleString()} Ft`, 196, finalY, { align: 'right' });
+
+            // Lábléc (Bank)
+            if(profile.bank) {
+                doc.setFontSize(10);
+                doc.setFont("helvetica", "normal");
+                doc.text(`Bankszámlaszám: ${profile.bank}`, 14, finalY + 20);
+            }
+            
+            doc.setFontSize(9);
+            doc.setTextColor(100);
+            doc.text("Köszönjük a bizalmat!", 105, 280, { align: 'center' });
+
+            doc.save("Arajanlat.pdf");
             showToast("PDF Letöltve!");
         }
 
-        // --- DATA LOGIC ---
+        // --- SHOP & PROJECTS SIMPLE ---
         function saveProject() {
-            const name = document.getElementById('inp-client').value;
-            if(!name) return showToast('Név kötelező!');
-            const p = {
-                id: Date.now(), client: name,
-                phone: document.getElementById('inp-phone').value,
-                email: document.getElementById('inp-email').value,
-                address: document.getElementById('inp-address').value,
-                note: document.getElementById('inp-note').value,
-                status: document.getElementById('inp-status').value,
-                start: document.getElementById('inp-start').value,
-                end: document.getElementById('inp-end').value,
-                rooms: []
-            };
-            projects.unshift(p);
-            localStorage.setItem('fn99_projects', JSON.stringify(projects));
-            closeModal();
-            document.getElementById('inp-client').value = ''; 
-            document.getElementById('inp-note').value = '';
-            showToast('Projekt létrehozva!');
-            renderDashboard(); switchTab('projects');
+            const n = document.getElementById('inp-client').value;
+            if(!n) return;
+            projects.unshift({id: Date.now(), client: n, address: document.getElementById('inp-address').value, rooms:[]});
+            localStorage.setItem('fn10_projects', JSON.stringify(projects));
+            closeModal(); renderProjects(); renderDashboard();
         }
-
         function renderProjects() {
-            const list = document.getElementById('projects-list'); list.innerHTML = '';
-            projects.forEach(p => list.innerHTML += createCard(p));
+            const l = document.getElementById('projects-list'); l.innerHTML='';
+            projects.forEach(p => l.innerHTML+=`<div class="card" onclick="openDetail(${p.id})"><b>${p.client}</b><br><small>${p.address}</small></div>`);
         }
         function renderDashboard() {
-            const list = document.getElementById('dashboard-list');
-            list.innerHTML = projects.length ? '' : '<div style="text-align:center; color:#999; padding:20px;">Nincs munka</div>';
-            projects.slice(0,3).forEach(p => list.innerHTML += createCard(p));
+            const l = document.getElementById('dashboard-list'); l.innerHTML='';
+            projects.slice(0,3).forEach(p => l.innerHTML+=`<div class="card" onclick="openDetail(${p.id})"><b>${p.client}</b></div>`);
         }
-        function createCard(p) {
-            const sm = {'active':'<span class="status-badge st-active">Folyamatban</span>','pending':'<span class="status-badge st-pending">Függő</span>','done':'<span class="status-badge st-done">Kész</span>'};
-            const count = shopItems.filter(i => i.projectId == p.id).length;
-            return `<div class="card" onclick="openDetail(${p.id})">${sm[p.status]||''}<div style="font-weight:bold; font-size:16px;">${p.client}</div><div style="font-size:13px; color:#666;">${p.address||''}</div><div style="font-size:12px; color:#007bff; margin-top:5px;">${count} anyag</div></div>`;
-        }
-        function filterProjects(txt) {
-            const list = document.getElementById('projects-list'); list.innerHTML = '';
-            projects.filter(p => p.client.toLowerCase().includes(txt.toLowerCase())).forEach(p => list.innerHTML += createCard(p));
-        }
-
         function openDetail(id) {
-            const p = projects.find(x => x.id == id); if(!p) return;
-            currentDetailId = id;
-            document.getElementById('view-detail').classList.add('show');
-            document.getElementById('detail-display').style.display = 'block';
-            document.getElementById('detail-edit').style.display = 'none';
-            
+            currentDetailId = id; const p = projects.find(x=>x.id==id);
             document.getElementById('d-client').innerText = p.client;
-            document.getElementById('d-address').innerText = p.address || '-';
-            document.getElementById('d-start').innerText = p.start || '-';
-            document.getElementById('d-end').innerText = p.end || '-';
-            
-            const noteBlock = document.getElementById('d-note-block');
-            if(p.note && p.note.trim() !== "") {
-                noteBlock.innerText = p.note;
-                noteBlock.style.display = 'block';
-            } else { noteBlock.style.display = 'none'; }
-
-            const btnCall = document.getElementById('btn-call');
-            const btnMail = document.getElementById('btn-mail');
-            if(p.phone) { btnCall.href = 'tel:'+p.phone; btnCall.classList.remove('btn-disabled'); } 
-            else { btnCall.href = '#'; btnCall.classList.add('btn-disabled'); }
-            if(p.email) { btnMail.href = 'mailto:'+p.email; btnMail.classList.remove('btn-disabled'); }
-            else { btnMail.href = '#'; btnMail.classList.add('btn-disabled'); }
-
-            const mapLink = document.getElementById('map-link');
-            if(p.address) {
-                mapLink.href = 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(p.address);
-                mapLink.style.display = 'flex';
-            } else { mapLink.style.display = 'none'; }
-
-            const rDiv = document.getElementById('d-room-tags'); rDiv.innerHTML = '';
-            if(p.rooms) p.rooms.forEach(r => {
-                rDiv.innerHTML += `<span class="room-tag">${r} <i class="fas fa-times" onclick="askDeleteRoom('${r}')"></i></span>`;
-            });
-            renderDetailList();
+            document.getElementById('d-address').innerText = p.address;
+            const rd = document.getElementById('d-rooms'); rd.innerHTML='';
+            p.rooms.forEach(r => rd.innerHTML+=`<span class="room-tag">${r}</span>`);
+            openModal('view-detail');
         }
-
-        function closeDetail() { document.getElementById('view-detail').classList.remove('show'); }
-
-        function goToShopForCurrentProject() {
-            if(!currentDetailId) return;
-            switchTab('shop');
-            setTimeout(() => {
-                const select = document.getElementById('shop-project-select');
-                if(select) { select.value = currentDetailId; updateRoomSelectInShop(); }
-            }, 50);
-            closeDetail();
+        function addRoom() {
+            const v = document.getElementById('new-room-input').value; 
+            const s = document.getElementById('new-room-size').value;
+            if(!v) return;
+            const p = projects.find(x=>x.id==currentDetailId);
+            p.rooms.push(s ? `${v} (${s}m²)` : v);
+            localStorage.setItem('fn10_projects', JSON.stringify(projects));
+            document.getElementById('new-room-input').value=''; openDetail(currentDetailId);
         }
-
-        function renderDetailList() {
-            const list = document.getElementById('d-materials-list'); list.innerHTML = '';
-            const items = shopItems.filter(i => i.projectId == currentDetailId);
-            if(!items.length) { list.innerHTML = '<div style="color:#999; text-align:center;">Nincs anyag</div>'; return; }
-            items.forEach(i => {
-                const room = i.room ? `(${i.room})` : '';
-                const doneClass = i.done ? 'item-done' : '';
-                const img = i.image ? `<img src="${i.image}" class="material-thumb" onclick="openImg('${i.image}')">` : '<div class="material-thumb"></div>';
-                list.innerHTML += `<div class="material-item ${doneClass}"><div class="check-circle" onclick="toggleItem(${i.id})"><i class="fas fa-check"></i></div>${img}<div style="flex:1;"><div style="font-weight:bold;">${i.qty}x ${i.text}</div><div style="font-size:12px; color:#666;">${i.code||''} ${room}</div></div><button class="icon-btn btn-edit" onclick="openItemEdit(${i.id})"><i class="fas fa-pen"></i></button></div>`;
-            });
-        }
-
-        function editProject() {
-            const p = projects.find(x => x.id == currentDetailId);
-            document.getElementById('detail-display').style.display = 'none';
-            document.getElementById('detail-edit').style.display = 'block';
-            document.getElementById('edit-client').value = p.client;
-            document.getElementById('edit-phone').value = p.phone || '';
-            document.getElementById('edit-email').value = p.email || '';
-            document.getElementById('edit-address').value = p.address || '';
-            document.getElementById('edit-note').value = p.note || '';
-        }
-        function saveEdit() {
-            const p = projects.find(x => x.id == currentDetailId);
-            p.client = document.getElementById('edit-client').value;
-            p.phone = document.getElementById('edit-phone').value;
-            p.email = document.getElementById('edit-email').value;
-            p.address = document.getElementById('edit-address').value;
-            p.note = document.getElementById('edit-note').value;
-            localStorage.setItem('fn99_projects', JSON.stringify(projects));
-            showToast('Mentve!'); openDetail(currentDetailId);
-        }
-        function cancelEdit() { document.getElementById('detail-display').style.display = 'block'; document.getElementById('detail-edit').style.display = 'none'; }
-        
         function deleteCurrentProject() {
-            projects = projects.filter(x => x.id != currentDetailId);
-            localStorage.setItem('fn99_projects', JSON.stringify(projects));
-            closeDetail(); renderDashboard(); showToast('Törölve!');
+            projects = projects.filter(x=>x.id!=currentDetailId);
+            localStorage.setItem('fn10_projects', JSON.stringify(projects));
+            closeModal(); renderProjects(); renderDashboard();
         }
 
+        // --- SHOP ---
         function addShopItem() {
-            const txt = document.getElementById('shop-input').value;
-            if(!txt) return showToast('Mit vettél?');
-            const item = {
-                id: Date.now(), text: txt,
-                qty: document.getElementById('shop-qty').value,
-                code: document.getElementById('shop-code').value,
-                note: document.getElementById('shop-note').value,
-                image: tempShopImage,
-                projectId: document.getElementById('shop-project-select').value || null,
-                room: document.getElementById('shop-room-select').value || null,
-                done: false
-            };
-            shopItems.unshift(item);
-            localStorage.setItem('fn99_shop', JSON.stringify(shopItems));
-            document.getElementById('shop-input').value = '';
-            document.getElementById('shop-photo-prev').style.display = 'none';
-            tempShopImage = null;
-            showToast('Hozzáadva!'); renderShop();
+            const t = document.getElementById('shop-input').value; if(!t) return;
+            const q = document.getElementById('shop-qty').value;
+            shopItems.unshift({id:Date.now(), text:t, qty:q, done:false});
+            localStorage.setItem('fn10_shop', JSON.stringify(shopItems));
+            document.getElementById('shop-input').value=''; renderShop();
         }
         function renderShop() {
-            const list = document.getElementById('shop-list'); list.innerHTML = '';
+            const l = document.getElementById('shop-list'); l.innerHTML='';
             shopItems.forEach(i => {
-                const doneClass = i.done ? 'item-done' : '';
-                list.innerHTML += `<div class="card ${doneClass}" style="display:flex; align-items:center; justify-content:space-between;"><div style="display:flex; align-items:center; flex:1;"><div class="check-circle" onclick="toggleItem(${i.id})"><i class="fas fa-check"></i></div><div><div style="font-weight:bold;">${i.qty}x ${i.text}</div><div style="font-size:12px; color:#666;">${i.code||''}</div></div></div><button class="icon-btn btn-delete" onclick="askDeleteItem(${i.id})"><i class="fas fa-trash"></i></button></div>`;
+                const cls = i.done ? 'item-done' : '';
+                l.innerHTML+=`<div class="card ${cls}" style="display:flex; align-items:center;"><div class="check-circle" onclick="toggleShop(${i.id})"><i class="fas fa-check"></i></div><div style="flex:1;"><b>${i.qty}x ${i.text}</b></div><i class="fas fa-trash" style="color:#dc3545;" onclick="delShop(${i.id})"></i></div>`;
             });
         }
-        function toggleItem(id) {
-            const i = shopItems.find(x => x.id == id);
-            if(i) { i.done = !i.done; localStorage.setItem('fn99_shop', JSON.stringify(shopItems)); renderShop(); if(currentDetailId) renderDetailList(); }
-        }
-        function askDeleteItem(id) { askConfirm('Törlöd az anyagot?', function() { deleteItem(id); }); }
-        function deleteItem(id) {
-            shopItems = shopItems.filter(x => x.id != id);
-            localStorage.setItem('fn99_shop', JSON.stringify(shopItems));
-            renderShop(); if(currentDetailId) renderDetailList(); showToast('Anyag törölve');
-        }
-        function openItemEdit(id) {
-            const i = shopItems.find(x => x.id == id);
-            openModal('item-edit-box');
-            document.getElementById('item-edit-id').value = i.id;
-            document.getElementById('item-edit-text').value = i.text;
-            document.getElementById('item-edit-qty').value = i.qty;
-        }
-        function saveItemEdit() {
-            const id = document.getElementById('item-edit-id').value;
-            const i = shopItems.find(x => x.id == id);
-            i.text = document.getElementById('item-edit-text').value;
-            i.qty = document.getElementById('item-edit-qty').value;
-            localStorage.setItem('fn99_shop', JSON.stringify(shopItems));
-            closeModal(); renderShop(); if(currentDetailId) renderDetailList(); showToast('Mentve');
-        }
-
-        function handleFavoriteClick() {
-            const currentInput = document.getElementById('shop-input').value.trim();
-            if (currentInput && !favorites.includes(currentInput)) {
-                askConfirm('Mented a kedvencek közé?', function() {
-                    favorites.push(currentInput);
-                    localStorage.setItem('fn99_favs', JSON.stringify(favorites));
-                    showToast('Mentve!');
-                });
-            } else {
-                const c = document.getElementById('fav-list-container'); c.innerHTML = '';
-                favorites.forEach((f, idx) => c.innerHTML += `<div class="fav-item"><span onclick="document.getElementById('shop-input').value='${f}'; closeModal();">${f}</span> <i class="fas fa-trash" style="color:#dc3545;" onclick="deleteFav(${idx})"></i></div>`);
-                openModal('fav-box');
-            }
-        }
-        function deleteFav(idx) {
-            favorites.splice(idx, 1); localStorage.setItem('fn99_favs', JSON.stringify(favorites));
-            closeModal(); showToast('Törölve');
-        }
-
-        // --- ANDROID INTENT SHARE (NUKLEÁRIS OPCIÓ) ---
-        function shareCurrentShopList() {
-             const pid = document.getElementById('shop-project-select').value;
-             const items = shopItems.filter(x => x.projectId == pid || (!pid && !x.projectId));
-             shareList("Bevásárlólista", items);
-        }
-        function shareProjectList() {
-            const p = projects.find(x => x.id == currentDetailId);
-            const items = shopItems.filter(x => x.projectId == currentDetailId);
-            shareList(p.client + " Anyaglista", items);
-        }
-
-        function shareList(title, items) {
-            if(!items.length) return showToast('Üres lista');
-            let txt = title + ":\n\n";
-            items.forEach(i => txt += `- ${i.qty}x ${i.text} ${i.code ? '('+i.code+')' : ''}\n`);
-            
-            // 1. Android Intent (Erőszakos megosztás)
-            // Ez kifejezetten az Android rendszernek szól, hogy "Küldd el ezt szövegként"
-            const intentUrl = "intent:#Intent;action=android.intent.action.SEND;type=text/plain;S.android.intent.extra.TEXT=" + encodeURIComponent(txt) + ";end";
-            
-            try {
-                // Próbáljuk megnyitni az Android Intent-et
-                window.location.href = intentUrl;
-            } catch (e) {
-                // Ha mégis PC-n vagy iPhone-on vagyunk, fallback a régire
-                if(navigator.share) {
-                     navigator.share({ title: title, text: txt }).catch(()=>{});
-                } else {
-                    copyToClipboard(txt);
-                }
-            }
-        }
-        
-        function copyToClipboard(txt) {
-            const el = document.createElement('textarea'); el.value = txt; document.body.appendChild(el);
-            el.select(); document.execCommand('copy'); document.body.removeChild(el);
-            showToast('Lista a vágólapon (ha nem nyílt meg a megosztás)');
-        }
-
-        function updateShopSelect() {
-            const s = document.getElementById('shop-project-select'); s.innerHTML = '<option value="">-- Raktár --</option>';
-            projects.forEach(p => s.innerHTML += `<option value="${p.id}">${p.client}</option>`);
-            updateRoomSelectInShop();
-        }
-        function updateRoomSelectInShop() {
-            const pid = document.getElementById('shop-project-select').value;
-            const s = document.getElementById('shop-room-select'); s.innerHTML = '<option value="">(Nincs)</option>';
-            if(pid) {
-                const p = projects.find(x => x.id == pid);
-                if(p && p.rooms) p.rooms.forEach(r => s.innerHTML += `<option value="${r}">${r}</option>`);
-            }
-        }
-        
-        function addRoomToProject() {
-            const val = document.getElementById('new-room-input').value;
-            const size = document.getElementById('new-room-size').value;
-            if(!val) return;
-            const p = projects.find(x => x.id == currentDetailId);
-            if(!p.rooms) p.rooms = [];
-            const roomString = size ? `${val} (${size} m²)` : val;
-            p.rooms.push(roomString);
-            localStorage.setItem('fn99_projects', JSON.stringify(projects));
-            document.getElementById('new-room-input').value = '';
-            document.getElementById('new-room-size').value = '';
-            openDetail(currentDetailId);
-        }
-        function askDeleteRoom(r) {
-            askConfirm('Törlöd a helyiséget?', function(){
-                const p = projects.find(x => x.id == currentDetailId);
-                p.rooms = p.rooms.filter(x => x !== r);
-                localStorage.setItem('fn99_projects', JSON.stringify(projects));
-                openDetail(currentDetailId);
-            });
-        }
-        function handleShopPhoto(input) {
-            if(input.files && input.files[0]) {
-                const r = new FileReader();
-                r.onload = function(e) {
-                    tempShopImage = e.target.result;
-                    const img = document.getElementById('shop-photo-prev');
-                    img.src = tempShopImage; img.style.display = 'block';
-                }; r.readAsDataURL(input.files[0]);
-            }
-        }
-        function calculatePaint() {
-            const a = document.getElementById('calc-area').value; const l = document.getElementById('calc-layers').value; const c = document.getElementById('calc-coverage').value;
-            if(a && l && c) {
-                document.getElementById('calc-result-num').innerText = Math.ceil((a*l)/c) + " Liter";
-                document.getElementById('calc-result-box').style.display = 'block';
-            }
-        }
-        function openImg(src) { showToast('Kép megtekintése nem támogatott ebben a módban'); }
-        function exportData() {
-            const d = JSON.stringify({p:projects, s:shopItems, f:favorites});
-            const b = new Blob([d],{type:'text/json'});
-            const a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download='mentes.json'; a.click();
-        }
-        function importData(el) {
-            const fr = new FileReader();
-            fr.onload = (e) => {
-                try {
-                    const d = JSON.parse(e.target.result);
-                    if(d.p && d.s) {
-                        projects = d.p; shopItems = d.s; if(d.f) favorites = d.f;
-                        localStorage.setItem('fn99_projects', JSON.stringify(projects));
-                        localStorage.setItem('fn99_shop', JSON.stringify(shopItems));
-                        localStorage.setItem('fn99_favs', JSON.stringify(favorites));
-                        showToast('Visszatöltve!'); setTimeout(()=>location.reload(), 1000);
-                    }
-                } catch(e) { showToast('Hibás fájl!'); }
-            }; fr.readAsText(el.files[0]);
+        function toggleShop(id) { const i=shopItems.find(x=>x.id==id); i.done=!i.done; localStorage.setItem('fn10_shop', JSON.stringify(shopItems)); renderShop(); }
+        function delShop(id) { shopItems=shopItems.filter(x=>x.id!=id); localStorage.setItem('fn10_shop', JSON.stringify(shopItems)); renderShop(); }
+        function shareShopList() {
+            let txt="Bevásárlólista:\n"; shopItems.forEach(i=>txt+=`- ${i.qty}x ${i.text}\n`);
+            window.location.href = 'median://share?text=' + encodeURIComponent(txt) + '&title=Lista';
         }
     </script>
 </body>
 </html>
+
