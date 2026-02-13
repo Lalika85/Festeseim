@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>FestőNapló v11.5 Final</title>
+    <title>FestőNapló v11.6</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
     
     <style>
-        :root { --primary: #1a237e; --accent: #ffab00; --bg: #eceff1; --text: #263238; --white: #ffffff; --success: #2e7d32; --danger: #c62828; --radius: 4px; }
+        :root { --primary: #1a237e; --accent: #f57f17; --bg: #eceff1; --text: #263238; --white: #ffffff; --success: #2e7d32; --danger: #c62828; --radius: 6px; }
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; outline: none; }
         body { font-family: 'Roboto', sans-serif; background-color: var(--bg); margin: 0; padding: 0; display: flex; flex-direction: column; height: 100vh; color: var(--text); }
         
@@ -19,14 +19,15 @@
 
         #main-container { flex: 1; overflow-y: auto; padding: 15px; padding-bottom: 80px; }
 
-        .card { background: var(--white); border-radius: var(--radius); padding: 20px; margin-bottom: 15px; box-shadow: 0 1px 3px rgba(0,0,0,0.12); }
+        .card { background: var(--white); border-radius: var(--radius); padding: 20px; margin-bottom: 15px; box-shadow: 0 1px 3px rgba(0,0,0,0.12); border-left: 4px solid transparent; }
         .card h3 { margin-top: 0; font-size: 15px; color: var(--primary); border-bottom: 2px solid #eee; padding-bottom: 10px; margin-bottom: 15px; text-transform: uppercase; }
 
         .input-group { margin-bottom: 15px; }
         label { display: block; font-size: 11px; font-weight: 700; color: #546e7a; margin-bottom: 5px; text-transform: uppercase; }
-        input, select, textarea { width: 100%; padding: 12px; border: 1px solid #cfd8dc; border-radius: var(--radius); font-size: 16px; background: #fff; }
+        input, select, textarea { width: 100%; padding: 12px; border: 1px solid #cfd8dc; border-radius: var(--radius); font-size: 16px; background: #fff; color: #333; }
         
-        button { cursor: pointer; font-family: inherit; }
+        button { cursor: pointer; font-family: inherit; transition: 0.2s; }
+        button:active { transform: scale(0.98); }
         button.primary { width: 100%; background: var(--primary); color: var(--white); border: none; padding: 14px; border-radius: var(--radius); font-size: 14px; font-weight: bold; text-transform: uppercase; }
         button.secondary { width: 100%; background: #cfd8dc; color: #37474f; border: none; padding: 14px; border-radius: var(--radius); font-size: 14px; font-weight: bold; margin-top: 10px; text-transform: uppercase; }
         button.success { width: 100%; background: var(--success); color: var(--white); border: none; padding: 14px; border-radius: var(--radius); font-size: 14px; font-weight: bold; margin-top:10px; text-transform: uppercase; }
@@ -35,11 +36,12 @@
         .nav-btn { background: none; border: none; display: flex; flex-direction: column; align-items: center; color: #90a4ae; font-size: 10px; font-weight: bold; width: 60px; }
         .nav-btn i { font-size: 22px; margin-bottom: 4px; }
         .nav-btn.active { color: var(--primary); }
-        .fab { width: 54px; height: 54px; background: var(--accent); border-radius: 50%; color: #fff; border: none; font-size: 22px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center; margin-top: -30px; }
+        
+        /* A NAGY NARANCSSÁRGA GOMB */
+        .fab { width: 56px; height: 56px; background: var(--accent); border-radius: 50%; color: #fff; border: none; font-size: 24px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center; margin-top: -30px; position: relative; z-index: 101; }
 
         .list-item { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid #eee; }
-        /* CHECKBOX STYLES */
-        .check-circle { width: 30px; height: 30px; border-radius: 4px; border: 2px solid #b0bec5; display: flex; align-items: center; justify-content: center; margin-right: 15px; flex-shrink: 0; cursor: pointer; }
+        .check-circle { width: 30px; height: 30px; border-radius: 50%; border: 2px solid #b0bec5; display: flex; align-items: center; justify-content: center; margin-right: 15px; flex-shrink: 0; cursor: pointer; }
         .item-done .check-circle { background-color: var(--success); border-color: var(--success); color: white; }
         .item-done .item-text { text-decoration: line-through; color: #b0bec5; }
         
@@ -52,11 +54,11 @@
 
         .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 900; display: none; }
         .modal-box { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 95%; max-height: 95%; background: #fff; border-radius: var(--radius); z-index: 901; display: none; flex-direction: column; padding: 20px; box-shadow: 0 20px 60px rgba(0,0,0,0.5); overflow-y: auto; }
+        
         #toast { visibility: hidden; min-width: 250px; background-color: #333; color: #fff; text-align: center; border-radius: 4px; padding: 16px; position: fixed; z-index: 3000; left: 50%; bottom: 30px; transform: translateX(-50%); font-size: 14px; opacity: 0; transition: opacity 0.3s; }
         #toast.show { visibility: visible; opacity: 1; }
         .view { display: none; }
         .view.active { display: block; }
-        
         .quote-row { display: flex; align-items: center; border-bottom: 1px solid #eee; padding: 10px 0; }
     </style>
 </head>
@@ -73,10 +75,10 @@
     <div id="main-container">
         <div id="view-dashboard" class="view active">
             <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-bottom:15px;">
-                <div class="card" onclick="switchTab('quote')" style="margin:0; background: linear-gradient(135deg, #1a237e 0%, #283593 100%); color:white;">
+                <div class="card" onclick="switchTab('quote')" style="margin:0; background: linear-gradient(135deg, #1a237e 0%, #283593 100%); color:white; cursor:pointer;">
                     <i class="fas fa-file-invoice" style="font-size:24px; margin-bottom:10px;"></i><div style="font-weight:bold;">Árajánlat</div>
                 </div>
-                <div class="card" onclick="switchTab('calc')" style="margin:0; background: linear-gradient(135deg, #ffab00 0%, #ff6f00 100%); color:white;">
+                <div class="card" onclick="switchTab('calc')" style="margin:0; background: linear-gradient(135deg, #ffab00 0%, #ff6f00 100%); color:white; cursor:pointer;">
                     <i class="fas fa-calculator" style="font-size:24px; margin-bottom:10px;"></i><div style="font-weight:bold;">Kalkulátor</div>
                 </div>
             </div>
@@ -107,7 +109,6 @@
                 <h3>Tételek</h3>
                 <div id="quote-items-container"></div>
                 <div style="background:#f5f7f8; padding:15px; border-radius:4px; margin-top:15px; border:1px solid #e0e0e0;">
-                    <label>Új tétel</label>
                     <div style="display:flex; gap:10px; margin-bottom:10px;">
                         <input type="text" id="q-item-name" placeholder="Pl. Glettelés" style="flex:2;">
                         <input type="number" id="q-item-qty" placeholder="Menny." style="flex:1;">
@@ -185,8 +186,18 @@
         <button class="nav-btn" onclick="switchTab('shop')" id="btn-shop"><i class="fas fa-shopping-cart"></i>Bolt</button>
     </nav>
 
+    <div id="new-project-box" class="modal-box">
+        <h3>Új Ügyfél</h3>
+        <div class="input-group"><label>Név</label><input type="text" id="inp-client"></div>
+        <div class="input-group"><label>Telefon</label><input type="tel" id="inp-phone"></div>
+        <div class="input-group"><label>Email</label><input type="email" id="inp-email"></div>
+        <div class="input-group"><label>Cím</label><input type="text" id="inp-address"></div>
+        <div class="input-group"><label>Jegyzet</label><textarea id="inp-note"></textarea></div>
+        <button onclick="saveProject()" class="primary">LÉTREHOZÁS</button>
+        <button onclick="closeModal()" class="secondary">MÉGSE</button>
+    </div>
+
     <div id="profile-box" class="modal-box"><h3>Vállalkozás Adatai</h3><div class="input-group"><label>Cégnév</label><input type="text" id="prof-name"></div><div class="input-group"><label>Cím</label><input type="text" id="prof-address"></div><div class="input-group"><label>Adószám</label><input type="text" id="prof-tax"></div><div class="input-group"><label>Telefon</label><input type="text" id="prof-phone"></div><div class="input-group"><label>Email</label><input type="text" id="prof-email"></div><div class="input-group"><label>Bankszámla</label><input type="text" id="prof-bank"></div><button onclick="saveProfile()" class="success">MENTÉS</button><button onclick="closeModal()" class="secondary">BEZÁRÁS</button></div>
-    <div id="new-project-box" class="modal-box"><h3>Új Ügyfél</h3><div class="input-group"><label>Név</label><input type="text" id="inp-client"></div><div class="input-group"><label>Telefon</label><input type="tel" id="inp-phone"></div><div class="input-group"><label>Email</label><input type="email" id="inp-email"></div><div class="input-group"><label>Cím</label><input type="text" id="inp-address"></div><div class="input-group"><label>Jegyzet</label><textarea id="inp-note"></textarea></div><button onclick="saveProject()" class="primary">LÉTREHOZÁS</button><button onclick="closeModal()" class="secondary">MÉGSE</button></div>
 
     <div id="view-detail" class="modal-box" style="width:100%; height:100%; max-height:100%; border-radius:0; padding:0; display:none; background:#eceff1;">
         <div style="background:white; padding:15px; border-bottom:1px solid #e0e0e0; display:flex; justify-content:space-between; align-items:center;">
@@ -216,7 +227,7 @@
                 <div id="d-rooms"></div>
             </div>
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-                <h3 style="margin:0; font-size:14px; color:#78909c;">BEÉPÍTETT ANYAGOK</h3>
+                <h3 style="margin:0; font-size:14px; color:#78909c;">BEÉPÍTETT ANYAGOK (KATTINTS HA KÉSZ)</h3>
                 <div style="display:flex; gap:5px;">
                     <button onclick="generateProjectPDF()" style="background:#546e7a; color:white; border:none; border-radius:4px; padding:5px 10px;"><i class="fas fa-file-pdf"></i></button>
                     <button onclick="shareProjectList()" style="background:#78909c; color:white; border:none; border-radius:4px; padding:5px 10px;"><i class="fas fa-share-nodes"></i></button>
@@ -235,20 +246,21 @@
     <div id="fav-box" class="modal-box"><h3>Gyorslista</h3><div id="fav-list-container"></div><button onclick="closeModal()" class="secondary">Bezárás</button></div>
 
     <script>
-        // CORE DATA INITIALIZATION
-        let projects=[], shopItems=[], profile={}, savedQuotes=[], favorites=[];
+        // --- ADATBÁZIS BETÖLTÉSE ---
+        let projects = [], shopItems = [], profile = {}, savedQuotes = [], favorites = [];
         try {
-            projects = JSON.parse(localStorage.getItem('fn115_projects')) || JSON.parse(localStorage.getItem('fn114_projects')) || [];
-            shopItems = JSON.parse(localStorage.getItem('fn115_shop')) || JSON.parse(localStorage.getItem('fn114_shop')) || [];
-            profile = JSON.parse(localStorage.getItem('fn115_profile')) || JSON.parse(localStorage.getItem('fn114_profile')) || {name:'',address:'',tax:'',phone:'',email:'',bank:''};
-            savedQuotes = JSON.parse(localStorage.getItem('fn115_quotes')) || [];
-            favorites = JSON.parse(localStorage.getItem('fn115_favs')) || ["Dulux", "Héra", "Rigips", "Ceresit", "Mapei"];
-        } catch(e) { console.error("Data load error", e); }
+            projects = JSON.parse(localStorage.getItem('fn116_projects')) || JSON.parse(localStorage.getItem('fn115_projects')) || [];
+            shopItems = JSON.parse(localStorage.getItem('fn116_shop')) || JSON.parse(localStorage.getItem('fn115_shop')) || [];
+            profile = JSON.parse(localStorage.getItem('fn116_profile')) || JSON.parse(localStorage.getItem('fn115_profile')) || {name:'',address:'',tax:'',phone:'',email:'',bank:''};
+            savedQuotes = JSON.parse(localStorage.getItem('fn116_quotes')) || [];
+            favorites = JSON.parse(localStorage.getItem('fn116_favs')) || ["Dulux", "Héra", "Rigips", "Ceresit", "Mapei"];
+        } catch(e) { console.error("Hiba az adatok betöltésekor", e); }
 
         let quoteItems = [];
         let currentDetailId = null;
         let tempShopImage = null;
 
+        // --- APP INDÍTÁSA ---
         window.onload = function() {
             renderDashboard();
             updateShopSelect();
@@ -258,30 +270,97 @@
             renderCalcInputs();
         };
 
+        // --- NAVIGÁCIÓ ---
         function switchTab(id) {
             document.querySelectorAll('.view').forEach(e => e.classList.remove('active'));
             document.getElementById('view-'+id).classList.add('active');
             document.querySelectorAll('.nav-btn').forEach(e => e.classList.remove('active'));
             if(document.getElementById('btn-'+id)) document.getElementById('btn-'+id).classList.add('active');
             document.getElementById('header-share-btn').style.display = (id === 'shop') ? 'block' : 'none';
-            if(id==='projects') renderProjects(); if(id==='shop') renderShop();
+            if(id==='projects') renderProjects();
+            if(id==='shop') renderShop();
         }
         function showToast(msg) { const t=document.getElementById("toast"); t.innerText=msg; t.className="show"; setTimeout(()=>t.className="",3000); }
 
-        // --- SHOP & LINKING & CHECKING ---
+        // --- FŐ FUNKCIÓ: ÚJ PROJEKT MENTÉSE (EZ VOLT A HIBÁS) ---
+        function saveProject() {
+            const n = document.getElementById('inp-client').value;
+            if(!n) return showToast('Név kötelező!');
+            
+            const newProject = {
+                id: Date.now(), 
+                client: n,
+                phone: document.getElementById('inp-phone').value,
+                email: document.getElementById('inp-email').value,
+                address: document.getElementById('inp-address').value,
+                note: document.getElementById('inp-note').value,
+                rooms: []
+            };
+            
+            projects.unshift(newProject);
+            localStorage.setItem('fn116_projects', JSON.stringify(projects));
+            
+            // Mezők törlése
+            document.getElementById('inp-client').value = '';
+            document.getElementById('inp-phone').value = '';
+            document.getElementById('inp-email').value = '';
+            document.getElementById('inp-address').value = '';
+            document.getElementById('inp-note').value = '';
+            
+            closeModal();
+            renderDashboard();
+            switchTab('projects');
+            showToast('Ügyfél létrehozva!');
+        }
+
+        // --- BOLT & KAPCSOLÁS ---
         function updateShopSelect() { const s=document.getElementById('shop-project-select'); s.innerHTML='<option value="">-- Raktár --</option>'+projects.map(p=>`<option value="${p.id}">${p.client}</option>`).join(''); }
         function updateRoomSelectInShop() { const pid=document.getElementById('shop-project-select').value; const s=document.getElementById('shop-room-select'); s.innerHTML='<option value="">(Nincs)</option>'; if(pid){const p=projects.find(x=>x.id==pid);if(p&&p.rooms)s.innerHTML+=p.rooms.map(r=>`<option value="${r}">${r}</option>`).join('');} }
-        function goToShopForCurrentProject() { if(!currentDetailId) return; switchTab('shop'); setTimeout(()=>{const s=document.getElementById('shop-project-select'); if(s){s.value=currentDetailId; updateRoomSelectInShop();}},100); closeModal(); }
         
-        function addShopItem() { const txt=document.getElementById('shop-input').value; if(!txt)return showToast('Mit?'); shopItems.unshift({id:Date.now(),text:txt,qty:document.getElementById('shop-qty').value,code:document.getElementById('shop-code').value,note:document.getElementById('shop-note').value,image:tempShopImage,projectId:document.getElementById('shop-project-select').value||null,room:document.getElementById('shop-room-select').value||null,done:false}); localStorage.setItem('fn115_shop',JSON.stringify(shopItems)); document.getElementById('shop-input').value=''; document.getElementById('shop-photo-prev').style.display='none'; tempShopImage=null; showToast('Hozzáadva'); renderShop(); }
+        function goToShopForCurrentProject() { 
+            if(!currentDetailId) return; 
+            switchTab('shop'); 
+            setTimeout(()=>{
+                const s=document.getElementById('shop-project-select'); 
+                if(s){s.value=currentDetailId; updateRoomSelectInShop();}
+            },100); 
+            closeModal(); 
+        }
         
-        function renderShop() { document.getElementById('shop-list').innerHTML=shopItems.map(i=>{let pTag='';if(i.projectId){const p=projects.find(x=>x.id==i.projectId);if(p)pTag=`<div style="font-size:11px;color:#1a237e;margin-top:2px;">${p.client} ${i.room?'• '+i.room:''}</div>`;}return `<div class="list-item ${i.done?'item-done':''}"><div style="display:flex;align-items:center;flex:1;"><div class="check-circle" onclick="toggleShop(${i.id})"><i class="fas fa-check" style="font-size:12px;"></i></div><div><div class="item-text" style="font-weight:bold;">${i.qty}x ${i.text} ${i.image?'📷':''}</div><div style="font-size:13px;color:#78909c;">${i.code||''} ${i.note||''}</div>${pTag}</div></div><i class="fas fa-trash" style="color:#cfd8dc;padding:10px;" onclick="delShop(${i.id})"></i></div>`;}).join(''); }
+        function addShopItem() { 
+            const txt=document.getElementById('shop-input').value; if(!txt)return showToast('Mit?'); 
+            shopItems.unshift({
+                id:Date.now(), text:txt, qty:document.getElementById('shop-qty').value,
+                code:document.getElementById('shop-code').value, note:document.getElementById('shop-note').value,
+                image:tempShopImage, projectId:document.getElementById('shop-project-select').value||null,
+                room:document.getElementById('shop-room-select').value||null, done:false
+            }); 
+            localStorage.setItem('fn116_shop',JSON.stringify(shopItems)); 
+            document.getElementById('shop-input').value=''; document.getElementById('shop-photo-prev').style.display='none'; tempShopImage=null; 
+            showToast('Hozzáadva'); renderShop(); 
+        }
         
-        function toggleShop(id) { const i=shopItems.find(x=>x.id==id); i.done=!i.done; localStorage.setItem('fn115_shop',JSON.stringify(shopItems)); renderShop(); if(currentDetailId)renderDetailList(); }
-        function delShop(id) { shopItems=shopItems.filter(x=>x.id!=id); localStorage.setItem('fn115_shop',JSON.stringify(shopItems)); renderShop(); if(currentDetailId)renderDetailList(); }
+        function renderShop() { 
+            document.getElementById('shop-list').innerHTML=shopItems.map(i=>{
+                let pTag=''; if(i.projectId){const p=projects.find(x=>x.id==i.projectId);if(p)pTag=`<div style="font-size:11px;color:#1a237e;margin-top:2px;">${p.client} ${i.room?'• '+i.room:''}</div>`;}
+                return `<div class="list-item ${i.done?'item-done':''}"><div style="display:flex;align-items:center;flex:1;"><div class="check-circle" onclick="toggleShop(${i.id})"><i class="fas fa-check" style="font-size:12px;"></i></div><div><div class="item-text" style="font-weight:bold;">${i.qty}x ${i.text} ${i.image?'📷':''}</div><div style="font-size:13px;color:#78909c;">${i.code||''} ${i.note||''}</div>${pTag}</div></div><i class="fas fa-trash" style="color:#cfd8dc;padding:10px;" onclick="delShop(${i.id})"></i></div>`;
+            }).join(''); 
+        }
+        
+        function toggleShop(id) { 
+            const i=shopItems.find(x=>x.id==id); i.done=!i.done; 
+            localStorage.setItem('fn116_shop',JSON.stringify(shopItems)); 
+            renderShop(); 
+            // Ha nyitva van az ügyfél nézet, ott is frissítünk
+            if(document.getElementById('view-detail').style.display === 'flex') {
+                renderDetailList();
+            }
+        }
+        
+        function delShop(id) { shopItems=shopItems.filter(x=>x.id!=id); localStorage.setItem('fn116_shop',JSON.stringify(shopItems)); renderShop(); if(document.getElementById('view-detail').style.display === 'flex') renderDetailList(); }
         function handleShopPhoto(i) { if(i.files&&i.files[0]){const r=new FileReader();r.onload=e=>{tempShopImage=e.target.result;document.getElementById('shop-photo-prev').src=tempShopImage;document.getElementById('shop-photo-prev').style.display='block';};r.readAsDataURL(i.files[0]);} }
 
-        // --- CALCULATOR PRO (kg/m2/mm) ---
+        // --- CALCULATOR PRO ---
         function renderCalcInputs() {
             const type = document.getElementById('calc-type').value;
             const c = document.getElementById('calc-inputs-container');
@@ -291,7 +370,7 @@
             } else {
                 let thickDef="3", consDef="1.5", packDef="25", tLbl="Vastagság (mm)";
                 if(type==='adhesive'){thickDef="4";consDef="1.4";}
-                if(type==='screed'){thickDef="50";consDef="2";} // 2kg/m2/mm
+                if(type==='screed'){thickDef="50";consDef="2";} 
                 html += `<div class="input-group"><label>${tLbl}</label><input type="number" id="calc-thick" value="${thickDef}"></div><div class="input-group"><label>Anyagigény (kg / $m^2$ / 1mm)</label><input type="number" id="calc-cons" value="${consDef}"></div><div class="input-group"><label>Zsák mérete (kg)</label><input type="number" id="calc-pack" value="${packDef}"></div>`;
             }
             c.innerHTML = html; document.getElementById('calc-result-box').style.display='none';
@@ -307,38 +386,52 @@
             document.getElementById('calc-result-box').style.display='block';
         }
 
-        // --- SHARE (FORCE INTENT + MEDIAN + FALLBACK) ---
+        // --- SHARE LOGIC (NATIVE) ---
         async function shareText(title, text) {
-            // 1. Native
-            if (navigator.share) { try { await navigator.share({ title: title, text: text }); return; } catch (err) {} }
-            // 2. Median App
-            try { window.location.href = "median://share?text=" + encodeURIComponent(text) + "&title=" + encodeURIComponent(title); } catch(e){}
-            // 3. Android Intent
+            // Elsődleges: Rendszer megosztás
+            if (navigator.share) { 
+                try { await navigator.share({ title: title, text: text }); return; } catch (err) {} 
+            }
+            // Android APK specifikus
             try { window.location.href = "intent:#Intent;action=android.intent.action.SEND;type=text/plain;S.android.intent.extra.TEXT=" + encodeURIComponent(text) + ";end"; return; } catch (e) {}
-            // 4. Clipboard
-            const el = document.createElement('textarea'); el.value = text; document.body.appendChild(el); el.select(); document.execCommand('copy'); document.body.removeChild(el); alert("Vágólapra másolva!");
+            // Fallback
+            const el = document.createElement('textarea'); el.value = text; document.body.appendChild(el); el.select(); document.execCommand('copy'); document.body.removeChild(el); alert("Másolva a vágólapra!");
         }
         function shareShopList() { let t="BEVÁSÁRLÓLISTA:\n\n"; shopItems.forEach(i=>{if(!i.done)t+=`[ ] ${i.qty}x ${i.text} ${i.code?'('+i.code+')':''}\n`;}); shareText("Bevásárlólista",t); }
         function shareProjectList() { const p=projects.find(x=>x.id==currentDetailId); const i=shopItems.filter(x=>x.projectId==currentDetailId); let t=`${p.client.toUpperCase()} - ANYAGOK:\n\n`; i.forEach(x=>t+=`- ${x.qty}x ${x.text} ${x.code?'('+x.code+')':''}\n`); shareText("Anyaglista",t); }
 
         // --- PROJECTS ---
-        function saveProject(){ const n=document.getElementById('inp-client').value; if(!n) return showToast('Név kötelező!'); projects.unshift({id:Date.now(),client:n,phone:document.getElementById('inp-phone').value,email:document.getElementById('inp-email').value,address:document.getElementById('inp-address').value,note:document.getElementById('inp-note').value,rooms:[]}); localStorage.setItem('fn115_projects',JSON.stringify(projects)); closeModal(); document.getElementById('inp-client').value=''; renderDashboard(); switchTab('projects'); showToast('Mentve'); }
         function renderProjects(){ document.getElementById('projects-list').innerHTML=projects.map(p=>`<div class="card" onclick="openDetail(${p.id})" style="cursor:pointer;"><b>${p.client}</b><br><small>${p.address||''}</small></div>`).join(''); }
         function renderDashboard(){ document.getElementById('dashboard-list').innerHTML=projects.slice(0,3).map(p=>`<div class="card" onclick="openDetail(${p.id})" style="cursor:pointer;"><b>${p.client}</b></div>`).join(''); }
-        function openDetail(id){ currentDetailId=id; const p=projects.find(x=>x.id==id); document.getElementById('d-client').innerText=p.client; document.getElementById('d-address').innerText=p.address; document.getElementById('btn-call').href=p.phone?'tel:'+p.phone:'#'; document.getElementById('btn-mail').href=p.email?'mailto:'+p.email:'#'; 
-        if(p.address){document.getElementById('map-link').href=`https://www.google.com/maps/dir//...{encodeURIComponent(p.address)}`;}
-        document.getElementById('d-rooms').innerHTML=(p.rooms||[]).map(r=>`<span class="room-tag">${r} <i class="fas fa-times" onclick="deleteRoom('${r}')"></i></span>`).join(''); renderDetailList(); openModal('view-detail'); }
-        // NEW: Render Detail List with Checkboxes
-        function renderDetailList(){ const l=document.getElementById('d-materials-list'); l.innerHTML=''; const items=shopItems.filter(i=>i.projectId==currentDetailId); if(!items.length){l.innerHTML='<div style="text-align:center;color:#b0bec5;padding:10px;">Nincs anyag.</div>';return;} l.innerHTML=items.map(i=>`<div class="list-item ${i.done?'item-done':''}"><div style="display:flex;align-items:center;flex:1;"><div class="check-circle" onclick="toggleShop(${i.id})"><i class="fas fa-check" style="font-size:12px;"></i></div><div><div class="item-text" style="font-weight:bold;">${i.qty}x ${i.text}</div><div>${i.code||''}</div></div></div><i class="fas fa-pen" style="color:#78909c;" onclick="openItemEdit(${i.id})"></i></div>`).join(''); }
-        function addRoom(){ const v=document.getElementById('new-room-input').value; const s=document.getElementById('new-room-size').value; if(!v)return; const p=projects.find(x=>x.id==currentDetailId); if(!p.rooms)p.rooms=[]; p.rooms.push(s?`${v} (${s}m²)`:v); localStorage.setItem('fn115_projects',JSON.stringify(projects)); document.getElementById('new-room-input').value=''; openDetail(currentDetailId); }
-        function deleteRoom(r){ if(!confirm('Törlöd?'))return; const p=projects.find(x=>x.id==currentDetailId); p.rooms=p.rooms.filter(x=>x!==r); localStorage.setItem('fn115_projects',JSON.stringify(projects)); openDetail(currentDetailId); }
-        function deleteCurrentProject(){ if(!confirm('Törlöd?'))return; projects=projects.filter(x=>x.id!=currentDetailId); localStorage.setItem('fn115_projects',JSON.stringify(projects)); closeModal(); renderProjects(); renderDashboard(); }
+        
+        function openDetail(id){ 
+            currentDetailId=id; const p=projects.find(x=>x.id==id); 
+            document.getElementById('d-client').innerText=p.client; document.getElementById('d-address').innerText=p.address; 
+            const btnCall=document.getElementById('btn-call'); p.phone?(btnCall.href='tel:'+p.phone,btnCall.style.opacity=1):(btnCall.href='#',btnCall.style.opacity=0.5);
+            const btnMail=document.getElementById('btn-mail'); p.email?(btnMail.href='mailto:'+p.email,btnMail.style.opacity=1):(btnMail.href='#',btnMail.style.opacity=0.5);
+            if(p.address){document.getElementById('map-link').href='https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(p.address);}
+            document.getElementById('d-rooms').innerHTML=(p.rooms||[]).map(r=>`<span class="room-tag">${r} <i class="fas fa-times" onclick="deleteRoom('${r}')" style="margin-left:5px;cursor:pointer;"></i></span>`).join(''); 
+            renderDetailList(); 
+            openModal('view-detail'); 
+        }
+        
+        // JAVÍTOTT DETAIL LISTA CHECKBOX-AL
+        function renderDetailList(){ 
+            const l=document.getElementById('d-materials-list'); l.innerHTML=''; 
+            const items=shopItems.filter(i=>i.projectId==currentDetailId); 
+            if(!items.length){l.innerHTML='<div style="text-align:center;color:#b0bec5;padding:10px;">Nincs anyag.</div>';return;} 
+            l.innerHTML=items.map(i=>`<div class="list-item ${i.done?'item-done':''}"><div style="display:flex;align-items:center;flex:1;"><div class="check-circle" onclick="toggleShop(${i.id})"><i class="fas fa-check" style="font-size:12px;"></i></div><div><div class="item-text" style="font-weight:bold;">${i.qty}x ${i.text}</div><div>${i.code||''} ${i.room?'('+i.room+')':''}</div></div></div><i class="fas fa-pen" style="color:#78909c;" onclick="openItemEdit(${i.id})"></i></div>`).join(''); 
+        }
+
+        function addRoom(){ const v=document.getElementById('new-room-input').value; const s=document.getElementById('new-room-size').value; if(!v)return; const p=projects.find(x=>x.id==currentDetailId); if(!p.rooms)p.rooms=[]; p.rooms.push(s?`${v} (${s}m²)`:v); localStorage.setItem('fn116_projects',JSON.stringify(projects)); document.getElementById('new-room-input').value=''; openDetail(currentDetailId); }
+        function deleteRoom(r){ if(!confirm('Törlöd?'))return; const p=projects.find(x=>x.id==currentDetailId); p.rooms=p.rooms.filter(x=>x!==r); localStorage.setItem('fn116_projects',JSON.stringify(projects)); openDetail(currentDetailId); }
+        function deleteCurrentProject(){ if(!confirm('Törlöd?'))return; projects=projects.filter(x=>x.id!=currentDetailId); localStorage.setItem('fn116_projects',JSON.stringify(projects)); closeModal(); renderProjects(); renderDashboard(); }
         function filterProjects(v){ document.getElementById('projects-list').innerHTML=projects.filter(p=>p.client.toLowerCase().includes(v.toLowerCase())).map(p=>`<div class="card" onclick="openDetail(${p.id})"><b>${p.client}</b></div>`).join(''); }
         function editProject(){ const p=projects.find(x=>x.id==currentDetailId); openModal('detail-edit'); document.getElementById('edit-client').value=p.client; document.getElementById('edit-phone').value=p.phone||''; document.getElementById('edit-email').value=p.email||''; document.getElementById('edit-address').value=p.address||''; document.getElementById('edit-note').value=p.note||''; }
-        function saveEdit(){ const p=projects.find(x=>x.id==currentDetailId); p.client=document.getElementById('edit-client').value; p.phone=document.getElementById('edit-phone').value; p.email=document.getElementById('edit-email').value; p.address=document.getElementById('edit-address').value; p.note=document.getElementById('edit-note').value; localStorage.setItem('fn115_projects',JSON.stringify(projects)); closeModal(); openDetail(currentDetailId); showToast('Mentve'); }
+        function saveEdit(){ const p=projects.find(x=>x.id==currentDetailId); p.client=document.getElementById('edit-client').value; p.phone=document.getElementById('edit-phone').value; p.email=document.getElementById('edit-email').value; p.address=document.getElementById('edit-address').value; p.note=document.getElementById('edit-note').value; localStorage.setItem('fn116_projects',JSON.stringify(projects)); closeModal(); openDetail(currentDetailId); showToast('Mentve'); }
 
         // --- OTHERS ---
-        function saveProfile(){ profile.name=document.getElementById('prof-name').value; profile.address=document.getElementById('prof-address').value; profile.tax=document.getElementById('prof-tax').value; profile.phone=document.getElementById('prof-phone').value; profile.email=document.getElementById('prof-email').value; profile.bank=document.getElementById('prof-bank').value; localStorage.setItem('fn115_profile',JSON.stringify(profile)); updateProfilePreview(); closeModal(); showToast('Mentve'); }
+        function saveProfile(){ profile.name=document.getElementById('prof-name').value; profile.address=document.getElementById('prof-address').value; profile.tax=document.getElementById('prof-tax').value; profile.phone=document.getElementById('prof-phone').value; profile.email=document.getElementById('prof-email').value; profile.bank=document.getElementById('prof-bank').value; localStorage.setItem('fn116_profile',JSON.stringify(profile)); updateProfilePreview(); closeModal(); showToast('Mentve'); }
         function updateProfilePreview(){ document.getElementById('quote-company-preview').innerHTML=profile.name?`<b>${profile.name}</b><br>${profile.phone}`:'<i>Nincs adat.</i>'; }
         function loadProfileInputs(){ document.getElementById('prof-name').value=profile.name; document.getElementById('prof-address').value=profile.address; document.getElementById('prof-tax').value=profile.tax; document.getElementById('prof-phone').value=profile.phone; document.getElementById('prof-email').value=profile.email; document.getElementById('prof-bank').value=profile.bank; }
         function addQuoteItem(){ const n=document.getElementById('q-item-name').value; const q=document.getElementById('q-item-qty').value; const p=document.getElementById('q-item-price').value; const u=document.getElementById('q-item-unit').value; if(!n||!q||!p)return; quoteItems.push({name:n,qty:q,price:p,unit:u,total:q*p}); document.getElementById('q-item-name').value=''; document.getElementById('q-item-qty').value=''; document.getElementById('q-item-price').value=''; renderQuoteItems(); }
@@ -346,15 +439,17 @@
         function createPDF(title,table,isQ,client){ if(!profile.name)return showToast('Cégadat!'); const {jsPDF}=window.jspdf; const doc=new jsPDF(); let y=20; doc.setFillColor(26,35,126); doc.rect(0,0,210,40,'F'); doc.setTextColor(255,255,255); doc.setFontSize(22); doc.text(title,14,25); doc.setTextColor(0,0,0); y=50; doc.setFontSize(10); doc.text("KIÁLLÍTÓ:",14,y); y+=5; doc.setFontSize(12); doc.setFont("helvetica","bold"); doc.text(profile.name,14,y); y+=5; doc.setFont("helvetica","normal"); doc.setFontSize(10); doc.text(profile.address,14,y); y+=5; if(profile.tax){doc.text("Adószám: "+profile.tax,14,y);y+=5;} if(client&&client.name){let cy=50; doc.text("MEGRENDELŐ:",120,cy); cy+=5; doc.setFontSize(12); doc.setFont("helvetica","bold"); doc.text(client.name,120,cy); cy+=5; doc.setFont("helvetica","normal"); doc.setFontSize(10); if(client.address)doc.text(client.address,120,cy); if(client.date){cy+=10;doc.text("Dátum: "+client.date,120,cy);}} y=Math.max(y,100); doc.autoTable({startY:y,head:isQ?[['Tétel','Menny.','Ár','Össz.']]:client.customHeaders?[client.customHeaders]:[['Anyag','Menny.','Infó']],body:table,theme:'grid',headStyles:{fillColor:[26,35,126]}}); if(isQ){const t=quoteItems.reduce((a,b)=>a+b.total,0); doc.setFontSize(14); doc.setFont("helvetica","bold"); doc.text("Végösszeg: "+t.toLocaleString()+" Ft",196,doc.lastAutoTable.finalY+15,{align:'right'});} doc.save(title+".pdf"); showToast('Letöltve'); }
         function generateProQuote(){ if(!quoteItems.length)return; createPDF("ÁRAJÁNLAT",quoteItems.map(i=>[i.name,i.qty+" "+i.unit,i.price,i.total]),true,{name:document.getElementById('quote-client-name').value,address:document.getElementById('quote-client-address').value,date:document.getElementById('quote-date').value}); }
         function generateProjectPDF(){ if(!currentDetailId)return; const p=projects.find(x=>x.id==currentDetailId); const i=shopItems.filter(x=>x.projectId==currentDetailId); if(!i.length)return showToast('Üres'); createPDF("ANYAGLISTA",i.map(x=>[x.text,x.qty+" db",x.room||'-',x.code||'-']),false,{name:p.client,address:p.address,date:new Date().toLocaleDateString('hu-HU'),customHeaders:['Anyag','Menny.','Hely','Kód']}); }
-        function saveCurrentQuote(){ if(!quoteItems.length)return; const c=document.getElementById('quote-client-name').value||'Névtelen'; savedQuotes.unshift({id:Date.now(),client:c,date:document.getElementById('quote-date').value,total:quoteItems.reduce((a,b)=>a+b.total,0),items:[...quoteItems]}); localStorage.setItem('fn115_quotes',JSON.stringify(savedQuotes)); renderSavedQuotes(); showToast('Mentve'); }
-        function renderSavedQuotes(){ document.getElementById('saved-quotes-list').innerHTML=savedQuotes.map(q=>`<div class="list-item"><div><b>${q.client}</b> ${q.total} Ft</div><div><button onclick="loadQuote(${q.id})" style="border:none;"><i class="fas fa-upload"></i></button><button onclick="deleteQuote(${q.id})" style="border:none;"><i class="fas fa-trash"></i></button></div></div>`).join(''); }
+        function saveCurrentQuote(){ if(!quoteItems.length)return; const c=document.getElementById('quote-client-name').value||'Névtelen'; savedQuotes.unshift({id:Date.now(),client:c,date:document.getElementById('quote-date').value,total:quoteItems.reduce((a,b)=>a+b.total,0),items:[...quoteItems]}); localStorage.setItem('fn116_quotes',JSON.stringify(savedQuotes)); renderSavedQuotes(); showToast('Mentve'); }
+        function renderSavedQuotes(){ document.getElementById('saved-quotes-list').innerHTML=savedQuotes.map(q=>`<div class="list-item"><div><b>${q.client}</b> ${q.total} Ft</div><div><button onclick="loadQuote(${q.id})" style="border:none;background:none;color:var(--primary);"><i class="fas fa-upload"></i></button><button onclick="deleteQuote(${q.id})" style="border:none;background:none;color:var(--danger);"><i class="fas fa-trash"></i></button></div></div>`).join(''); }
         function loadQuote(id){ const q=savedQuotes.find(x=>x.id==id); if(!q)return; quoteItems=[...q.items]; document.getElementById('quote-client-name').value=q.client; renderQuoteItems(); showToast('Betöltve'); }
-        function deleteQuote(id){ if(!confirm('?'))return; savedQuotes=savedQuotes.filter(x=>x.id!=id); localStorage.setItem('fn115_quotes',JSON.stringify(savedQuotes)); renderSavedQuotes(); }
-        function handleFavoriteClick(){const v=document.getElementById('shop-input').value;if(v&&!favorites.includes(v)){favorites.push(v);localStorage.setItem('fn115_favs',JSON.stringify(favorites));showToast('Kedvenc!');}else{document.getElementById('fav-list-container').innerHTML=favorites.map(f=>`<div style="padding:10px;" onclick="document.getElementById('shop-input').value='${f}';closeModal()">${f}</div>`).join('');openModal('fav-box');}}
+        function deleteQuote(id){ if(!confirm('?'))return; savedQuotes=savedQuotes.filter(x=>x.id!=id); localStorage.setItem('fn116_quotes',JSON.stringify(savedQuotes)); renderSavedQuotes(); }
+        function handleFavoriteClick(){const v=document.getElementById('shop-input').value;if(v&&!favorites.includes(v)){favorites.push(v);localStorage.setItem('fn116_favs',JSON.stringify(favorites));showToast('Kedvenc!');}else{document.getElementById('fav-list-container').innerHTML=favorites.map(f=>`<div style="padding:10px;" onclick="document.getElementById('shop-input').value='${f}';closeModal()">${f}</div>`).join('');openModal('fav-box');}}
         function openItemEdit(id){const i=shopItems.find(x=>x.id==id);openModal('item-edit-box');document.getElementById('item-edit-id').value=i.id;document.getElementById('item-edit-text').value=i.text;document.getElementById('item-edit-qty').value=i.qty;document.getElementById('item-edit-code').value=i.code||'';document.getElementById('item-edit-note').value=i.note||'';}
-        function saveItemEdit(){const id=document.getElementById('item-edit-id').value;const i=shopItems.find(x=>x.id==id);i.text=document.getElementById('item-edit-text').value;i.qty=document.getElementById('item-edit-qty').value;i.code=document.getElementById('item-edit-code').value;i.note=document.getElementById('item-edit-note').value;localStorage.setItem('fn115_shop',JSON.stringify(shopItems));closeModal();renderShop();if(currentDetailId)renderDetailList();}
+        function saveItemEdit(){const id=document.getElementById('item-edit-id').value;const i=shopItems.find(x=>x.id==id);i.text=document.getElementById('item-edit-text').value;i.qty=document.getElementById('item-edit-qty').value;i.code=document.getElementById('item-edit-code').value;i.note=document.getElementById('item-edit-note').value;localStorage.setItem('fn116_shop',JSON.stringify(shopItems));closeModal();renderShop();if(currentDetailId)renderDetailList();}
+        function closeModal(){document.querySelectorAll('.modal-box').forEach(e=>e.style.display='none');document.getElementById('modal-overlay').style.display='none';}
+        function openModal(id){document.getElementById('modal-overlay').style.display='block';document.getElementById(id).style.display='flex';if(id==='profile-box')loadProfileInputs();}
         function exportData(){const d=JSON.stringify({p:projects,s:shopItems,pr:profile,q:savedQuotes});const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([d],{type:'text/json'}));a.download='festonaplo_backup.json';a.click();}
-        function importData(el){const fr=new FileReader();fr.onload=e=>{try{const d=JSON.parse(e.target.result);if(d.p){projects=d.p;shopItems=d.s;profile=d.pr;savedQuotes=d.q;localStorage.setItem('fn115_projects',JSON.stringify(projects));localStorage.setItem('fn115_shop',JSON.stringify(shopItems));localStorage.setItem('fn115_profile',JSON.stringify(profile));localStorage.setItem('fn115_quotes',JSON.stringify(savedQuotes));location.reload();}}catch(e){alert('Hiba!');}};fr.readAsText(el.files[0]);}
+        function importData(el){const fr=new FileReader();fr.onload=e=>{try{const d=JSON.parse(e.target.result);if(d.p){projects=d.p;shopItems=d.s;profile=d.pr;savedQuotes=d.q;localStorage.setItem('fn116_projects',JSON.stringify(projects));localStorage.setItem('fn116_shop',JSON.stringify(shopItems));localStorage.setItem('fn116_profile',JSON.stringify(profile));localStorage.setItem('fn116_quotes',JSON.stringify(savedQuotes));location.reload();}}catch(e){alert('Hiba!');}};fr.readAsText(el.files[0]);}
     </script>
 </body>
 </html>
