@@ -70,10 +70,6 @@ async function loadData() {
 
         projects.sort((a, b) => b.id - a.id); // Descending ID sort (approx timestamp)
 
-        // Shop Items (Reload specifically to catch migrated items if any)
-        projSnap.forEach(doc => projects.push(doc.data()));
-        projects.sort((a, b) => b.id - a.id);
-
         // Shop Items
         const shopSnap = await getDocs(getUserRef("shopItems"));
         shopItems = [];
@@ -114,19 +110,16 @@ async function loadData() {
 
 // --- Auth Functions ---
 function loginWithEmail() {
-    console.log("Login clicked");
     const email = document.getElementById('login-email').value;
     const pass = document.getElementById('login-password').value;
     const errorDiv = document.getElementById('login-error');
 
     if (!email || !pass) {
-        alert("Hiányzó adatok!"); // Debug alert
         errorDiv.innerText = "Kérlek töltsd ki mindkét mezőt!";
         errorDiv.style.display = 'block';
         return;
     }
 
-    alert("Bejelentkezés folyamatban..."); // Debug alert
     firebase.auth().signInWithEmailAndPassword(email, pass)
         .then((userCredential) => {
             window.showToast("Sikeres bejelentkezés!");
@@ -144,25 +137,21 @@ function loginWithEmail() {
 }
 
 function registerWithEmail() {
-    console.log("Register clicked");
     const email = document.getElementById('login-email').value;
     const pass = document.getElementById('login-password').value;
     const errorDiv = document.getElementById('login-error');
 
     if (!email || !pass) {
-        alert("Hiányzó adatok!");
         errorDiv.innerText = "Kérlek töltsd ki mindkét mezőt!";
         errorDiv.style.display = 'block';
         return;
     }
     if (pass.length < 6) {
-        alert("Rövid jelszó!");
         errorDiv.innerText = "A jelszó legalább 6 karakter legyen!";
         errorDiv.style.display = 'block';
         return;
     }
 
-    alert("Regisztráció...");
     firebase.auth().createUserWithEmailAndPassword(email, pass)
         .then((userCredential) => {
             window.showToast("Sikeres regisztráció!");
