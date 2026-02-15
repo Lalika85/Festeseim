@@ -64,6 +64,7 @@
             </div>
             <div class="card">
                 <h3>Havi Munkák</h3>
+                <button id="sync-google-calendar" class="secondary">Google Naptár Szinkronizálása</button>
                 <div id="calendar-event-list"></div>
             </div>
         </div>
@@ -290,6 +291,6 @@
     <div id="backup-box" class="modal-box"><h3>Adatbázis</h3><button onclick="window.exportData()" class="primary" style="background:#2e7d32;">LETÖLTÉS</button><label class="secondary" style="text-align:center; display:block; margin-top:10px;">VISSZATÖLTÉS<input type="file" style="display:none;" onchange="window.importData(this)"></label><button onclick="window.closeModal()" class="secondary" style="margin-top:20px;">BEZÁRÁS</button></div>
     <div id="fav-box" class="modal-box"><h3>Gyorslista</h3><div id="fav-list-container"></div><button onclick="window.closeModal()" class="secondary">Bezárás</button></div>
 
-    <script src="script.js" defer></script>
+    <script type="module" src="script.js"></script>
 </body>
 </html>
