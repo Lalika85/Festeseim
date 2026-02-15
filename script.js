@@ -94,73 +94,98 @@ async function loadData() {
         // Quotes
         const quotesSnap = await getDocs(getUserRef("quotes"));
         savedQuotes = [];
-        quotesSnap.forEach(doc// --- Auth Functions ---
+        quotesSnap.forEach(doc => savedQuotes.push(doc.data()));
+        savedQuotes.sort((a, b) => b.id - a.id);
+
+        console.log("Data loaded");
+
+        // Refresh UI after loading
+        window.renderDashboard();
+        window.updateShopSelect();
+        window.updateProfilePreview();
+        window.renderSavedQuotes();
+        window.renderCalendar(currentCalendarDate);
+
+    } catch (e) {
+        console.error("Firestore loading error:", e);
+        window.showToast("Hiba az adatok betöltésekor!");
+    }
+}
+
+// --- Auth Functions ---
 function loginWithEmail() {
-                const email = document.getElementById('login-email').value;
-                const pass = document.getElementById('login-password').value;
-                const errorDiv = document.getElementById('login-error');
+    console.log("Login clicked");
+    const email = document.getElementById('login-email').value;
+    const pass = document.getElementById('login-password').value;
+    const errorDiv = document.getElementById('login-error');
 
-                if (!email || !pass) {
-                    errorDiv.innerText = "Kérlek töltsd ki mindkét mezőt!";
-                    errorDiv.style.display = 'block';
-                    return;
-                }
+    if (!email || !pass) {
+        alert("Hiányzó adatok!"); // Debug alert
+        errorDiv.innerText = "Kérlek töltsd ki mindkét mezőt!";
+        errorDiv.style.display = 'block';
+        return;
+    }
 
-                firebase.auth().signInWithEmailAndPassword(email, pass)
-                    .then((userCredential) => {
-                        window.showToast("Sikeres bejelentkezés!");
-                        errorDiv.style.display = 'none';
-                    })
-                    .catch((error) => {
-                        console.error(error);
-                        let msg = "Hiba történt.";
-                        if (error.code === 'auth/wrong-password') msg = "Hibás jelszó.";
-                        if (error.code === 'auth/user-not-found') msg = "Nincs ilyen felhasználó.";
-                        if (error.code === 'auth/invalid-email') msg = "Érvénytelen email cím.";
-                        errorDiv.innerText = msg;
-                        errorDiv.style.display = 'block';
-                    });
-            }
+    alert("Bejelentkezés folyamatban..."); // Debug alert
+    firebase.auth().signInWithEmailAndPassword(email, pass)
+        .then((userCredential) => {
+            window.showToast("Sikeres bejelentkezés!");
+            errorDiv.style.display = 'none';
+        })
+        .catch((error) => {
+            console.error(error);
+            let msg = "Hiba történt.";
+            if (error.code === 'auth/wrong-password') msg = "Hibás jelszó.";
+            if (error.code === 'auth/user-not-found') msg = "Nincs ilyen felhasználó.";
+            if (error.code === 'auth/invalid-email') msg = "Érvénytelen email cím.";
+            errorDiv.innerText = msg;
+            errorDiv.style.display = 'block';
+        });
+}
 
 function registerWithEmail() {
-                const email = document.getElementById('login-email').value;
-                const pass = document.getElementById('login-password').value;
-                const errorDiv = document.getElementById('login-error');
+    console.log("Register clicked");
+    const email = document.getElementById('login-email').value;
+    const pass = document.getElementById('login-password').value;
+    const errorDiv = document.getElementById('login-error');
 
-                if (!email || !pass) {
-                    errorDiv.innerText = "Kérlek töltsd ki mindkét mezőt!";
-                    errorDiv.style.display = 'block';
-                    return;
-                }
-                if (pass.length < 6) {
-                    errorDiv.innerText = "A jelszó legalább 6 karakter legyen!";
-                    errorDiv.style.display = 'block';
-                    return;
-                }
+    if (!email || !pass) {
+        alert("Hiányzó adatok!");
+        errorDiv.innerText = "Kérlek töltsd ki mindkét mezőt!";
+        errorDiv.style.display = 'block';
+        return;
+    }
+    if (pass.length < 6) {
+        alert("Rövid jelszó!");
+        errorDiv.innerText = "A jelszó legalább 6 karakter legyen!";
+        errorDiv.style.display = 'block';
+        return;
+    }
 
-                firebase.auth().createUserWithEmailAndPassword(email, pass)
-                    .then((userCredential) => {
-                        window.showToast("Sikeres regisztráció!");
-                        errorDiv.style.display = 'none';
-                    })
-                    .catch((error) => {
-                        console.error(error);
-                        let msg = "Hiba történt.";
-                        if (error.code === 'auth/email-already-in-use') msg = "Ez az email már regisztrálva van.";
-                        if (error.code === 'auth/invalid-email') msg = "Érvénytelen email cím.";
-                        if (error.code === 'auth/weak-password') msg = "Túl gyenge jelszó.";
-                        errorDiv.innerText = msg;
-                        errorDiv.style.display = 'block';
-                    });
-            }
+    alert("Regisztráció...");
+    firebase.auth().createUserWithEmailAndPassword(email, pass)
+        .then((userCredential) => {
+            window.showToast("Sikeres regisztráció!");
+            errorDiv.style.display = 'none';
+        })
+        .catch((error) => {
+            console.error(error);
+            let msg = "Hiba történt.";
+            if (error.code === 'auth/email-already-in-use') msg = "Ez az email már regisztrálva van.";
+            if (error.code === 'auth/invalid-email') msg = "Érvénytelen email cím.";
+            if (error.code === 'auth/weak-password') msg = "Túl gyenge jelszó.";
+            errorDiv.innerText = msg;
+            errorDiv.style.display = 'block';
+        });
+}
 
 function logout() {
-                firebase.auth().signOut().then(() => {
-                    window.showToast("Kijelentkezve.");
-                    window.location.reload(); // Reload to clear state
-                }).catch((error) => console.error(error));
-            }estore loading error: ", e);
-        window.showToast("Hiba az adatok betöltésekor!");
+    firebase.auth().signOut().then(() => {
+        window.showToast("Kijelentkezve.");
+        window.location.reload(); // Reload to clear state
+    }).catch((error) => console.error(error));
+}estore loading error: ", e);
+window.showToast("Hiba az adatok betöltésekor!");
     }
 }
 
