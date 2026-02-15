@@ -2,7 +2,7 @@
 let projects=[], shopItems=[], profile={}, savedQuotes=[], favorites=[];
 
 try {
-    // Load data
+    // Load v12.9 data
     projects = JSON.parse(localStorage.getItem('fn129_projects')) || JSON.parse(localStorage.getItem('fn127_projects')) || [];
     shopItems = JSON.parse(localStorage.getItem('fn129_shop')) || JSON.parse(localStorage.getItem('fn127_shop')) || [];
     profile = JSON.parse(localStorage.getItem('fn129_profile')) || JSON.parse(localStorage.getItem('fn127_profile')) || {name:'',address:'',tax:'',phone:'',email:'',bank:'',logo:null};
@@ -22,7 +22,7 @@ window.onload = function() {
     updateShopSelect();
     updateProfilePreview();
     renderSavedQuotes();
-    document.getElementById('quote-date').valueAsDate = new Date();
+    if(document.getElementById('quote-date')) document.getElementById('quote-date').valueAsDate = new Date();
     renderCalcInputs();
     renderCalendar(currentCalendarDate);
 };
@@ -35,7 +35,9 @@ function switchTab(id) {
     if(document.getElementById('btn-'+id)) document.getElementById('btn-'+id).classList.add('active');
     if(id === 'calendar') document.getElementById('btn-cal').classList.add('active');
     
-    document.getElementById('header-share-btn').style.display = (id === 'shop') ? 'block' : 'none';
+    const shareBtn = document.getElementById('header-share-btn');
+    if(shareBtn) shareBtn.style.display = (id === 'shop') ? 'block' : 'none';
+    
     if(id==='projects') filterProjects(); 
     if(id==='shop') renderShop(); 
     if(id==='calendar') renderCalendar(currentCalendarDate);
@@ -65,9 +67,8 @@ function openDetail(id){
     p.email ? (btnMail.href='mailto:'+p.email,btnMail.style.opacity=1) : (btnMail.href='#',btnMail.style.opacity=0.5);
     
     const mapLink = document.getElementById('map-link');
-    // JAVÍTOTT LINK
     if(p.address){
-        mapLink.href = "https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent(p.address);
+        mapLink.href = "http://maps.google.com/?q=" + encodeURIComponent(p.address);
         mapLink.style.display = 'flex';
     } else {
         mapLink.style.display = 'none';
@@ -83,7 +84,8 @@ function openDetail(id){
 }
 
 function filterProjects() {
-    const val = (document.getElementById('search-input').value || '').toLowerCase();
+    const searchInput = document.getElementById('search-input');
+    const val = (searchInput ? searchInput.value : '').toLowerCase();
     const statusFilter = document.getElementById('filter-status').value;
     
     const filtered = projects.filter(p => {
@@ -112,7 +114,7 @@ function filterProjects() {
     }).join('');
 }
 
-// --- NEW PROJECT (EMPTY FORM) ---
+// --- NEW PROJECT ---
 function openNewProject() { 
     document.getElementById('inp-client').value=''; 
     document.getElementById('inp-phone').value=''; 
@@ -156,6 +158,7 @@ function saveProject(){
 function changeMonth(delta) { currentCalendarDate.setMonth(currentCalendarDate.getMonth() + delta); renderCalendar(currentCalendarDate); }
 function renderCalendar(date) {
     const container = document.getElementById('calendar-days'); const monthNameEl = document.getElementById('cal-month-name'); const eventListEl = document.getElementById('calendar-event-list');
+    if(!container) return;
     container.innerHTML = ''; eventListEl.innerHTML = '';
     const year = date.getFullYear(); const month = date.getMonth();
     const monthNames = ["Január", "Február", "Március", "Április", "Május", "Június", "Július", "Augusztus", "Szeptember", "Október", "November", "December"];
@@ -177,7 +180,7 @@ function renderCalendar(date) {
     else relevantProjects.forEach(p => { let col = getProjectColor(p.id); eventListEl.innerHTML += `<div class="list-item" onclick="openDetail(${p.id})"><div><span style="display:inline-block;width:10px;height:10px;background:${col};border-radius:50%;margin-right:5px;"></span><b>${p.client}</b><br><small>${p.start} - ${p.end}</small></div><i class="fas fa-chevron-right" style="color:#ccc;"></i></div>`; });
 }
 
-// --- QUOTE LOGIC (NET/GROSS/VAT) ---
+// --- QUOTE LOGIC ---
 function addQuoteItem(){ 
     const n=document.getElementById('q-item-name').value; const q=parseFloat(document.getElementById('q-item-qty').value); const pInput=parseFloat(document.getElementById('q-item-price').value); const u=document.getElementById('q-item-unit').value; 
     const layers = document.getElementById('q-item-layers').value;
@@ -215,10 +218,7 @@ function renderQuoteItems(){
     quoteItems.forEach((i,x)=>{
         tNet += i.totalNet;
         tGross += i.totalGross;
-        
         let layerInfo = i.layers ? ` <small style="color:#666;">(${i.layers} rtg.)</small>` : '';
-        let vatLabel = i.vatRate === 0 ? "AAM/0%" : i.vatRate+"%";
-
         c.innerHTML+=`
         <div class="quote-row">
             <div style="flex:2"><b>${i.name}</b>${layerInfo}<br><small>${i.qty} ${i.unit}</small></div>
@@ -243,13 +243,13 @@ function addDocument(input) { if (input.files && input.files[0]) { const file = 
 function renderDocsList() { const p = projects.find(x => x.id == currentDetailId); const list = document.getElementById('d-docs-list'); list.innerHTML = ''; if (!p.docs || p.docs.length === 0) { list.innerHTML = '<div style="color:#999;font-size:13px;text-align:center;">Nincs dokumentum.</div>'; return; } p.docs.forEach((doc, idx) => { let icon = 'fa-file'; if(doc.type.includes('image')) icon = 'fa-file-image'; if(doc.type.includes('pdf')) icon = 'fa-file-pdf'; list.innerHTML += `<div class="doc-item"><i class="fas ${icon} doc-icon"></i><div class="doc-name">${doc.name}</div><a href="${doc.data}" download="${doc.name}" style="color:var(--primary); margin-right:15px;"><i class="fas fa-download"></i></a><i class="fas fa-trash" style="color:var(--danger); cursor:pointer;" onclick="deleteDoc(${idx})"></i></div>`; }); }
 function deleteDoc(idx) { if(!confirm("Törlöd?")) return; const p = projects.find(x => x.id == currentDetailId); p.docs.splice(idx, 1); localStorage.setItem('fn129_projects', JSON.stringify(projects)); renderDocsList(); }
 
-// Standard Utility Functions
+// --- DASHBOARD ---
 function renderDashboard(){ document.getElementById('dashboard-list').innerHTML=projects.slice(0,3).map(p=>`<div class="card" onclick="openDetail(${p.id})" style="cursor:pointer;"><b>${p.client}</b></div>`).join(''); }
 function addRoom(){ const v=document.getElementById('new-room-input').value; const s=document.getElementById('new-room-size').value; if(!v)return; const p=projects.find(x=>x.id==currentDetailId); if(!p.rooms)p.rooms=[]; p.rooms.push(s?`${v} (${s}m²)`:v); localStorage.setItem('fn129_projects',JSON.stringify(projects)); document.getElementById('new-room-input').value=''; openDetail(currentDetailId); }
 function deleteRoom(r){ if(!confirm('Törlöd?'))return; const p=projects.find(x=>x.id==currentDetailId); p.rooms=p.rooms.filter(x=>x!==r); localStorage.setItem('fn129_projects',JSON.stringify(projects)); openDetail(currentDetailId); }
 function deleteCurrentProject(){ if(!confirm('Törlöd?'))return; projects=projects.filter(x=>x.id!=currentDetailId); localStorage.setItem('fn129_projects',JSON.stringify(projects)); closeModal(); renderProjects(); renderDashboard(); }
 
-// --- EDIT PROJECT (FIXED) ---
+// --- EDIT PROJECT ---
 function openEditModal(){ 
     const p=projects.find(x=>x.id==currentDetailId); 
     openModal('detail-edit'); 
