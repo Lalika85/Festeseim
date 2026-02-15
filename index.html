@@ -1,296 +1,412 @@
 <!DOCTYPE html>
 <html lang="hu">
+
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Vállalkozói Napló v13.5</title>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
-    
+    <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Vállalkozói Napló</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
 </head>
+
 <body>
 
-    <header>
-        <div><div class="header-subtitle">VÁLLALKOZÓI RENDSZER</div><h1>Vállalkozói Napló PRO</h1></div>
-        <div class="header-actions">
-            <button id="header-share-btn" class="hidden"><i class="fas fa-share-nodes"></i></button>
-            <button id="header-backup-btn"><i class="fas fa-database"></i></button>
-        </div>
-    </header>
+    <!-- Login Screen -->
+    <div id="login-screen"
+        style="position:fixed; top:0; left:0; width:100%; height:100%; background:var(--bg-color); z-index:9999; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:20px; text-align:center;">
+        <h1 style="color:var(--primary); margin-bottom:10px;">Vállalkozói Napló</h1>
+        <p style="color:var(--text); margin-bottom:30px;">Kérlek jelentkezz be a folytatáshoz</p>
+        <button id="btn-login" class="btn primary"
+            style="padding:15px 30px; font-size:18px; display:flex; align-items:center; gap:10px;">
+            <span class="material-icons">login</span> Bejelentkezés Google-fiókkal
+        </button>
+    </div>
 
-    <div id="main-container">
-        <div id="view-dashboard" class="view active">
-            <div class="grid-2-col">
-                        <div id="dash-card-quote" class="card card--quote">
-                            <i class="fas fa-file-invoice card-icon"></i><div class="card-title">Árajánlat</div>
+    <!-- App Content (Hidden by default) -->
+    <div id="app-content" style="display:none;">
+
+        <div class="header">
+            <div class="header-left">
+                <h1>Napló</h1>
+                <small id="user-display"
+                    style="font-size:12px; color:var(--text-light); display:block; margin-top:-5px;">...</small>
+            </div>
+            <div class="header-icons">
+                <span class="material-icons" id="header-share-btn" style="display:none;">share</span>
+                <span class="material-icons" id="header-backup-btn">save</span>
+                <span class="material-icons" id="header-logout-btn" title="Kijelentkezés">logout</span>
+            </div>
+        </div>
+
+        <div id="main-container">
+            <div id="view-dashboard" class="view active">
+                <div class="grid-2-col">
+                    <div id="dash-card-quote" class="card card--quote">
+                        <i class="fas fa-file-invoice card-icon"></i>
+                        <div class="card-title">Árajánlat</div>
+                    </div>
+                    <div id="dash-card-calc" class="card card--calc">
+                        <i class="fas fa-calculator card-icon"></i>
+                        <div class="card-title">Kalkulátor</div>
+                    </div>
+                </div>
+                <h3 class="section-title">Aktív Munkák</h3>
+                <div id="dashboard-list"></div>
+            </div>
+
+            <div id="view-projects" class="view">
+                <div class="filter-bar">
+                    <div class="input-group flex-2">
+                        <input type="text" placeholder="Keresés..." onkeyup="window.filterProjects()" id="search-input">
+                    </div>
+                    <div class="input-group flex-1">
+                        <select id="filter-status" onchange="window.filterProjects()">
+                            <option value="all">Összes</option>
+                            <option value="active">Elkezdett</option>
+                            <option value="suspend">Felfügg.</option>
+                            <option value="done">Befejezett</option>
+                        </select>
+                    </div>
+                </div>
+                <div id="projects-list"></div>
+            </div>
+
+            <div id="view-calendar" class="view">
+                <div class="card">
+                    <div class="calendar-header">
+                        <button onclick="window.changeMonth(-1)" class="secondary"><i
+                                class="fas fa-chevron-left"></i></button>
+                        <h3 id="cal-month-name"></h3>
+                        <button onclick="window.changeMonth(1)" class="secondary"><i
+                                class="fas fa-chevron-right"></i></button>
+                    </div>
+                    <div class="calendar-grid">
+                        <div class="cal-day-header">H</div>
+                        <div class="cal-day-header">K</div>
+                        <div class="cal-day-header">Sz</div>
+                        <div class="cal-day-header">Cs</div>
+                        <div class="cal-day-header">P</div>
+                        <div class="cal-day-header">Sz</div>
+                        <div class="cal-day-header">V</div>
+                    </div>
+                    <div id="calendar-days" class="calendar-grid"></div>
+                </div>
+                <div class="card">
+                    <h3>Havi Munkák</h3>
+                    <button id="sync-google-calendar" class="secondary">Google Naptár Szinkronizálása</button>
+                    <div id="calendar-event-list"></div>
+                </div>
+            </div>
+
+            <div id="view-quote" class="view">
+                <div class="card card--accent-border">
+                    <div class="card-header">
+                        <h3>Cégadatok & Logó</h3>
+                        <button onclick="window.openModal('profile-box')" class="btn-edit">SZERKESZTÉS</button>
+                    </div>
+                    <div id="quote-company-preview"></div>
+                </div>
+                <div class="card">
+                    <h3>Megrendelő</h3>
+                    <button onclick="window.openClientSelector()" class="secondary btn-select-client"><i
+                            class="fas fa-user-check"></i> Meglévő Ügyfél Kiválasztása</button>
+                    <div class="input-group"><input type="text" id="quote-client-name" placeholder="Név"></div>
+                    <div class="input-group"><input type="text" id="quote-client-address" placeholder="Cím"></div>
+                    <div class="input-group"><label>Dátum</label><input type="date" id="quote-date"></div>
+                </div>
+                <div class="card">
+                    <h3>Tételek</h3>
+                    <div id="quote-items-container"></div>
+
+                    <div class="quote-item-adder">
+                        <div class="quote-item-adder-row">
+                            <input type="text" id="q-item-name" placeholder="Munka/Anyag neve" class="flex-3">
+                            <input type="number" id="q-item-qty" placeholder="Menny." class="flex-1">
+                            <select id="q-item-unit" class="flex-1">
+                                <option value="m²">m²</option>
+                                <option value="db">db</option>
+                                <option value="fm">fm</option>
+                                <option value="óra">óra</option>
+                                <option value="nap">nap</option>
+                                <option value="kg">kg</option>
+                                <option value="liter">liter</option>
+                            </select>
+                            <input type="number" id="q-item-layers" placeholder="Rét." class="flex-1"
+                                title="Rétegek száma">
                         </div>
-                        <div id="dash-card-calc" class="card card--calc">
-                            <i class="fas fa-calculator card-icon"></i><div class="card-title">Kalkulátor</div>
-                        </div>            </div>
-            <h3 class="section-title">Aktív Munkák</h3>
-            <div id="dashboard-list"></div>
-        </div>
-
-        <div id="view-projects" class="view">
-            <div class="filter-bar">
-                <div class="input-group flex-2">
-                    <input type="text" placeholder="Keresés..." onkeyup="window.filterProjects()" id="search-input">
-                </div>
-                <div class="input-group flex-1">
-                    <select id="filter-status" onchange="window.filterProjects()">
-                        <option value="all">Összes</option>
-                        <option value="active">Elkezdett</option>
-                        <option value="suspend">Felfügg.</option>
-                        <option value="done">Befejezett</option>
-                    </select>
-                </div>
-            </div>
-            <div id="projects-list"></div>
-        </div>
-
-        <div id="view-calendar" class="view">
-            <div class="card">
-                <div class="calendar-header">
-                    <button onclick="window.changeMonth(-1)" class="secondary"><i class="fas fa-chevron-left"></i></button>
-                    <h3 id="cal-month-name"></h3>
-                    <button onclick="window.changeMonth(1)" class="secondary"><i class="fas fa-chevron-right"></i></button>
-                </div>
-                <div class="calendar-grid">
-                    <div class="cal-day-header">H</div><div class="cal-day-header">K</div><div class="cal-day-header">Sz</div><div class="cal-day-header">Cs</div><div class="cal-day-header">P</div><div class="cal-day-header">Sz</div><div class="cal-day-header">V</div>
-                </div>
-                <div id="calendar-days" class="calendar-grid"></div>
-            </div>
-            <div class="card">
-                <h3>Havi Munkák</h3>
-                <button id="sync-google-calendar" class="secondary">Google Naptár Szinkronizálása</button>
-                <div id="calendar-event-list"></div>
-            </div>
-        </div>
-
-        <div id="view-quote" class="view">
-            <div class="card card--accent-border">
-                <div class="card-header">
-                    <h3>Cégadatok & Logó</h3>
-                    <button onclick="window.openModal('profile-box')" class="btn-edit">SZERKESZTÉS</button>
-                </div>
-                <div id="quote-company-preview"></div>
-            </div>
-            <div class="card">
-                <h3>Megrendelő</h3>
-                <button onclick="window.openClientSelector()" class="secondary btn-select-client"><i class="fas fa-user-check"></i> Meglévő Ügyfél Kiválasztása</button>
-                <div class="input-group"><input type="text" id="quote-client-name" placeholder="Név"></div>
-                <div class="input-group"><input type="text" id="quote-client-address" placeholder="Cím"></div>
-                <div class="input-group"><label>Dátum</label><input type="date" id="quote-date"></div>
-            </div>
-            <div class="card">
-                <h3>Tételek</h3>
-                <div id="quote-items-container"></div>
-                
-                <div class="quote-item-adder">
-                    <div class="quote-item-adder-row">
-                        <input type="text" id="q-item-name" placeholder="Munka/Anyag neve" class="flex-3">
-                        <input type="number" id="q-item-qty" placeholder="Menny." class="flex-1">
-                        <select id="q-item-unit" class="flex-1">
-                            <option value="m²">m²</option><option value="db">db</option><option value="fm">fm</option>
-                            <option value="óra">óra</option><option value="nap">nap</option><option value="kg">kg</option><option value="liter">liter</option>
-                        </select>
-                        <input type="number" id="q-item-layers" placeholder="Rét." class="flex-1" title="Rétegek száma">
+                        <div class="quote-item-adder-row">
+                            <select id="q-price-type" class="flex-1">
+                                <option value="net">Nettó</option>
+                                <option value="gross">Bruttó</option>
+                            </select>
+                            <select id="q-vat-rate" class="flex-1">
+                                <option value="0">AAM (0%)</option>
+                                <option value="27" selected>27%</option>
+                                <option value="18">18%</option>
+                                <option value="5">5%</option>
+                                <option value="0.1">0%</option>
+                            </select>
+                            <input type="number" id="q-item-price" placeholder="Ár" class="flex-1-5">
+                            <button onclick="window.addQuoteItem()" class="quote-item-adder-row btn-add"><i
+                                    class="fas fa-plus"></i></button>
+                        </div>
                     </div>
-                    <div class="quote-item-adder-row">
-                        <select id="q-price-type" class="flex-1">
-                            <option value="net">Nettó</option>
-                            <option value="gross">Bruttó</option>
+                    <div id="quote-grand-total" class="quote-total-display">Nettó: 0 Ft | Bruttó: 0 Ft</div>
+                </div>
+                <div style="display:flex; gap:10px;">
+                    <button onclick="window.saveCurrentQuote()" class="secondary" style="flex:1;"><i
+                            class="fas fa-save"></i> MENTÉS</button>
+                    <button onclick="window.generateProQuote()" class="primary" style="flex:1;"><i
+                            class="fas fa-file-pdf"></i> PDF</button>
+                </div>
+                <div id="saved-quotes-container" style="margin-top:20px;">
+                    <h3 style="font-size:14px; text-transform:uppercase; color:#78909c;">Mentett Ajánlatok</h3>
+                    <div id="saved-quotes-list"></div>
+                </div>
+            </div>
+
+            <div id="view-shop" class="view">
+                <div class="card">
+                    <h3>Anyag Felírás</h3>
+                    <div style="display:flex; gap:10px; margin-bottom:10px;">
+                        <input type="number" id="shop-qty" value="1" style="width:70px;" placeholder="Db">
+                        <div style="flex:1; display:flex; gap:5px;">
+                            <input type="text" id="shop-input" placeholder="Pl. Ragasztó, Kábel..."
+                                style="margin-bottom:0;">
+                            <button onclick="window.handleFavoriteClick()"
+                                style="background:var(--accent); border:none; border-radius:4px; width:45px; color:white;"><i
+                                    class="fas fa-star"></i></button>
+                        </div>
+                    </div>
+                    <div class="input-group"><input type="text" id="shop-code" placeholder="Típus / Szín / Kód"></div>
+                    <div class="input-group"><input type="text" id="shop-note" placeholder="Megjegyzés"></div>
+                    <label class="photo-btn"><i class="fas fa-camera"></i> FOTÓ<input type="file" id="shop-photo"
+                            accept="image/*" style="display:none;" onchange="window.handleShopPhoto(this)"></label>
+                    <img id="shop-photo-prev" class="photo-preview">
+
+                    <div
+                        style="background:#f1f8e9; padding:15px; border-radius:6px; border:1px solid #c5e1a5; margin-top:10px;">
+                        <label style="color:#33691e;">Hozzárendelés</label>
+                        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+                            <div class="input-group" style="margin:0;"><label>Ügyfél</label><select
+                                    id="shop-project-select" onchange="window.updateRoomSelectInShop()"
+                                    style="background:white;"></select></div>
+                            <div class="input-group" style="margin:0;"><label>Helyiség</label><select
+                                    id="shop-room-select" style="background:white;"></select></div>
+                        </div>
+                    </div>
+
+                    <button onclick="window.addShopItem()" class="primary" style="margin-top:15px;">HOZZÁADÁS</button>
+                </div>
+                <div id="shop-list"></div>
+                <button onclick="window.shareShopList()" class="secondary"
+                    style="width:100%; margin-top:20px; background:#37474f; color:white;">LISTA KÜLDÉSE</button>
+            </div>
+
+            <div id="view-calc" class="view">
+                <div class="card">
+                    <h3>Anyagszükséglet</h3>
+                    <div class="input-group">
+                        <label>Kalkuláció Típusa</label>
+                        <select id="calc-type" onchange="window.renderCalcInputs()"
+                            style="font-weight:bold; color:var(--primary);">
+                            <option value="paint">Festés / Folyékony</option>
+                            <option value="adhesive">Ragasztás / Habarcs</option>
+                            <option value="plaster">Glettelés / Simítás</option>
+                            <option value="screed">Betonozás / Aljzat</option>
+                            <option value="plaster_finish">Vakolás</option>
                         </select>
-                        <select id="q-vat-rate" class="flex-1">
-                            <option value="0">AAM (0%)</option>
-                            <option value="27" selected>27%</option>
-                            <option value="18">18%</option>
-                            <option value="5">5%</option>
-                            <option value="0.1">0%</option>
-                        </select>
-                        <input type="number" id="q-item-price" placeholder="Ár" class="flex-1-5">
-                        <button onclick="window.addQuoteItem()" class="quote-item-adder-row btn-add"><i class="fas fa-plus"></i></button>
+                    </div>
+                    <div id="calc-inputs-container"></div>
+                    <button onclick="window.calculateMaterial()" class="primary"
+                        style="margin-top:20px;">SZÁMOLÁS</button>
+                    <div id="calc-result-box" class="calc-result-box">
+                        <div class="calc-val" id="calc-result-num"></div>
+                        <div style="font-size:14px; margin-top:5px;" id="calc-result-desc"></div>
                     </div>
                 </div>
-                <div id="quote-grand-total" class="quote-total-display">Nettó: 0 Ft | Bruttó: 0 Ft</div>
             </div>
+        </div>
+
+        <nav class="navbar">
+            <button class="nav-btn active" id="btn-dash"><i class="fas fa-chart-pie"></i>Áttek.</button>
+            <button class="nav-btn" id="btn-proj"><i class="fas fa-folder-open"></i>Munkák</button>
+            <button class="fab" id="fab-new-project"><i class="fas fa-plus"></i></button>
+            <button class="nav-btn" id="btn-cal"><i class="fas fa-calendar-alt"></i>Naptár</button>
+            <button class="nav-btn" id="btn-quote"><i class="fas fa-file-invoice"></i>Ajánlat</button>
+            <button class="nav-btn" id="btn-shop"><i class="fas fa-shopping-cart"></i>Bolt</button>
+        </nav>
+
+        <div id="profile-box" class="modal-box">
+            <h3>Vállalkozás Adatai</h3>
+            <label class="photo-btn"><i class="fas fa-image"></i> CÉGES LOGÓ FELTÖLTÉSE<input type="file"
+                    accept="image/*" style="display:none;" onchange="window.handleLogoUpload(this)"></label>
+            <div id="logo-preview-container" style="text-align:center; margin-bottom:15px; display:none;"><img
+                    id="logo-preview" style="max-height:80px;"></div>
+            <div class="input-group"><label>Cégnév</label><input type="text" id="prof-name"></div>
+            <div class="input-group"><label>Cím</label><input type="text" id="prof-address"></div>
+            <div class="input-group"><label>Adószám</label><input type="text" id="prof-tax"></div>
+            <div class="input-group"><label>Telefon</label><input type="text" id="prof-phone"></div>
+            <div class="input-group"><label>Email</label><input type="text" id="prof-email"></div>
+            <div class="input-group"><label>Bankszámla</label><input type="text" id="prof-bank"></div>
+            <button onclick="window.saveProfile()" class="success">MENTÉS</button>
+            <button onclick="window.closeModal()" class="secondary">BEZÁRÁS</button>
+        </div>
+
+        <div id="new-project-box" class="modal-box">
+            <h3>Új Ügyfél / Munka</h3>
+            <div class="input-group"><label>Megrendelő Neve</label><input type="text" id="inp-client"></div>
+            <div class="input-group"><label>Telefon</label><input type="tel" id="inp-phone"></div>
+            <div class="input-group"><label>Email</label><input type="email" id="inp-email"></div>
+            <div class="input-group"><label>Munkaterület Címe</label><input type="text" id="inp-address"></div>
+            <div class="input-group"><label>Állapot</label>
+                <select id="inp-status">
+                    <option value="active">Elkezdett</option>
+                    <option value="suspend">Felfüggesztve</option>
+                    <option value="done">Befejezett</option>
+                </select>
+            </div>
+            <div class="input-group"><label>Jegyzet</label><textarea id="inp-note"></textarea></div>
             <div style="display:flex; gap:10px;">
-                <button onclick="window.saveCurrentQuote()" class="secondary" style="flex:1;"><i class="fas fa-save"></i> MENTÉS</button>
-                <button onclick="window.generateProQuote()" class="primary" style="flex:1;"><i class="fas fa-file-pdf"></i> PDF</button>
+                <div class="input-group" style="flex:1"><label>Kezdés</label><input type="date" id="inp-start"></div>
+                <div class="input-group" style="flex:1"><label>Vége</label><input type="date" id="inp-end"></div>
             </div>
-            <div id="saved-quotes-container" style="margin-top:20px;">
-                <h3 style="font-size:14px; text-transform:uppercase; color:#78909c;">Mentett Ajánlatok</h3>
-                <div id="saved-quotes-list"></div>
-            </div>
+            <button onclick="window.saveProject()" class="primary">LÉTREHOZÁS</button>
+            <button onclick="window.closeModal()" class="secondary">MÉGSE</button>
         </div>
 
-        <div id="view-shop" class="view">
-            <div class="card">
-                <h3>Anyag Felírás</h3>
-                <div style="display:flex; gap:10px; margin-bottom:10px;">
-                    <input type="number" id="shop-qty" value="1" style="width:70px;" placeholder="Db">
-                    <div style="flex:1; display:flex; gap:5px;">
-                        <input type="text" id="shop-input" placeholder="Pl. Ragasztó, Kábel..." style="margin-bottom:0;">
-                        <button onclick="window.handleFavoriteClick()" style="background:var(--accent); border:none; border-radius:4px; width:45px; color:white;"><i class="fas fa-star"></i></button>
+        <div id="client-selector-box" class="modal-box">
+            <h3>Válassz Ügyfelet</h3>
+            <div class="input-group"><input type="text" placeholder="Keresés..."
+                    onkeyup="window.renderClientSelector(this.value)"></div>
+            <div id="client-selector-list" style="max-height:300px; overflow-y:auto;"></div>
+            <button onclick="window.closeModal()" class="secondary">MÉGSE</button>
+        </div>
+
+        <div id="view-detail" class="modal-box"
+            style="width:100%; height:100%; max-height:100%; border-radius:0; padding:0; display:none; background:#eceff1;">
+            <div
+                style="background:white; padding:15px; border-bottom:1px solid #e0e0e0; display:flex; justify-content:space-between; align-items:center;">
+                <button onclick="window.closeModal()"
+                    style="border:none; background:none; color:var(--primary); font-weight:bold;"><i
+                        class="fas fa-arrow-left"></i> VISSZA</button>
+                <div>
+                    <button onclick="window.openEditModal()"
+                        style="border:none; background:none; color:var(--text); margin-right:10px;"><i
+                            class="fas fa-pen"></i></button>
+                    <button onclick="window.deleteCurrentProject()"
+                        style="border:none; background:none; color:var(--danger);"><i class="fas fa-trash"></i></button>
+                </div>
+            </div>
+            <div style="padding:20px; overflow-y:auto;">
+                <h2 id="d-client" style="margin:0 0 5px 0; color:var(--primary);"></h2>
+                <div id="d-status-badge" style="margin-bottom:10px;"></div>
+                <p id="d-address" style="color:#546e7a; margin:0 0 20px 0; font-size:14px;"></p>
+                <div style="display:flex; gap:10px; margin-bottom:20px;">
+                    <a href="#" id="btn-call" class="contact-btn"
+                        style="background:var(--success); color:white; text-decoration:none; flex:1; text-align:center; padding:12px; border-radius:4px; font-weight:bold;"><i
+                            class="fas fa-phone"></i> Hívás</a>
+                    <a href="#" id="btn-mail" class="contact-btn"
+                        style="background:#0288d1; color:white; text-decoration:none; flex:1; text-align:center; padding:12px; border-radius:4px; font-weight:bold;"><i
+                            class="fas fa-envelope"></i> Email</a>
+                </div>
+                <div style="display:flex; align-items:center; gap:10px; margin-bottom:20px;">
+                    <a href="#" id="map-link" target="_blank" class="nav-map-link"
+                        style="background:#607d8b; color:white; flex:1; padding:12px; border-radius:4px; font-weight:bold; justify-content:center;"><i
+                            class="fas fa-location-arrow"></i> Útvonal</a>
+                </div>
+
+                <div class="card">
+                    <label>Helyiségek / Területek</label>
+                    <div style="display:flex; gap:5px; margin-bottom:10px;">
+                        <input type="text" id="new-room-input" placeholder="Pl. Nappali" style="flex:2;">
+                        <input type="number" id="new-room-size" placeholder="m²" style="flex:1;">
+                        <button onclick="window.addRoom()" class="primary" style="width:40px; padding:0;"><i
+                                class="fas fa-plus"></i></button>
+                    </div>
+                    <div id="d-rooms"></div>
+                </div>
+
+                <div class="card" style="border-left: 4px solid #78909c;">
+                    <label>DOKUMENTUMOK</label>
+                    <div id="d-docs-list" style="margin-bottom:10px;"></div>
+                    <label class="secondary"
+                        style="text-align:center; display:block; padding:10px; cursor:pointer; background:#eceff1;">
+                        <i class="fas fa-file-upload"></i> Feltöltés (Max 15MB)
+                        <input type="file" style="display:none;" onchange="window.addDocument(this)">
+                    </label>
+                </div>
+
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                    <h3 style="margin:0; font-size:14px; color:#78909c;">ANYAGOK</h3>
+                    <div style="display:flex; gap:5px;">
+                        <button onclick="window.generateProjectPDF()"
+                            style="background:#546e7a; color:white; border:none; border-radius:4px; padding:5px 10px;"><i
+                                class="fas fa-file-pdf"></i></button>
+                        <button onclick="window.shareProjectList()"
+                            style="background:#78909c; color:white; border:none; border-radius:4px; padding:5px 10px;"><i
+                                class="fas fa-share-nodes"></i></button>
                     </div>
                 </div>
-                <div class="input-group"><input type="text" id="shop-code" placeholder="Típus / Szín / Kód"></div>
-                <div class="input-group"><input type="text" id="shop-note" placeholder="Megjegyzés"></div>
-                <label class="photo-btn"><i class="fas fa-camera"></i> FOTÓ<input type="file" id="shop-photo" accept="image/*" style="display:none;" onchange="window.handleShopPhoto(this)"></label>
-                <img id="shop-photo-prev" class="photo-preview">
-                
-                <div style="background:#f1f8e9; padding:15px; border-radius:6px; border:1px solid #c5e1a5; margin-top:10px;">
-                    <label style="color:#33691e;">Hozzárendelés</label>
-                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
-                        <div class="input-group" style="margin:0;"><label>Ügyfél</label><select id="shop-project-select" onchange="window.updateRoomSelectInShop()" style="background:white;"></select></div>
-                        <div class="input-group" style="margin:0;"><label>Helyiség</label><select id="shop-room-select" style="background:white;"></select></div>
-                    </div>
-                </div>
-
-                <button onclick="window.addShopItem()" class="primary" style="margin-top:15px;">HOZZÁADÁS</button>
-            </div>
-            <div id="shop-list"></div>
-            <button onclick="window.shareShopList()" class="secondary" style="width:100%; margin-top:20px; background:#37474f; color:white;">LISTA KÜLDÉSE</button>
-        </div>
-
-        <div id="view-calc" class="view">
-            <div class="card">
-                <h3>Anyagszükséglet</h3>
-                <div class="input-group">
-                    <label>Kalkuláció Típusa</label>
-                    <select id="calc-type" onchange="window.renderCalcInputs()" style="font-weight:bold; color:var(--primary);">
-                        <option value="paint">Festés / Folyékony</option>
-                        <option value="adhesive">Ragasztás / Habarcs</option>
-                        <option value="plaster">Glettelés / Simítás</option>
-                        <option value="screed">Betonozás / Aljzat</option>
-                        <option value="plaster_finish">Vakolás</option>
-                    </select>
-                </div>
-                <div id="calc-inputs-container"></div>
-                <button onclick="window.calculateMaterial()" class="primary" style="margin-top:20px;">SZÁMOLÁS</button>
-                <div id="calc-result-box" class="calc-result-box">
-                    <div class="calc-val" id="calc-result-num"></div>
-                    <div style="font-size:14px; margin-top:5px;" id="calc-result-desc"></div>
-                </div>
+                <div id="d-materials-list"></div>
+                <button onclick="window.goToShopForCurrentProject()" class="secondary"
+                    style="width:100%; margin-top:20px;">+ ANYAG HOZZÁADÁSA</button>
             </div>
         </div>
+
+        <div id="modal-overlay-edit"></div>
+        <div id="detail-edit" class="modal-box">
+            <h3>Szerkesztés</h3>
+            <div class="input-group"><label>Név</label><input type="text" id="edit-client"></div>
+            <div class="input-group"><label>Telefon</label><input type="tel" id="edit-phone"></div>
+            <div class="input-group"><label>Email</label><input type="email" id="edit-email"></div>
+            <div class="input-group"><label>Cím</label><input type="text" id="edit-address"></div>
+            <div class="input-group"><label>Állapot</label><select id="edit-status">
+                    <option value="active">Elkezdett</option>
+                    <option value="suspend">Felfüggesztve</option>
+                    <option value="done">Befejezett</option>
+                </select></div>
+            <div class="input-group"><label>Jegyzet</label><textarea id="edit-note"></textarea></div>
+            <div style="display:flex; gap:10px;">
+                <div class="input-group" style="flex:1"><label>Kezdés</label><input type="date" id="edit-start"></div>
+                <div class="input-group" style="flex:1"><label>Vége</label><input type="date" id="edit-end"></div>
+            </div><button onclick="window.saveEdit()" class="primary">MENTÉS</button><button
+                onclick="window.closeEditModal()" class="secondary">MÉGSE</button>
+        </div>
+
+        <div id="item-edit-box" class="modal-box"><input type="hidden" id="item-edit-id">
+            <div class="input-group"><label>Db</label><input type="number" id="item-edit-qty"></div>
+            <div class="input-group"><label>Név</label><input type="text" id="item-edit-text"></div>
+            <div class="input-group"><label>Kód</label><input type="text" id="item-edit-code"></div>
+            <div class="input-group"><label>Jegyzet</label><input type="text" id="item-edit-note"></div><button
+                onclick="window.saveItemEdit()" class="primary">Mentés</button><button onclick="window.closeModal()"
+                class="secondary">Mégse</button>
+        </div>
+
+        <div id="modal-overlay" class="modal-overlay"></div>
+        <div id="toast">Üzenet</div>
+        <div id="backup-box" class="modal-box">
+            <h3>Adatbázis</h3><button onclick="window.exportData()" class="primary"
+                style="background:#2e7d32;">LETÖLTÉS</button><label class="secondary"
+                style="text-align:center; display:block; margin-top:10px;">VISSZATÖLTÉS<input type="file"
+                    style="display:none;" onchange="window.importData(this)"></label><button
+                onclick="window.closeModal()" class="secondary" style="margin-top:20px;">BEZÁRÁS</button>
+        </div>
+        <div id="fav-box" class="modal-box">
+            <h3>Gyorslista</h3>
+            <div id="fav-list-container"></div><button onclick="window.closeModal()" class="secondary">Bezárás</button>
+        </div>
+
+        <!-- End App Content -->
     </div>
 
-    <nav class="navbar">
-        <button class="nav-btn active" id="btn-dash"><i class="fas fa-chart-pie"></i>Áttek.</button>
-        <button class="nav-btn" id="btn-proj"><i class="fas fa-folder-open"></i>Munkák</button>
-        <button class="fab" id="fab-new-project"><i class="fas fa-plus"></i></button>
-        <button class="nav-btn" id="btn-cal"><i class="fas fa-calendar-alt"></i>Naptár</button>
-        <button class="nav-btn" id="btn-quote"><i class="fas fa-file-invoice"></i>Ajánlat</button>
-        <button class="nav-btn" id="btn-shop"><i class="fas fa-shopping-cart"></i>Bolt</button>
-    </nav>
-
-    <div id="profile-box" class="modal-box">
-        <h3>Vállalkozás Adatai</h3>
-        <label class="photo-btn"><i class="fas fa-image"></i> CÉGES LOGÓ FELTÖLTÉSE<input type="file" accept="image/*" style="display:none;" onchange="window.handleLogoUpload(this)"></label>
-        <div id="logo-preview-container" style="text-align:center; margin-bottom:15px; display:none;"><img id="logo-preview" style="max-height:80px;"></div>
-        <div class="input-group"><label>Cégnév</label><input type="text" id="prof-name"></div>
-        <div class="input-group"><label>Cím</label><input type="text" id="prof-address"></div>
-        <div class="input-group"><label>Adószám</label><input type="text" id="prof-tax"></div>
-        <div class="input-group"><label>Telefon</label><input type="text" id="prof-phone"></div>
-        <div class="input-group"><label>Email</label><input type="text" id="prof-email"></div>
-        <div class="input-group"><label>Bankszámla</label><input type="text" id="prof-bank"></div>
-        <button onclick="window.saveProfile()" class="success">MENTÉS</button>
-        <button onclick="window.closeModal()" class="secondary">BEZÁRÁS</button>
-    </div>
-    
-    <div id="new-project-box" class="modal-box">
-        <h3>Új Ügyfél / Munka</h3>
-        <div class="input-group"><label>Megrendelő Neve</label><input type="text" id="inp-client"></div>
-        <div class="input-group"><label>Telefon</label><input type="tel" id="inp-phone"></div>
-        <div class="input-group"><label>Email</label><input type="email" id="inp-email"></div>
-        <div class="input-group"><label>Munkaterület Címe</label><input type="text" id="inp-address"></div>
-        <div class="input-group"><label>Állapot</label>
-            <select id="inp-status">
-                <option value="active">Elkezdett</option>
-                <option value="suspend">Felfüggesztve</option>
-                <option value="done">Befejezett</option>
-            </select>
-        </div>
-        <div class="input-group"><label>Jegyzet</label><textarea id="inp-note"></textarea></div>
-        <div style="display:flex; gap:10px;">
-            <div class="input-group" style="flex:1"><label>Kezdés</label><input type="date" id="inp-start"></div>
-            <div class="input-group" style="flex:1"><label>Vége</label><input type="date" id="inp-end"></div>
-        </div>
-        <button onclick="window.saveProject()" class="primary">LÉTREHOZÁS</button>
-        <button onclick="window.closeModal()" class="secondary">MÉGSE</button>
-    </div>
-
-    <div id="client-selector-box" class="modal-box">
-        <h3>Válassz Ügyfelet</h3>
-        <div class="input-group"><input type="text" placeholder="Keresés..." onkeyup="window.renderClientSelector(this.value)"></div>
-        <div id="client-selector-list" style="max-height:300px; overflow-y:auto;"></div>
-        <button onclick="window.closeModal()" class="secondary">MÉGSE</button>
-    </div>
-
-    <div id="view-detail" class="modal-box" style="width:100%; height:100%; max-height:100%; border-radius:0; padding:0; display:none; background:#eceff1;">
-        <div style="background:white; padding:15px; border-bottom:1px solid #e0e0e0; display:flex; justify-content:space-between; align-items:center;">
-            <button onclick="window.closeModal()" style="border:none; background:none; color:var(--primary); font-weight:bold;"><i class="fas fa-arrow-left"></i> VISSZA</button>
-            <div>
-                <button onclick="window.openEditModal()" style="border:none; background:none; color:var(--text); margin-right:10px;"><i class="fas fa-pen"></i></button>
-                <button onclick="window.deleteCurrentProject()" style="border:none; background:none; color:var(--danger);"><i class="fas fa-trash"></i></button>
-            </div>
-        </div>
-        <div style="padding:20px; overflow-y:auto;">
-            <h2 id="d-client" style="margin:0 0 5px 0; color:var(--primary);"></h2>
-            <div id="d-status-badge" style="margin-bottom:10px;"></div>
-            <p id="d-address" style="color:#546e7a; margin:0 0 20px 0; font-size:14px;"></p>
-            <div style="display:flex; gap:10px; margin-bottom:20px;">
-                <a href="#" id="btn-call" class="contact-btn" style="background:var(--success); color:white; text-decoration:none; flex:1; text-align:center; padding:12px; border-radius:4px; font-weight:bold;"><i class="fas fa-phone"></i> Hívás</a>
-                <a href="#" id="btn-mail" class="contact-btn" style="background:#0288d1; color:white; text-decoration:none; flex:1; text-align:center; padding:12px; border-radius:4px; font-weight:bold;"><i class="fas fa-envelope"></i> Email</a>
-            </div>
-            <div style="display:flex; align-items:center; gap:10px; margin-bottom:20px;">
-                 <a href="#" id="map-link" target="_blank" class="nav-map-link" style="background:#607d8b; color:white; flex:1; padding:12px; border-radius:4px; font-weight:bold; justify-content:center;"><i class="fas fa-location-arrow"></i> Útvonal</a>
-            </div>
-            
-            <div class="card">
-                <label>Helyiségek / Területek</label>
-                <div style="display:flex; gap:5px; margin-bottom:10px;">
-                    <input type="text" id="new-room-input" placeholder="Pl. Nappali" style="flex:2;">
-                    <input type="number" id="new-room-size" placeholder="m²" style="flex:1;">
-                    <button onclick="window.addRoom()" class="primary" style="width:40px; padding:0;"><i class="fas fa-plus"></i></button>
-                </div>
-                <div id="d-rooms"></div>
-            </div>
-
-            <div class="card" style="border-left: 4px solid #78909c;">
-                <label>DOKUMENTUMOK</label>
-                <div id="d-docs-list" style="margin-bottom:10px;"></div>
-                <label class="secondary" style="text-align:center; display:block; padding:10px; cursor:pointer; background:#eceff1;">
-                    <i class="fas fa-file-upload"></i> Feltöltés (Max 15MB)
-                    <input type="file" style="display:none;" onchange="window.addDocument(this)">
-                </label>
-            </div>
-
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-                <h3 style="margin:0; font-size:14px; color:#78909c;">ANYAGOK</h3>
-                <div style="display:flex; gap:5px;">
-                    <button onclick="window.generateProjectPDF()" style="background:#546e7a; color:white; border:none; border-radius:4px; padding:5px 10px;"><i class="fas fa-file-pdf"></i></button>
-                    <button onclick="window.shareProjectList()" style="background:#78909c; color:white; border:none; border-radius:4px; padding:5px 10px;"><i class="fas fa-share-nodes"></i></button>
-                </div>
-            </div>
-            <div id="d-materials-list"></div>
-            <button onclick="window.goToShopForCurrentProject()" class="secondary" style="width:100%; margin-top:20px;">+ ANYAG HOZZÁADÁSA</button>
-        </div>
-    </div>
-
-    <div id="modal-overlay-edit"></div>
-    <div id="detail-edit" class="modal-box"><h3>Szerkesztés</h3><div class="input-group"><label>Név</label><input type="text" id="edit-client"></div><div class="input-group"><label>Telefon</label><input type="tel" id="edit-phone"></div><div class="input-group"><label>Email</label><input type="email" id="edit-email"></div><div class="input-group"><label>Cím</label><input type="text" id="edit-address"></div><div class="input-group"><label>Állapot</label><select id="edit-status"><option value="active">Elkezdett</option><option value="suspend">Felfüggesztve</option><option value="done">Befejezett</option></select></div><div class="input-group"><label>Jegyzet</label><textarea id="edit-note"></textarea></div><div style="display:flex; gap:10px;"><div class="input-group" style="flex:1"><label>Kezdés</label><input type="date" id="edit-start"></div><div class="input-group" style="flex:1"><label>Vége</label><input type="date" id="edit-end"></div></div><button onclick="window.saveEdit()" class="primary">MENTÉS</button><button onclick="window.closeEditModal()" class="secondary">MÉGSE</button></div>
-    
-    <div id="item-edit-box" class="modal-box"><input type="hidden" id="item-edit-id"><div class="input-group"><label>Db</label><input type="number" id="item-edit-qty"></div><div class="input-group"><label>Név</label><input type="text" id="item-edit-text"></div><div class="input-group"><label>Kód</label><input type="text" id="item-edit-code"></div><div class="input-group"><label>Jegyzet</label><input type="text" id="item-edit-note"></div><button onclick="window.saveItemEdit()" class="primary">Mentés</button><button onclick="window.closeModal()" class="secondary">Mégse</button></div>
-    
-    <div id="modal-overlay" class="modal-overlay"></div>
-    <div id="toast">Üzenet</div>
-    <div id="backup-box" class="modal-box"><h3>Adatbázis</h3><button onclick="window.exportData()" class="primary" style="background:#2e7d32;">LETÖLTÉS</button><label class="secondary" style="text-align:center; display:block; margin-top:10px;">VISSZATÖLTÉS<input type="file" style="display:none;" onchange="window.importData(this)"></label><button onclick="window.closeModal()" class="secondary" style="margin-top:20px;">BEZÁRÁS</button></div>
-    <div id="fav-box" class="modal-box"><h3>Gyorslista</h3><div id="fav-list-container"></div><button onclick="window.closeModal()" class="secondary">Bezárás</button></div>
-
-    <script type="module" src="script.js"></script>
+    <script src="script.js"></script>
 </body>
+
 </html>

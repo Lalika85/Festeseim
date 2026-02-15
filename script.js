@@ -74,70 +74,91 @@ async function loadData() {
         projects.sort((a, b) => b.id - a.id); // Descending ID sort (approx timestamp)
 
         // Shop Items (Reload specifically to catch migrated items if any)
-        const shopSnap = await getDocs(collection(db, "shopItems"));
+        projSnap.forEach(doc => projects.push(doc.data()));
+        projects.sort((a, b) => b.id - a.id);
+
+        // Shop Items
+        const shopSnap = await getDocs(getUserRef("shopItems"));
         shopItems = [];
         shopSnap.forEach(doc => shopItems.push(doc.data()));
         shopItems.sort((a, b) => b.id - a.id);
 
         // Profile
-        const profileSnap = await getDocs(collection(db, "settings"));
-        profile = { name: '', address: '', tax: '', phone: '', email: '', bank: '', logo: null };
-        profileSnap.forEach(doc => {
-            if (doc.id === 'profile') profile = { ...profile, ...doc.data() };
-            if (doc.id === 'favorites' && doc.data().items) favorites = doc.data().items;
-        });
+        const profileSnap = await getDocs(getSettingsRef("profile")); // getDocs on a doc ref returns a query snapshot, need to adjust
+        // Correct way to get a single document:
+        const profileDoc = await getDocs(getSettingsRef("profile"));
+        if (profileDoc.exists) profile = profileDoc.data();
 
-        if (favorites.length === 0) {
-            const localFavs = JSON.parse(localStorage.getItem('fn133_favs'));
-            if (localFavs) {
-                favorites = localFavs;
-                await setDoc(doc(db, "settings", "favorites"), { items: favorites });
-            } else {
-                favorites = ["Ragasztó", "Festék", "Gipszkarton", "Csavar", "Kábel", "Profil"];
-            }
-        }
 
-        // Quotes (Reload)
-        const quotesSnap = await getDocs(collection(db, "quotes"));
+        // Favorites
+        const favDoc = await getDocs(getSettingsRef("favorites"));
+        if (favDoc.exists) favorites = favDoc.data().items || [];
+
+        // Quotes
+        const quotesSnap = await getDocs(getUserRef("quotes"));
         savedQuotes = [];
         quotesSnap.forEach(doc => savedQuotes.push(doc.data()));
         savedQuotes.sort((a, b) => b.id - a.id);
 
         console.log("Data loaded");
+
+        // Refresh UI after loading
+        window.renderDashboard();
+        window.updateShopSelect();
+        window.updateProfilePreview();
+        window.renderSavedQuotes();
+        window.renderCalendar(currentCalendarDate);
+
     } catch (e) {
-        console.error("Firestore Error (Make sure config is correct):", e);
-        alert("Hiba a Firebase csatlakozáskor! Ellenőrizd a konzolt.");
+        console.error("Firestore loading error:", e);
+        window.showToast("Hiba az adatok betöltésekor!");
     }
 }
 
-// Helper functions for Firestore sync
-const syncProject = async (p) => { try { await setDoc(doc(db, "projects", String(p.id)), p); } catch (e) { console.error(e); } };
-const syncShop = async (i) => { try { await setDoc(doc(db, "shopItems", String(i.id)), i); } catch (e) { console.error(e); } };
-const syncProfile = async () => { try { await setDoc(doc(db, "settings", "profile"), profile); } catch (e) { console.error(e); } };
-const syncFavorites = async () => { try { await setDoc(doc(db, "settings", "favorites"), { items: favorites }); } catch (e) { console.error(e); } };
-const syncQuote = async (q) => { try { await setDoc(doc(db, "quotes", String(q.id)), q); } catch (e) { console.error(e); } };
-const removeProject = async (id) => { try { await deleteDoc(doc(db, "projects", String(id))); } catch (e) { console.error(e); } };
-const removeShop = async (id) => { try { await deleteDoc(doc(db, "shopItems", String(id))); } catch (e) { console.error(e); } };
-const removeQuote = async (id) => { try { await deleteDoc(doc(db, "quotes", String(id))); } catch (e) { console.error(e); } };
+// --- Sync Functions (User Scoped) ---
+const syncProject = async (p) => { try { if (currentUser) await setDoc(doc(getUserRef("projects"), String(p.id)), p); } catch (e) { console.error(e); } };
+const syncShop = async (i) => { try { if (currentUser) await setDoc(doc(getUserRef("shopItems"), String(i.id)), i); } catch (e) { console.error(e); } };
+const syncProfile = async () => { try { if (currentUser) await setDoc(getSettingsRef("profile"), profile); } catch (e) { console.error(e); } };
+const syncFavorites = async () => { try { if (currentUser) await setDoc(getSettingsRef("favorites"), { items: favorites }); } catch (e) { console.error(e); } };
+const syncQuote = async (q) => { try { if (currentUser) await setDoc(doc(getUserRef("quotes"), String(q.id)), q); } catch (e) { console.error(e); } };
+const removeProject = async (id) => { try { if (currentUser) await deleteDoc(doc(getUserRef("projects"), String(id))); } catch (e) { console.error(e); } };
+const removeShop = async (id) => { try { if (currentUser) await deleteDoc(doc(getUserRef("shopItems"), String(id))); } catch (e) { console.error(e); } };
+const removeQuote = async (id) => { try { if (currentUser) await deleteDoc(doc(getUserRef("quotes"), String(id))); } catch (e) { console.error(e); } };
 
 
-window.onload = async function () {
+window.onload = function () {
+    // UI Init
     bindEvents();
-    await loadData();
-    window.renderDashboard();
-    window.updateShopSelect();
-    window.updateProfilePreview();
-    window.renderSavedQuotes();
     if (document.getElementById('quote-date')) document.getElementById('quote-date').valueAsDate = new Date();
     window.renderCalcInputs();
-    window.renderCalendar(currentCalendarDate);
-    window.showToast("Napló v13.5 (Firebase)");
+    window.showToast("Napló v14.0 (Auth)");
+
+    // Auth State Listener
+    onAuthStateChanged(auth, async (user) => {
+        if (user) {
+            // Logged In
+            currentUser = user;
+            document.getElementById('login-screen').style.display = 'none';
+            document.getElementById('app-content').style.display = 'block';
+            document.getElementById('user-display').innerText = user.email;
+            await window.loadData();
+        } else {
+            // Logged Out
+            currentUser = null;
+            document.getElementById('login-screen').style.display = 'flex';
+            document.getElementById('app-content').style.display = 'none';
+        }
+    });
+
+    // Login Button
+    document.getElementById('btn-login').addEventListener('click', loginWithGoogle);
 };
 
 function bindEvents() {
     // Header
     document.getElementById('header-share-btn').addEventListener('click', () => window.shareCurrentShopList());
     document.getElementById('header-backup-btn').addEventListener('click', () => window.openModal('backup-box'));
+    document.getElementById('header-logout-btn').addEventListener('click', logout);
 
     // Navbar
     document.getElementById('btn-dash').addEventListener('click', () => window.switchTab('dashboard'));
