@@ -153,7 +153,7 @@ function bindEvents() {
 
     // Calendar
     document.getElementById('sync-google-calendar').addEventListener('click', () => {
-        window.open('http://localhost:3000/auth', '_blank');
+        window.open('http://192.168.10.36.nip.io:3000/auth', '_blank');
     });
 }
 
@@ -181,7 +181,7 @@ window.showToast = function (msg) { const t = document.getElementById("toast"); 
 
 window.fetchGoogleCalendarEvents = async function () {
     try {
-        const response = await fetch('http://localhost:3000/events');
+        const response = await fetch('http://192.168.10.36.nip.io:3000/events');
         if (!response.ok) {
             // Don't show an error toast, as the user might not be logged in
             console.error('Error fetching Google Calendar events:', response.statusText);
@@ -206,7 +206,7 @@ window.syncProjectToCalendar = async function (p) {
     };
 
     try {
-        let url = 'http://localhost:3000/events';
+        let url = 'http://192.168.10.36.nip.io:3000/events';
         let method = 'POST';
 
         if (p.googleEventId) {
@@ -465,7 +465,7 @@ window.deleteCurrentProject = function () {
     if (!confirm('Törlöd?')) return;
     const p = projects.find(x => x.id == currentDetailId);
     if (p && p.googleEventId) {
-        fetch('http://localhost:3000/events/' + p.googleEventId, { method: 'DELETE' }).catch(console.error);
+        fetch('http://192.168.10.36.nip.io:3000/events/' + p.googleEventId, { method: 'DELETE' }).catch(console.error);
     }
     removeProject(currentDetailId);
     projects = projects.filter(x => x.id != currentDetailId);
