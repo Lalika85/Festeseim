@@ -21,11 +21,21 @@
     <div id="login-screen"
         style="position:fixed; top:0; left:0; width:100%; height:100%; background:var(--bg-color); z-index:9999; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:20px; text-align:center;">
         <h1 style="color:var(--primary); margin-bottom:10px;">Vállalkozói Napló</h1>
-        <p style="color:var(--text); margin-bottom:30px;">Kérlek jelentkezz be a folytatáshoz</p>
-        <button id="btn-login" class="btn primary"
-            style="padding:15px 30px; font-size:18px; display:flex; align-items:center; gap:10px;">
-            <span class="material-icons">login</span> Bejelentkezés Google-fiókkal
-        </button>
+        <p style="color:var(--text); margin-bottom:20px;">Jelentkezz be vagy regisztrálj!</p>
+
+        <div style="width:100%; max-width:300px; display:flex; flex-direction:column; gap:10px;">
+            <input type="email" id="login-email" placeholder="Email cím" class="form-control"
+                style="padding:12px; border-radius:8px; border:1px solid #ddd;">
+            <input type="password" id="login-password" placeholder="Jelszó (min. 6 karakter)" class="form-control"
+                style="padding:12px; border-radius:8px; border:1px solid #ddd;">
+
+            <div id="login-error" style="color:red; font-size:14px; display:none;"></div>
+
+            <button id="btn-login-email" class="btn primary"
+                style="padding:12px; font-size:16px;">Bejelentkezés</button>
+            <button id="btn-register-email" class="btn secondary"
+                style="padding:12px; font-size:16px;">Regisztráció</button>
+        </div>
     </div>
 
     <!-- App Content (Hidden by default) -->
