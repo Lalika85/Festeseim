@@ -3,125 +3,43 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Vállalkozói Napló v13.4</title>
+    <title>Vállalkozói Napló v13.5</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
     
-    <style>
-        :root { --primary: #1a237e; --accent: #f57f17; --bg: #eceff1; --text: #263238; --white: #ffffff; --success: #2e7d32; --danger: #c62828; --warning: #fbc02d; --radius: 8px; }
-        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; outline: none; }
-        body { font-family: 'Roboto', sans-serif; background-color: var(--bg); margin: 0; padding: 0; display: flex; flex-direction: column; height: 100vh; color: var(--text); }
-        
-        header { flex: 0 0 60px; background: var(--primary); color: var(--white); display: flex; justify-content: space-between; align-items: center; padding: 0 20px; box-shadow: 0 2px 5px rgba(0,0,0,0.2); z-index: 100; }
-        h1 { margin: 0; font-size: 18px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; }
-        .header-actions button { color: var(--white); background: transparent; border: none; font-size: 18px; padding: 10px; cursor: pointer; }
-
-        #main-container { flex: 1; overflow-y: auto; padding: 15px; padding-bottom: 80px; }
-
-        .card { 
-            background: var(--white); 
-            border-radius: var(--radius); 
-            padding: 20px; 
-            margin-bottom: 15px; 
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1); 
-            border-left: 4px solid transparent;
-            cursor: pointer; 
-            position: relative; 
-            z-index: 10;
-        }
-        .card:active { transform: scale(0.98); background: #f5f5f5; }
-        .card h3 { margin-top: 0; font-size: 15px; color: var(--primary); border-bottom: 2px solid #eee; padding-bottom: 10px; margin-bottom: 15px; text-transform: uppercase; }
-
-        .input-group { margin-bottom: 15px; }
-        label { display: block; font-size: 11px; font-weight: 700; color: #546e7a; margin-bottom: 5px; text-transform: uppercase; }
-        input, select, textarea { width: 100%; padding: 12px; border: 1px solid #cfd8dc; border-radius: var(--radius); font-size: 16px; background: #fff; color: #333; }
-        
-        button { cursor: pointer; font-family: inherit; transition: 0.2s; }
-        button:active { transform: scale(0.98); }
-        button.primary { width: 100%; background: var(--primary); color: var(--white); border: none; padding: 14px; border-radius: var(--radius); font-size: 14px; font-weight: bold; text-transform: uppercase; }
-        button.secondary { width: 100%; background: #cfd8dc; color: #37474f; border: none; padding: 14px; border-radius: var(--radius); font-size: 14px; font-weight: bold; margin-top: 10px; text-transform: uppercase; }
-        button.success { width: 100%; background: var(--success); color: var(--white); border: none; padding: 14px; border-radius: var(--radius); font-size: 14px; font-weight: bold; margin-top:10px; text-transform: uppercase; }
-
-        .navbar { flex: 0 0 70px; background: var(--white); border-top: 1px solid #cfd8dc; display: flex; justify-content: space-around; align-items: center; z-index: 100; overflow-x: auto; }
-        .nav-btn { background: none; border: none; display: flex; flex-direction: column; align-items: center; color: #90a4ae; font-size: 10px; font-weight: bold; min-width: 60px; }
-        .nav-btn i { font-size: 22px; margin-bottom: 4px; }
-        .nav-btn.active { color: var(--primary); }
-        .fab { width: 56px; height: 56px; background: var(--accent); border-radius: 50%; color: #fff; border: none; font-size: 24px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center; margin-top: -30px; position: relative; z-index: 101; flex-shrink: 0; }
-
-        .list-item { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid #eee; }
-        .check-circle { width: 30px; height: 30px; border-radius: 50%; border: 2px solid #b0bec5; display: flex; align-items: center; justify-content: center; margin-right: 15px; flex-shrink: 0; cursor: pointer; }
-        .item-done .check-circle { background-color: var(--success); border-color: var(--success); color: white; }
-        .item-done .item-text { text-decoration: line-through; color: #b0bec5; }
-        
-        .photo-btn { border: 2px dashed var(--primary); color: var(--primary); background: #e8eaf6; padding: 15px; border-radius: var(--radius); text-align: center; font-weight: bold; display: block; margin-bottom: 10px; }
-        .photo-preview { width: 100%; height: 200px; object-fit: contain; background: #fff; border: 1px solid #ddd; display: none; margin-bottom: 10px; }
-        .calc-result-box { display:none; background: var(--primary); color: white; padding: 20px; border-radius: var(--radius); text-align: center; margin-top: 20px; }
-        .calc-val { font-size: 32px; font-weight: 900; color: var(--accent); }
-        .nav-map-link { text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 8px; }
-        .room-tag { background: #546e7a; color: white; padding: 3px 8px; border-radius: 3px; font-size: 11px; margin-right: 5px; display: inline-block; margin-bottom: 5px; }
-        .doc-item { display: flex; align-items: center; padding: 10px; background: #f5f5f5; border-radius: 4px; margin-bottom: 5px; }
-        .doc-icon { font-size: 20px; margin-right: 15px; color: var(--primary); }
-        .doc-name { flex: 1; font-weight: bold; font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-
-        .calendar-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
-        .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; text-align: center; }
-        .cal-day-header { font-weight: bold; font-size: 12px; color: #78909c; padding-bottom: 5px; }
-        .cal-day { padding: 8px 0; border-radius: 4px; font-size: 14px; position: relative; border: 1px solid transparent; min-height: 40px; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; }
-        .cal-day.today { border: 2px solid var(--accent); }
-        .cal-day.empty { background: transparent; }
-        .cal-dots { display: flex; gap: 2px; margin-top: 2px; flex-wrap: wrap; justify-content: center; }
-        .cal-dot { width: 6px; height: 6px; border-radius: 50%; }
-
-        .badge { font-size: 10px; padding: 3px 6px; border-radius: 4px; font-weight: bold; text-transform: uppercase; color: white; display: inline-block; margin-bottom: 5px; }
-        .bg-active { background: var(--primary); }
-        .bg-suspend { background: var(--warning); color: #333; }
-        .bg-done { background: #546e7a; text-decoration: line-through; }
-
-        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 2000; display: none; }
-        .modal-box { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 95%; max-height: 95%; background: #fff; border-radius: var(--radius); z-index: 2001; display: none; flex-direction: column; padding: 20px; box-shadow: 0 20px 60px rgba(0,0,0,0.5); overflow-y: auto; }
-        
-        #detail-edit { z-index: 9999 !important; }
-        #modal-overlay-edit { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 9998; display: none; }
-
-        #toast { visibility: hidden; min-width: 250px; background-color: #333; color: #fff; text-align: center; border-radius: 4px; padding: 16px; position: fixed; z-index: 10000; left: 50%; bottom: 30px; transform: translateX(-50%); font-size: 14px; opacity: 0; transition: opacity 0.3s; }
-        #toast.show { visibility: visible; opacity: 1; }
-        .view { display: none; }
-        .view.active { display: block; }
-        .quote-row { display: flex; align-items: center; border-bottom: 1px solid #eee; padding: 10px 0; }
-    </style>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
     <header>
-        <div><div style="font-size:10px; opacity:0.8;">VÁLLALKOZÓI RENDSZER</div><h1>Vállalkozói Napló PRO</h1></div>
+        <div><div class="header-subtitle">VÁLLALKOZÓI RENDSZER</div><h1>Vállalkozói Napló PRO</h1></div>
         <div class="header-actions">
-            <button id="header-share-btn" onclick="window.shareCurrentShopList()" style="display:none;"><i class="fas fa-share-nodes"></i></button>
-            <button onclick="window.openModal('backup-box')"><i class="fas fa-database"></i></button>
+            <button id="header-share-btn" class="hidden"><i class="fas fa-share-nodes"></i></button>
+            <button id="header-backup-btn"><i class="fas fa-database"></i></button>
         </div>
     </header>
 
     <div id="main-container">
         <div id="view-dashboard" class="view active">
-            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-bottom:15px;">
-                <div class="card" onclick="window.switchTab('quote')" style="margin:0; background: linear-gradient(135deg, #1a237e 0%, #283593 100%); color:white;">
-                    <i class="fas fa-file-invoice" style="font-size:24px; margin-bottom:10px;"></i><div style="font-weight:bold;">Árajánlat</div>
-                </div>
-                <div class="card" onclick="window.switchTab('calc')" style="margin:0; background: linear-gradient(135deg, #ffab00 0%, #ff6f00 100%); color:white;">
-                    <i class="fas fa-calculator" style="font-size:24px; margin-bottom:10px;"></i><div style="font-weight:bold;">Kalkulátor</div>
-                </div>
-            </div>
-            <h3 style="font-size:14px; text-transform:uppercase; color:#78909c; margin: 10px 0;">Aktív Munkák</h3>
+            <div class="grid-2-col">
+                        <div id="dash-card-quote" class="card card--quote">
+                            <i class="fas fa-file-invoice card-icon"></i><div class="card-title">Árajánlat</div>
+                        </div>
+                        <div id="dash-card-calc" class="card card--calc">
+                            <i class="fas fa-calculator card-icon"></i><div class="card-title">Kalkulátor</div>
+                        </div>            </div>
+            <h3 class="section-title">Aktív Munkák</h3>
             <div id="dashboard-list"></div>
         </div>
 
         <div id="view-projects" class="view">
-            <div style="display:flex; gap:10px; margin-bottom:15px;">
-                <div class="input-group" style="flex:2; margin:0;">
+            <div class="filter-bar">
+                <div class="input-group flex-2">
                     <input type="text" placeholder="Keresés..." onkeyup="window.filterProjects()" id="search-input">
                 </div>
-                <div class="input-group" style="flex:1; margin:0;">
-                    <select id="filter-status" onchange="window.filterProjects()" style="background:#fff;">
+                <div class="input-group flex-1">
+                    <select id="filter-status" onchange="window.filterProjects()">
                         <option value="all">Összes</option>
                         <option value="active">Elkezdett</option>
                         <option value="suspend">Felfügg.</option>
@@ -135,9 +53,9 @@
         <div id="view-calendar" class="view">
             <div class="card">
                 <div class="calendar-header">
-                    <button onclick="window.changeMonth(-1)" class="secondary" style="margin:0; padding:5px 15px;"><i class="fas fa-chevron-left"></i></button>
-                    <h3 id="cal-month-name" style="margin:0; border:none; color:#333;"></h3>
-                    <button onclick="window.changeMonth(1)" class="secondary" style="margin:0; padding:5px 15px;"><i class="fas fa-chevron-right"></i></button>
+                    <button onclick="window.changeMonth(-1)" class="secondary"><i class="fas fa-chevron-left"></i></button>
+                    <h3 id="cal-month-name"></h3>
+                    <button onclick="window.changeMonth(1)" class="secondary"><i class="fas fa-chevron-right"></i></button>
                 </div>
                 <div class="calendar-grid">
                     <div class="cal-day-header">H</div><div class="cal-day-header">K</div><div class="cal-day-header">Sz</div><div class="cal-day-header">Cs</div><div class="cal-day-header">P</div><div class="cal-day-header">Sz</div><div class="cal-day-header">V</div>
@@ -151,16 +69,16 @@
         </div>
 
         <div id="view-quote" class="view">
-            <div class="card" style="border-left: 4px solid var(--accent);">
-                <div style="display:flex; justify-content:space-between; align-items:center;">
-                    <h3 style="margin:0; border:none;">Cégadatok & Logó</h3>
-                    <button onclick="window.openModal('profile-box')" style="background:#eceff1; border:none; padding:6px 12px; border-radius:4px; font-weight:bold;">SZERKESZTÉS</button>
+            <div class="card card--accent-border">
+                <div class="card-header">
+                    <h3>Cégadatok & Logó</h3>
+                    <button onclick="window.openModal('profile-box')" class="btn-edit">SZERKESZTÉS</button>
                 </div>
-                <div id="quote-company-preview" style="font-size:13px; color:#546e7a; margin-top:10px;"></div>
+                <div id="quote-company-preview"></div>
             </div>
             <div class="card">
                 <h3>Megrendelő</h3>
-                <button onclick="window.openClientSelector()" class="secondary" style="width:100%; margin-bottom:10px; margin-top:0;"><i class="fas fa-user-check"></i> Meglévő Ügyfél Kiválasztása</button>
+                <button onclick="window.openClientSelector()" class="secondary btn-select-client"><i class="fas fa-user-check"></i> Meglévő Ügyfél Kiválasztása</button>
                 <div class="input-group"><input type="text" id="quote-client-name" placeholder="Név"></div>
                 <div class="input-group"><input type="text" id="quote-client-address" placeholder="Cím"></div>
                 <div class="input-group"><label>Dátum</label><input type="date" id="quote-date"></div>
@@ -169,34 +87,33 @@
                 <h3>Tételek</h3>
                 <div id="quote-items-container"></div>
                 
-                <div style="background:#f5f7f8; padding:15px; border-radius:4px; margin-top:15px; border:1px solid #e0e0e0;">
-                    
-                    <div style="display:flex; gap:10px; margin-bottom:10px;">
-                        <input type="text" id="q-item-name" placeholder="Munka/Anyag neve" style="flex:3;">
-                        <input type="number" id="q-item-qty" placeholder="Menny." style="flex:1;">
-                        <select id="q-item-unit" style="flex:1;">
+                <div class="quote-item-adder">
+                    <div class="quote-item-adder-row">
+                        <input type="text" id="q-item-name" placeholder="Munka/Anyag neve" class="flex-3">
+                        <input type="number" id="q-item-qty" placeholder="Menny." class="flex-1">
+                        <select id="q-item-unit" class="flex-1">
                             <option value="m²">m²</option><option value="db">db</option><option value="fm">fm</option>
                             <option value="óra">óra</option><option value="nap">nap</option><option value="kg">kg</option><option value="liter">liter</option>
                         </select>
-                        <input type="number" id="q-item-layers" placeholder="Rét." style="flex:1; max-width: 50px;" title="Rétegek száma">
+                        <input type="number" id="q-item-layers" placeholder="Rét." class="flex-1" title="Rétegek száma">
                     </div>
-                    <div style="display:flex; gap:10px;">
-                        <select id="q-price-type" style="flex:1;">
+                    <div class="quote-item-adder-row">
+                        <select id="q-price-type" class="flex-1">
                             <option value="net">Nettó</option>
                             <option value="gross">Bruttó</option>
                         </select>
-                        <select id="q-vat-rate" style="flex:1;">
+                        <select id="q-vat-rate" class="flex-1">
                             <option value="0">AAM (0%)</option>
                             <option value="27" selected>27%</option>
                             <option value="18">18%</option>
                             <option value="5">5%</option>
                             <option value="0.1">0%</option>
                         </select>
-                        <input type="number" id="q-item-price" placeholder="Ár" style="flex:1.5;">
-                        <button onclick="window.addQuoteItem()" style="background:var(--success); color:white; border:none; border-radius:4px; width:50px;"><i class="fas fa-plus"></i></button>
+                        <input type="number" id="q-item-price" placeholder="Ár" class="flex-1-5">
+                        <button onclick="window.addQuoteItem()" class="quote-item-adder-row btn-add"><i class="fas fa-plus"></i></button>
                     </div>
                 </div>
-                <div id="quote-grand-total" style="font-size:18px; font-weight:bold; text-align:right; margin-top:15px; color:var(--primary);">Nettó: 0 Ft | Bruttó: 0 Ft</div>
+                <div id="quote-grand-total" class="quote-total-display">Nettó: 0 Ft | Bruttó: 0 Ft</div>
             </div>
             <div style="display:flex; gap:10px;">
                 <button onclick="window.saveCurrentQuote()" class="secondary" style="flex:1;"><i class="fas fa-save"></i> MENTÉS</button>
@@ -261,12 +178,12 @@
     </div>
 
     <nav class="navbar">
-        <button class="nav-btn active" onclick="window.switchTab('dashboard')" id="btn-dash"><i class="fas fa-chart-pie"></i>Áttek.</button>
-        <button class="nav-btn" onclick="window.switchTab('projects')" id="btn-proj"><i class="fas fa-folder-open"></i>Munkák</button>
-        <button class="fab" onclick="window.openNewProject()"><i class="fas fa-plus"></i></button>
-        <button class="nav-btn" onclick="window.switchTab('calendar')" id="btn-cal"><i class="fas fa-calendar-alt"></i>Naptár</button>
-        <button class="nav-btn" onclick="window.switchTab('quote')" id="btn-quote"><i class="fas fa-file-invoice"></i>Ajánlat</button>
-        <button class="nav-btn" onclick="window.switchTab('shop')" id="btn-shop"><i class="fas fa-shopping-cart"></i>Bolt</button>
+        <button class="nav-btn active" id="btn-dash"><i class="fas fa-chart-pie"></i>Áttek.</button>
+        <button class="nav-btn" id="btn-proj"><i class="fas fa-folder-open"></i>Munkák</button>
+        <button class="fab" id="fab-new-project"><i class="fas fa-plus"></i></button>
+        <button class="nav-btn" id="btn-cal"><i class="fas fa-calendar-alt"></i>Naptár</button>
+        <button class="nav-btn" id="btn-quote"><i class="fas fa-file-invoice"></i>Ajánlat</button>
+        <button class="nav-btn" id="btn-shop"><i class="fas fa-shopping-cart"></i>Bolt</button>
     </nav>
 
     <div id="profile-box" class="modal-box">
@@ -373,249 +290,6 @@
     <div id="backup-box" class="modal-box"><h3>Adatbázis</h3><button onclick="window.exportData()" class="primary" style="background:#2e7d32;">LETÖLTÉS</button><label class="secondary" style="text-align:center; display:block; margin-top:10px;">VISSZATÖLTÉS<input type="file" style="display:none;" onchange="window.importData(this)"></label><button onclick="window.closeModal()" class="secondary" style="margin-top:20px;">BEZÁRÁS</button></div>
     <div id="fav-box" class="modal-box"><h3>Gyorslista</h3><div id="fav-list-container"></div><button onclick="window.closeModal()" class="secondary">Bezárás</button></div>
 
-    <script>
-        var projects=[], shopItems=[], profile={}, savedQuotes=[], favorites=[];
-        
-        try {
-            projects = JSON.parse(localStorage.getItem('fn133_projects')) || JSON.parse(localStorage.getItem('fn131_projects')) || [];
-            shopItems = JSON.parse(localStorage.getItem('fn133_shop')) || JSON.parse(localStorage.getItem('fn131_shop')) || [];
-            profile = JSON.parse(localStorage.getItem('fn133_profile')) || JSON.parse(localStorage.getItem('fn131_profile')) || {name:'',address:'',tax:'',phone:'',email:'',bank:'',logo:null};
-            savedQuotes = JSON.parse(localStorage.getItem('fn133_quotes')) || [];
-            favorites = JSON.parse(localStorage.getItem('fn133_favs')) || ["Ragasztó", "Festék", "Gipszkarton", "Csavar", "Kábel", "Profil"];
-        } catch(e) { console.error("Load error:", e); }
-
-        var quoteItems = [];
-        var currentDetailId = null;
-        var tempShopImage = null;
-        var currentCalendarDate = new Date();
-        var calColors = ["#1a237e", "#c62828", "#2e7d32", "#f57f17", "#00838f", "#6a1b9a", "#ad1457", "#283593", "#4e342e", "#455a64"];
-        function getProjectColor(id) { return calColors[id % calColors.length]; }
-
-        window.onload = function() {
-            window.renderDashboard();
-            window.updateShopSelect();
-            window.updateProfilePreview();
-            window.renderSavedQuotes();
-            if(document.getElementById('quote-date')) document.getElementById('quote-date').valueAsDate = new Date();
-            window.renderCalcInputs();
-            window.renderCalendar(currentCalendarDate);
-            window.showToast("Napló v13.4 - Térkép OK");
-        };
-
-        window.switchTab = function(id) {
-            document.querySelectorAll('.view').forEach(e => e.classList.remove('active'));
-            document.getElementById('view-'+id).classList.add('active');
-            document.querySelectorAll('.nav-btn').forEach(e => e.classList.remove('active'));
-            if(document.getElementById('btn-'+id)) document.getElementById('btn-'+id).classList.add('active');
-            if(id === 'calendar') document.getElementById('btn-cal').classList.add('active');
-            
-            const shareBtn = document.getElementById('header-share-btn');
-            if(shareBtn) shareBtn.style.display = (id === 'shop') ? 'block' : 'none';
-            if(id==='projects') window.filterProjects(); 
-            if(id==='shop') window.renderShop(); 
-            if(id==='calendar') window.renderCalendar(currentCalendarDate);
-        };
-
-        window.showToast = function(msg) { const t=document.getElementById("toast"); t.innerText=msg; t.className="show"; setTimeout(()=>t.className="",3000); }
-
-        window.openDetail = function(id){ 
-            currentDetailId = id; 
-            const p = projects.find(x => x.id == id); 
-            if(!p) return window.showToast('Hiba: Ügyfél nem található');
-            
-            document.getElementById('d-client').innerText = p.client || 'Névtelen'; 
-            document.getElementById('d-address').innerText = p.address || '-'; 
-            
-            let badge = '';
-            const st = p.status || 'active';
-            if(st === 'active') badge = '<span class="badge bg-active">Elkezdett</span>';
-            if(st === 'suspend') badge = '<span class="badge bg-suspend">Felfüggesztve</span>';
-            if(st === 'done') badge = '<span class="badge bg-done">Befejezett</span>';
-            document.getElementById('d-status-badge').innerHTML = badge;
-
-            const btnCall=document.getElementById('btn-call'); 
-            p.phone ? (btnCall.href='tel:'+p.phone,btnCall.style.opacity=1) : (btnCall.href='#',btnCall.style.opacity=0.5);
-            
-            const btnMail=document.getElementById('btn-mail'); 
-            p.email ? (btnMail.href='mailto:'+p.email,btnMail.style.opacity=1) : (btnMail.href='#',btnMail.style.opacity=0.5);
-            
-            const mapLink = document.getElementById('map-link');
-            // JAVÍTOTT TÉRKÉP LINK (Szabványos Google Maps URL)
-            if(p.address){
-                mapLink.href = "https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent(p.address);
-                mapLink.style.display = 'flex';
-            } else {
-                mapLink.style.display = 'none';
-            }
-            
-            document.getElementById('d-rooms').innerHTML = (p.rooms||[]).map(r=>`<span class="room-tag">${r} <i class="fas fa-times" onclick="window.deleteRoom('${r}')" style="margin-left:5px;cursor:pointer;"></i></span>`).join(''); 
-            
-            window.renderDetailList(); 
-            window.renderDocsList();
-            
-            document.getElementById('modal-overlay').style.display = 'block';
-            document.getElementById('view-detail').style.display = 'flex'; 
-        };
-
-        window.filterProjects = function() {
-            const searchInput = document.getElementById('search-input');
-            const val = (searchInput ? searchInput.value : '').toLowerCase();
-            const statusFilter = document.getElementById('filter-status').value;
-            
-            const filtered = projects.filter(p => {
-                if (statusFilter !== 'all' && (p.status||'active') !== statusFilter) return false;
-                if (!val) return true;
-                const c = (p.client||'').toLowerCase(); const a = (p.address||'').toLowerCase(); const ph = (p.phone||'').toLowerCase(); const e = (p.email||'').toLowerCase();
-                return c.includes(val) || a.includes(val) || ph.includes(val) || e.includes(val);
-            });
-            
-            document.getElementById('projects-list').innerHTML = filtered.map(p => {
-                let badge = '';
-                const st = p.status || 'active';
-                if(st === 'active') badge = '<span class="badge bg-active">Elkezdett</span>';
-                if(st === 'suspend') badge = '<span class="badge bg-suspend">Felfügg.</span>';
-                if(st === 'done') badge = '<span class="badge bg-done">Befejezett</span>';
-                return `<div class="card" onclick="window.openDetail(${p.id})">
-                    <div>${badge}<div style="font-weight:bold; font-size:16px; color:var(--primary);">${p.client}</div><div style="font-size:13px; color:#78909c;">${p.address||'Nincs cím'}</div></div>
-                    <i class="fas fa-chevron-right" style="color:#cfd8dc;"></i>
-                </div>`;
-            }).join('');
-        };
-
-        window.openNewProject = function() { 
-            document.getElementById('inp-client').value=''; document.getElementById('inp-phone').value=''; document.getElementById('inp-email').value=''; document.getElementById('inp-address').value=''; document.getElementById('inp-note').value=''; document.getElementById('inp-start').value=''; document.getElementById('inp-end').value=''; window.openModal('new-project-box'); 
-        };
-
-        window.saveProject = function(){ 
-            const n = document.getElementById('inp-client').value; 
-            if(!n) return window.showToast('Név kötelező!'); 
-            const status = document.getElementById('inp-status') ? document.getElementById('inp-status').value : 'active'; 
-            projects.unshift({id: Date.now(), client: n, phone: document.getElementById('inp-phone').value, email: document.getElementById('inp-email').value, address: document.getElementById('inp-address').value, note: document.getElementById('inp-note').value, start: document.getElementById('inp-start').value, end: document.getElementById('inp-end').value, status: status, rooms: [], docs: []}); 
-            localStorage.setItem('fn133_projects', JSON.stringify(projects)); 
-            window.closeModal(); window.renderDashboard(); window.switchTab('projects'); window.updateShopSelect(); window.showToast('Ügyfél létrehozva'); 
-        };
-
-        window.openEditModal = function(){ 
-            const p=projects.find(x=>x.id==currentDetailId); 
-            if(!p) return;
-            document.getElementById('modal-overlay-edit').style.display='block';
-            document.getElementById('detail-edit').style.display='flex';
-            document.getElementById('edit-client').value=p.client; 
-            document.getElementById('edit-phone').value=p.phone||''; 
-            document.getElementById('edit-email').value=p.email||''; 
-            document.getElementById('edit-address').value=p.address||''; 
-            document.getElementById('edit-note').value=p.note||''; 
-            document.getElementById('edit-status').value=p.status||'active'; 
-            document.getElementById('edit-start').value=p.start||''; 
-            document.getElementById('edit-end').value=p.end||'';
-        };
-        
-        window.closeEditModal = function() {
-            document.getElementById('modal-overlay-edit').style.display='none';
-            document.getElementById('detail-edit').style.display='none';
-        };
-        
-        window.saveEdit = function(){ 
-            const p=projects.find(x=>x.id==currentDetailId); 
-            if(!p) return;
-            p.client=document.getElementById('edit-client').value; 
-            p.phone=document.getElementById('edit-phone').value; 
-            p.email=document.getElementById('edit-email').value; 
-            p.address=document.getElementById('edit-address').value; 
-            p.note=document.getElementById('edit-note').value; 
-            p.status=document.getElementById('edit-status').value; 
-            p.start=document.getElementById('edit-start').value; 
-            p.end=document.getElementById('edit-end').value; 
-            localStorage.setItem('fn133_projects',JSON.stringify(projects)); 
-            window.closeEditModal(); 
-            window.openDetail(currentDetailId); 
-            window.showToast('Mentve'); 
-        };
-
-        window.changeMonth = function(delta) { currentCalendarDate.setMonth(currentCalendarDate.getMonth() + delta); window.renderCalendar(currentCalendarDate); };
-        window.renderCalendar = function(date) {
-            const container = document.getElementById('calendar-days'); const monthNameEl = document.getElementById('cal-month-name'); const eventListEl = document.getElementById('calendar-event-list');
-            if(!container) return;
-            container.innerHTML = ''; eventListEl.innerHTML = '';
-            const year = date.getFullYear(); const month = date.getMonth();
-            const monthNames = ["Január", "Február", "Március", "Április", "Május", "Június", "Július", "Augusztus", "Szeptember", "Október", "November", "December"];
-            monthNameEl.innerText = `${year} ${monthNames[month]}`;
-            const firstDay = new Date(year, month, 1).getDay() || 7; const daysInMonth = new Date(year, month + 1, 0).getDate();
-            for(let i=1; i<firstDay; i++) { container.innerHTML += `<div class="cal-day empty"></div>`; }
-            for(let i=1; i<=daysInMonth; i++) {
-                const currentDateStr = `${year}-${String(month+1).padStart(2,'0')}-${String(i).padStart(2,'0')}`;
-                let dayProjects = [];
-                projects.forEach(p => { if(p.start && p.end && currentDateStr >= p.start && currentDateStr <= p.end) dayProjects.push(p); });
-                let cls = 'cal-day'; if(new Date().toDateString() === new Date(year, month, i).toDateString()) cls += ' today';
-                let dotsHtml = ''; if(dayProjects.length > 0) { dotsHtml = '<div class="cal-dots">'; dayProjects.forEach(dp => { dotsHtml += `<div class="cal-dot" style="background:${getProjectColor(dp.id)}"></div>`; }); dotsHtml += '</div>'; }
-                container.innerHTML += `<div class="${cls}">${i}${dotsHtml}</div>`;
-            }
-            const mStart = `${year}-${String(month+1).padStart(2,'0')}-01`; const mEnd = `${year}-${String(month+1).padStart(2,'0')}-${daysInMonth}`;
-            const relevantProjects = projects.filter(p => { if(!p.start || !p.end) return false; return (p.start <= mEnd && p.end >= mStart); });
-            if(relevantProjects.length === 0) eventListEl.innerHTML = '<div style="text-align:center; color:#999; padding:10px;">Nincs munka.</div>';
-            else relevantProjects.forEach(p => { let col = getProjectColor(p.id); eventListEl.innerHTML += `<div class="list-item" onclick="window.openDetail(${p.id})"><div><span style="display:inline-block;width:10px;height:10px;background:${col};border-radius:50%;margin-right:5px;"></span><b>${p.client}</b><br><small>${p.start} - ${p.end}</small></div><i class="fas fa-chevron-right" style="color:#ccc;"></i></div>`; });
-        };
-
-        window.addQuoteItem = function(){ 
-            const n=document.getElementById('q-item-name').value; const q=parseFloat(document.getElementById('q-item-qty').value); const pInput=parseFloat(document.getElementById('q-item-price').value); const u=document.getElementById('q-item-unit').value; const layers = document.getElementById('q-item-layers').value; const priceType = document.getElementById('q-price-type').value; const vatRate = parseFloat(document.getElementById('q-vat-rate').value);
-            if(!n||!q||!pInput)return window.showToast('Hiányos adatok!'); 
-            let netPrice, grossPrice;
-            if(priceType === 'net') { netPrice = pInput; grossPrice = pInput * (1 + vatRate/100); } else { grossPrice = pInput; netPrice = pInput / (1 + vatRate/100); }
-            const totalNet = netPrice * q; const totalGross = grossPrice * q;
-            quoteItems.push({name:n, qty:q, unit:u, layers: layers, netPrice: netPrice, grossPrice: grossPrice, vatRate: vatRate, totalNet: totalNet, totalGross: totalGross}); 
-            document.getElementById('q-item-name').value=''; document.getElementById('q-item-qty').value=''; document.getElementById('q-item-price').value=''; document.getElementById('q-item-layers').value='';
-            window.renderQuoteItems(); 
-        };
-
-        window.renderQuoteItems = function(){ 
-            const c=document.getElementById('quote-items-container'); c.innerHTML=''; let tNet=0, tGross=0; 
-            quoteItems.forEach((i,x)=>{ tNet += i.totalNet; tGross += i.totalGross; let layerInfo = i.layers ? ` <small style="color:#666;">(${i.layers} rtg.)</small>` : ''; c.innerHTML+=`<div class="quote-row"><div style="flex:2"><b>${i.name}</b>${layerInfo}<br><small>${i.qty} ${i.unit}</small></div><div style="flex:1; font-size:12px; text-align:right;">N: ${Math.round(i.netPrice).toLocaleString()}<br>B: ${Math.round(i.grossPrice).toLocaleString()}</div><div style="flex:1; text-align:right; font-weight:bold;">${Math.round(i.totalGross).toLocaleString()} Ft</div><i class="fas fa-times" style="color:red;margin-left:10px; cursor:pointer;" onclick="quoteItems.splice(${x},1);window.renderQuoteItems()"></i></div>`; }); 
-            document.getElementById('quote-grand-total').innerHTML = `<div style="font-size:14px; color:#666;">Nettó: ${Math.round(tNet).toLocaleString()} Ft</div><div style="font-size:14px; color:#666;">ÁFA: ${Math.round(tGross - tNet).toLocaleString()} Ft</div><div style="font-size:18px; color:var(--primary); font-weight:bold;">Bruttó: ${Math.round(tGross).toLocaleString()} Ft</div>`;
-        };
-
-        window.saveCurrentQuote = function(){ if(!quoteItems.length)return; const c=document.getElementById('quote-client-name').value||'Névtelen'; savedQuotes.unshift({id:Date.now(),client:c,date:document.getElementById('quote-date').value,total:quoteItems.reduce((a,b)=>a+b.totalGross,0),items:[...quoteItems]}); localStorage.setItem('fn133_quotes',JSON.stringify(savedQuotes)); window.renderSavedQuotes(); window.showToast('Mentve'); };
-        window.renderSavedQuotes = function(){ document.getElementById('saved-quotes-list').innerHTML=savedQuotes.map(q=>`<div class="list-item"><div><b>${q.client}</b> ${Math.round(q.total).toLocaleString()} Ft</div><div><button onclick="window.loadQuote(${q.id})" style="border:none;background:none;color:var(--primary);"><i class="fas fa-upload"></i></button><button onclick="window.deleteQuote(${q.id})" style="border:none;background:none;color:var(--danger);"><i class="fas fa-trash"></i></button></div></div>`).join(''); };
-        window.loadQuote = function(id){ const q=savedQuotes.find(x=>x.id==id); if(!q)return; quoteItems=[...q.items]; document.getElementById('quote-client-name').value=q.client; window.renderQuoteItems(); window.showToast('Betöltve'); };
-        window.deleteQuote = function(id){ if(!confirm('?'))return; savedQuotes=savedQuotes.filter(x=>x.id!=id); localStorage.setItem('fn133_quotes',JSON.stringify(savedQuotes)); window.renderSavedQuotes(); };
-        
-        window.generateProQuote = function(){ if(!quoteItems.length)return; window.createPDF("ÁRAJÁNLAT",quoteItems.map(i=>[i.name,i.qty+" "+i.unit,i.price,i.total]),true,{name:document.getElementById('quote-client-name').value,address:document.getElementById('quote-client-address').value,date:document.getElementById('quote-date').value}); };
-        window.createPDF = function(title,table,isQ,client){ if(!profile.name)return window.showToast('Cégadat!'); const {jsPDF}=window.jspdf; const doc=new jsPDF(); let y=20; if(profile.logo){try{doc.addImage(profile.logo,'JPEG',14,15,30,30);y=55;}catch(e){}} doc.setFillColor(26,35,126); doc.setFontSize(22); doc.setTextColor(26,35,126); doc.text(title,196,25,{align:'right'}); doc.setTextColor(0,0,0); doc.setFontSize(10); doc.text("KIÁLLÍTÓ:",14,y); y+=5; doc.setFontSize(12); doc.setFont("helvetica","bold"); doc.text(profile.name,14,y); y+=5; doc.setFont("helvetica","normal"); doc.setFontSize(10); doc.text(profile.address,14,y); y+=5; if(profile.tax){doc.text("Adószám: "+profile.tax,14,y);y+=5;} if(profile.phone){doc.text("Tel: "+profile.phone,14,y);y+=5;} if(profile.email){doc.text("Email: "+profile.email,14,y);y+=5;} if(profile.bank){doc.text("Bank: "+profile.bank,14,y);y+=5;} if(client&&client.name){let cy=y-25; doc.text("MEGRENDELŐ:",120,cy); cy+=5; doc.setFontSize(12); doc.setFont("helvetica","bold"); doc.text(client.name,120,cy); cy+=5; doc.setFont("helvetica","normal"); doc.setFontSize(10); if(client.address)doc.text(client.address,120,cy); if(client.date){cy+=10;doc.text("Dátum: "+client.date,120,cy);}} y=Math.max(y,100); if(isQ) {const headers = [['Tétel', 'Menny.', 'Nettó Egységár', 'ÁFA', 'Bruttó Egységár', 'Bruttó Össz.']]; const body = quoteItems.map(i => { let name = i.name + (i.layers ? ` (${i.layers} rtg.)` : ''); return [name, `${i.qty} ${i.unit}`, Math.round(i.netPrice).toLocaleString(), (i.vatRate === 0 ? "AAM" : i.vatRate + "%"), Math.round(i.grossPrice).toLocaleString(), Math.round(i.totalGross).toLocaleString()]; }); doc.autoTable({startY:y, head:headers, body:body, theme:'grid', headStyles:{fillColor:[26,35,126]}}); let finalY = doc.lastAutoTable.finalY + 10; const tNet = quoteItems.reduce((a,b)=>a+b.totalNet,0); const tGross = quoteItems.reduce((a,b)=>a+b.totalGross,0); const tVat = tGross - tNet; doc.setFontSize(10); doc.text(`Nettó részösszeg: ${Math.round(tNet).toLocaleString()} Ft`, 196, finalY, {align:'right'}); doc.text(`ÁFA tartalom: ${Math.round(tVat).toLocaleString()} Ft`, 196, finalY+5, {align:'right'}); doc.setFontSize(14); doc.setFont("helvetica","bold"); doc.text(`FIZETENDŐ VÉGÖSSZEG (BRUTTÓ): ${Math.round(tGross).toLocaleString()} Ft`, 196, finalY+12, {align:'right'}); } else { doc.autoTable({startY:y,head:client.customHeaders?[client.customHeaders]:[['Anyag','Menny.','Infó']],body:table,theme:'grid',headStyles:{fillColor:[26,35,126]}}); } doc.save(title+".pdf"); window.showToast('Letöltve'); }
-
-        window.closeModal = function(){document.querySelectorAll('.modal-box').forEach(e=>e.style.display='none');document.getElementById('modal-overlay').style.display='none';};
-        window.openModal = function(id){document.getElementById('modal-overlay').style.display='block';document.getElementById(id).style.display='flex';if(id==='profile-box')window.loadProfileInputs();};
-        window.handleFavoriteClick = function(){const v=document.getElementById('shop-input').value;if(v&&!favorites.includes(v)){favorites.push(v);localStorage.setItem('fn133_favs',JSON.stringify(favorites));window.showToast('Kedvenc!');}else{document.getElementById('fav-list-container').innerHTML=favorites.map(f=>`<div style="padding:10px;" onclick="document.getElementById('shop-input').value='${f}';window.closeModal()">${f}</div>`).join('');window.openModal('fav-box');}};
-        window.addDocument = function(input) { if (input.files && input.files[0]) { const file = input.files[0]; if(file.size > 15000000) { alert("Max 15MB!"); return; } const reader = new FileReader(); reader.onload = function(e) { const p = projects.find(x => x.id == currentDetailId); if (!p.docs) p.docs = []; p.docs.push({ name: file.name, data: e.target.result, type: file.type }); localStorage.setItem('fn133_projects', JSON.stringify(projects)); window.renderDocsList(); window.showToast("Feltöltve!"); }; reader.readAsDataURL(file); } };
-        window.renderDocsList = function() { const p = projects.find(x => x.id == currentDetailId); const list = document.getElementById('d-docs-list'); list.innerHTML = ''; if (!p.docs || p.docs.length === 0) { list.innerHTML = '<div style="color:#999;font-size:13px;text-align:center;">Nincs dokumentum.</div>'; return; } p.docs.forEach((doc, idx) => { let icon = 'fa-file'; if(doc.type.includes('image')) icon = 'fa-file-image'; if(doc.type.includes('pdf')) icon = 'fa-file-pdf'; list.innerHTML += `<div class="doc-item"><i class="fas ${icon} doc-icon"></i><div class="doc-name">${doc.name}</div><a href="${doc.data}" download="${doc.name}" style="color:var(--primary); margin-right:15px;"><i class="fas fa-download"></i></a><i class="fas fa-trash" style="color:var(--danger); cursor:pointer;" onclick="window.deleteDoc(${idx})"></i></div>`; }); }
-        window.deleteDoc = function(idx) { if(!confirm("Törlöd?")) return; const p = projects.find(x => x.id == currentDetailId); p.docs.splice(idx, 1); localStorage.setItem('fn133_projects', JSON.stringify(projects)); window.renderDocsList(); };
-        window.addRoom = function(){ const v=document.getElementById('new-room-input').value; const s=document.getElementById('new-room-size').value; if(!v)return; const p=projects.find(x=>x.id==currentDetailId); if(!p.rooms)p.rooms=[]; p.rooms.push(s?`${v} (${s}m²)`:v); localStorage.setItem('fn133_projects',JSON.stringify(projects)); document.getElementById('new-room-input').value=''; window.openDetail(currentDetailId); };
-        window.deleteRoom = function(r){ if(!confirm('Törlöd?'))return; const p=projects.find(x=>x.id==currentDetailId); p.rooms=p.rooms.filter(x=>x!==r); localStorage.setItem('fn133_projects',JSON.stringify(projects)); window.openDetail(currentDetailId); };
-        window.deleteCurrentProject = function(){ if(!confirm('Törlöd?'))return; projects=projects.filter(x=>x.id!=currentDetailId); localStorage.setItem('fn133_projects',JSON.stringify(projects)); window.closeModal(); window.renderDashboard(); window.switchTab('projects'); };
-        
-        window.renderDashboard = function(){ document.getElementById('dashboard-list').innerHTML=projects.slice(0,3).map(p=>`<div class="card" onclick="window.openDetail(${p.id})" style="cursor:pointer;"><b>${p.client}</b></div>`).join(''); }
-        window.renderCalcInputs = function() { const type = document.getElementById('calc-type').value; const c = document.getElementById('calc-inputs-container'); let html = `<div class="input-group"><label>Falfelület ($m^2$)</label><input type="number" id="calc-area" placeholder="Pl. 50"></div>`; if(type === 'paint') { html += `<div class="input-group"><label>Rétegek</label><input type="number" id="calc-layers" value="2"></div><div class="input-group"><label>Kiadósság ($m^2$/Liter)</label><input type="number" id="calc-coverage" value="10"></div><div class="input-group"><label>Kiszerelés (Liter)</label><input type="number" id="calc-pack" value="10"></div>`; } else { let thickDef="3", consDef="1.5", packDef="25", tLbl="Vastagság (mm)"; if(type==='adhesive'){thickDef="4";consDef="1.4";} if(type==='screed'){thickDef="50";consDef="2";} html += `<div class="input-group"><label>${tLbl}</label><input type="number" id="calc-thick" value="${thickDef}"></div><div class="input-group"><label>Anyagigény (kg / $m^2$ / 1mm)</label><input type="number" id="calc-cons" value="${consDef}"></div><div class="input-group"><label>Zsák mérete (kg)</label><input type="number" id="calc-pack" value="${packDef}"></div>`; } c.innerHTML = html; document.getElementById('calc-result-box').style.display='none'; }
-        window.calculateMaterial = function() { const t=document.getElementById('calc-type').value; const a=parseFloat(document.getElementById('calc-area').value); const p=parseFloat(document.getElementById('calc-pack').value); if(!a||!p)return window.showToast('Minden mező kell!'); let res=0, unit=''; if(t==='paint') { const l=parseFloat(document.getElementById('calc-layers').value), c=parseFloat(document.getElementById('calc-coverage').value); res=(a*l)/c; unit="Liter"; } else { const th=parseFloat(document.getElementById('calc-thick').value), c=parseFloat(document.getElementById('calc-cons').value); res=a*th*c; unit="Kg"; } document.getElementById('calc-result-num').innerText = Math.ceil(res/p)+" db"; document.getElementById('calc-result-desc').innerText = `Össz: ${Math.ceil(res)} ${unit} (${p} ${unit}/csomag)`; document.getElementById('calc-result-box').style.display='block'; }
-        
-        window.exportData = function(){const d=JSON.stringify({p:projects,s:shopItems,pr:profile,q:savedQuotes});const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([d],{type:'text/json'}));a.download='festonaplo_backup.json';a.click();}
-        window.importData = function(el){const fr=new FileReader();fr.onload=e=>{try{const d=JSON.parse(e.target.result);if(d.p){projects=d.p;shopItems=d.s;profile=d.pr;savedQuotes=d.q;localStorage.setItem('fn133_projects',JSON.stringify(projects));localStorage.setItem('fn133_shop',JSON.stringify(shopItems));localStorage.setItem('fn133_profile',JSON.stringify(profile));localStorage.setItem('fn133_quotes',JSON.stringify(savedQuotes));location.reload();}}catch(e){alert('Hiba!');}};fr.readAsText(el.files[0]);}
-        
-        window.generateProjectPDF = function(){ if(!currentDetailId)return; const p=projects.find(x=>x.id==currentDetailId); const i=shopItems.filter(x=>x.projectId==currentDetailId); if(!i.length)return window.showToast('Üres'); createPDF("ANYAGLISTA",i.map(x=>[x.text,x.qty+" db",x.room||'-',x.code||'-']),false,{name:p.client,address:p.address,date:new Date().toLocaleDateString('hu-HU'),customHeaders:['Anyag','Menny.','Hely','Kód']}); }
-        window.shareProjectList = function() { const p=projects.find(x=>x.id==currentDetailId); const i=shopItems.filter(x=>x.projectId==currentDetailId); let t=`${p.client.toUpperCase()} - ANYAGOK:\n\n`; i.forEach(x=>t+=`- ${x.qty}x ${x.text} ${x.code?'('+x.code+')':''}\n`); shareText("Anyaglista",t); }
-        window.goToShopForCurrentProject = function() { if(!currentDetailId) return; window.switchTab('shop'); setTimeout(()=>{const s=document.getElementById('shop-project-select'); if(s){s.value=currentDetailId; window.updateRoomSelectInShop();}},100); window.closeModal(); }
-        
-        window.shareCurrentShopList = function() { let t="BEVÁSÁRLÓLISTA:\n\n"; shopItems.forEach(i=>{if(!i.done)t+=`[ ] ${i.qty}x ${i.text} ${i.code?'('+i.code+')':''}\n`;}); shareText("Bevásárlólista",t); }
-        
-        window.openItemEdit = function(id){const i=shopItems.find(x=>x.id==id);window.openModal('item-edit-box');document.getElementById('item-edit-id').value=i.id;document.getElementById('item-edit-text').value=i.text;document.getElementById('item-edit-qty').value=i.qty;document.getElementById('item-edit-code').value=i.code||'';document.getElementById('item-edit-note').value=i.note||'';}
-        window.saveItemEdit = function(){const id=document.getElementById('item-edit-id').value;const i=shopItems.find(x=>x.id==id);i.text=document.getElementById('item-edit-text').value;i.qty=document.getElementById('item-edit-qty').value;i.code=document.getElementById('item-edit-code').value;i.note=document.getElementById('item-edit-note').value;localStorage.setItem('fn133_shop',JSON.stringify(shopItems));window.closeModal();window.renderShop();if(currentDetailId)window.renderDetailList();}
-        
-        window.renderShop = function() { document.getElementById('shop-list').innerHTML=shopItems.map(i=>{let pTag='';if(i.projectId){const p=projects.find(x=>x.id==i.projectId);if(p)pTag=`<div style="font-size:11px;color:#1a237e;margin-top:2px;font-weight:bold;">${p.client} ${i.room?'• '+i.room:''}</div>`;}return `<div class="list-item ${i.done?'item-done':''}"><div style="display:flex;align-items:center;flex:1;"><div class="check-circle" onclick="window.toggleShop(${i.id})"><i class="fas fa-check" style="font-size:12px;"></i></div><div><div class="item-text" style="font-weight:bold;">${i.qty}x ${i.text} ${i.image?'📷':''}</div><div style="font-size:13px;color:#78909c;">${i.code||''} ${i.note||''}</div>${pTag}</div></div><i class="fas fa-trash" style="color:#cfd8dc;padding:10px;" onclick="window.delShop(${i.id})"></i></div>`;}).join(''); }
-        window.toggleShop = function(id) { const i=shopItems.find(x=>x.id==id); i.done=!i.done; localStorage.setItem('fn133_shop',JSON.stringify(shopItems)); window.renderShop(); if(document.getElementById('view-detail').style.display === 'flex') window.renderDetailList(); }
-        window.delShop = function(id) { shopItems=shopItems.filter(x=>x.id!=id); localStorage.setItem('fn133_shop',JSON.stringify(shopItems)); window.renderShop(); if(document.getElementById('view-detail').style.display === 'flex') window.renderDetailList(); }
-        window.handleShopPhoto = function(i) { if(i.files&&i.files[0]){const r=new FileReader();r.onload=e=>{tempShopImage=e.target.result;document.getElementById('shop-photo-prev').src=tempShopImage;document.getElementById('shop-photo-prev').style.display='block';};r.readAsDataURL(i.files[0]);} }
-        
-        window.updateShopSelect = function() { const s=document.getElementById('shop-project-select'); s.innerHTML='<option value="">-- Raktár --</option>'+projects.map(p=>`<option value="${p.id}">${p.client}</option>`).join(''); }
-        window.updateRoomSelectInShop = function() { const pid=document.getElementById('shop-project-select').value; const s=document.getElementById('shop-room-select'); s.innerHTML='<option value="">(Nincs)</option>'; if(pid){const p=projects.find(x=>x.id==pid);if(p&&p.rooms)s.innerHTML+=p.rooms.map(r=>`<option value="${r}">${r}</option>`).join('');} }
-        window.addShopItem = function() { const txt=document.getElementById('shop-input').value; if(!txt)return window.showToast('Mit?'); const pId = document.getElementById('shop-project-select').value || null; const rId = document.getElementById('shop-room-select').value || null; shopItems.unshift({id:Date.now(),text:txt,qty:document.getElementById('shop-qty').value,code:document.getElementById('shop-code').value,note:document.getElementById('shop-note').value,image:tempShopImage,projectId: pId, room: rId, done:false}); localStorage.setItem('fn133_shop',JSON.stringify(shopItems)); document.getElementById('shop-input').value=''; document.getElementById('shop-photo-prev').style.display='none'; tempShopImage=null; window.showToast('Rögzítve'); window.renderShop(); }
-        window.renderDetailList = function() { const l=document.getElementById('d-materials-list'); l.innerHTML=''; const items=shopItems.filter(i=>i.projectId==currentDetailId); if(!items.length){l.innerHTML='<div style="text-align:center;color:#b0bec5;padding:10px;">Nincs anyag.</div>';return;} l.innerHTML=items.map(i=>`<div class="list-item ${i.done?'item-done':''}"><div style="display:flex;align-items:center;flex:1;"><div class="check-circle" onclick="window.toggleShop(${i.id})"><i class="fas fa-check" style="font-size:12px;"></i></div><div><div class="item-text" style="font-weight:bold;">${i.qty}x ${i.text}</div><div>${i.code||''} ${i.room?'('+i.room+')':''}</div></div></div><i class="fas fa-pen" style="color:#78909c;" onclick="window.openItemEdit(${i.id})"></i></div>`).join(''); }
-    </script>
+    <script src="script.js" defer></script>
 </body>
 </html>
