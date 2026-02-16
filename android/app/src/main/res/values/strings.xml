@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Festőnapló</string>
+    <string name="title_activity_main">Festőnapló</string>
+    <string name="package_name">com.vallalkozoi.app</string>
+    <string name="custom_url_scheme">com.vallalkozoi.app</string>
+</resources>
