@@ -6,7 +6,8 @@ import { doc, getDoc, updateDoc, deleteDoc } from 'firebase/firestore';
 import { jsPDF } from 'jspdf';
 import {
     ArrowLeft, Edit, Trash2, Phone, Mail, MapPin,
-    Map, Plus, X, ShoppingCart, FileText, ChevronRight
+    Map, Plus, X, ShoppingCart, FileText, ChevronRight,
+    User, Home, Layers
 } from 'lucide-react';
 import Card from '../../components/ui/Card';
 import Button from '../../components/ui/Button';
@@ -119,138 +120,177 @@ export default function ProjectDetail() {
     const mapUrl = project.address ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(project.address)}` : '#';
 
     return (
-        <div className="view-container">
-            <div className="flex justify-between items-center mb-6">
-                <Button variant="ghost" onClick={() => navigate('/projects')} icon={<ArrowLeft size={20} />} className="!p-0" />
-                <h2 className="text-xl font-bold text-gray-900">Adatlap</h2>
-                <Button variant="ghost" onClick={() => navigate(`/projects/edit/${id}`)} icon={<Edit size={20} />} className="!p-0 text-primary-600" />
-            </div>
-
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6 text-center">
-                <h1 className="text-2xl font-bold text-gray-900 mb-2">{project.client}</h1>
-                <div className="flex items-center justify-center text-gray-500 text-sm mb-3">
-                    <MapPin size={16} className="mr-1" />
-                    {project.address || '-'}
+        <div className="pb-10">
+            {/* Header */}
+            <div className="flex items-center gap-3 mb-6">
+                <Button variant="secondary" onClick={() => navigate('/projects')} className="!p-2.5 rounded-full shadow-sm border-0 bg-white">
+                    <ArrowLeft size={22} className="text-gray-700" />
+                </Button>
+                <div>
+                    <h1 className="text-2xl font-bold text-gray-900 leading-tight">Adatlap</h1>
+                    <p className="text-sm text-gray-500">Ügyfél és munka részletei</p>
                 </div>
-                <div className="mb-4">
-                    <Badge variant={project.status === 'done' ? 'success' : project.status === 'suspend' ? 'warning' : 'info'}>
-                        {project.status === 'done' ? 'Befejezett' : project.status === 'suspend' ? 'Felfüggesztve' : 'Aktív munka'}
-                    </Badge>
-                </div>
-
-                <div className="grid grid-cols-3 gap-3">
-                    <a
-                        href={project.phone ? `tel:${project.phone}` : '#'}
-                        className={`flex flex-col items-center justify-center p-3 rounded-lg bg-green-50 text-green-700 transition-colors ${!project.phone && 'opacity-50 pointer-events-none'}`}
-                    >
-                        <Phone size={20} className="mb-1" />
-                        <span className="text-xs font-medium">Hívás</span>
-                    </a>
-                    <a
-                        href={project.email ? `mailto:${project.email}` : '#'}
-                        className={`flex flex-col items-center justify-center p-3 rounded-lg bg-blue-50 text-blue-700 transition-colors ${!project.email && 'opacity-50 pointer-events-none'}`}
-                    >
-                        <Mail size={20} className="mb-1" />
-                        <span className="text-xs font-medium">Email</span>
-                    </a>
-                    {project.address && (
-                        <a
-                            href={mapUrl}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="flex flex-col items-center justify-center p-3 rounded-lg bg-orange-50 text-orange-700 transition-colors"
-                        >
-                            <Map size={20} className="mb-1" />
-                            <span className="text-xs font-medium">Térkép</span>
-                        </a>
-                    )}
-                </div>
-            </div>
-
-            <div className="mb-6">
-                <h3 className="text-lg font-semibold mb-3 text-gray-800">Helyiségek</h3>
-                <div className="flex flex-wrap gap-2 mb-3">
-                    {(project.rooms || []).map((r, idx) => (
-                        <span key={idx} className="inline-flex items-center px-3 py-1 bg-gray-100 text-gray-700 rounded-lg text-sm">
-                            {r}
-                            <button
-                                onClick={() => handleDeleteRoom(r)}
-                                className="ml-2 w-4 h-4 flex items-center justify-center rounded-full bg-gray-300 text-gray-600 hover:bg-gray-400 hover:text-white"
-                            >
-                                <X size={10} />
-                            </button>
-                        </span>
-                    ))}
-                    {(project.rooms || []).length === 0 && <p className="text-gray-500 text-sm italic">Nincsenek rögzített helyiségek.</p>}
-                </div>
-
-                <div className="flex gap-2">
-                    <div className="flex-1">
-                        <Input
-                            placeholder="Megnevezés"
-                            value={newRoom}
-                            onChange={(e) => setNewRoom(e.target.value)}
-                            className="!mb-0"
-                        />
-                    </div>
-                    <div className="w-24">
-                        <Input
-                            type="number"
-                            placeholder="m²"
-                            value={newRoomSize}
-                            onChange={(e) => setNewRoomSize(e.target.value)}
-                            className="!mb-0"
-                        />
-                    </div>
-                    <Button onClick={handleAddRoom} className="!px-3">
-                        <Plus size={20} />
+                <div className="ml-auto">
+                    <Button variant="secondary" onClick={() => navigate(`/projects/edit/${id}`)} className="!p-2.5 rounded-full shadow-sm border-0 bg-white">
+                        <Edit size={22} className="text-primary-600" />
                     </Button>
                 </div>
             </div>
 
-            <div className="mb-6">
-                <h3 className="text-lg font-semibold mb-3 text-gray-800">Gyorsműveletek</h3>
-                <div className="grid grid-cols-2 gap-3">
-                    <div
-                        onClick={() => navigate(`/shop?project=${id}`)}
-                        className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm flex items-center gap-3 cursor-pointer hover:bg-gray-50 active:scale-[0.98] transition-all"
-                    >
-                        <div className="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center text-purple-600">
-                            <ShoppingCart size={20} />
-                        </div>
-                        <div>
-                            <div className="font-medium text-gray-900">Anyagok</div>
-                            <div className="text-xs text-gray-500">Bevásárlólista</div>
-                        </div>
-                        <ChevronRight size={16} className="ml-auto text-gray-400" />
+            {/* Client Info Card - Redesigned */}
+            <Card className="!p-0 overflow-hidden mb-6 border-0 shadow-md">
+                <div className="bg-primary-600 p-6 text-white relative overflow-hidden">
+                    <div className="absolute top-0 right-0 p-4 opacity-10">
+                        <User size={120} />
                     </div>
-
-                    <div
-                        onClick={generateProjectPDF}
-                        className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm flex items-center gap-3 cursor-pointer hover:bg-gray-50 active:scale-[0.98] transition-all"
-                    >
-                        <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center text-red-600">
-                            <FileText size={20} />
+                    <div className="relative z-10">
+                        <div className="flex items-center gap-2 mb-2 opacity-90">
+                            <Badge className="bg-white/20 text-white backdrop-blur-sm border-0">
+                                {project.status === 'done' ? 'Befejezett' : project.status === 'suspend' ? 'Felfüggesztve' : 'Aktív munka'}
+                            </Badge>
+                        </div>
+                        <h2 className="text-3xl font-bold mb-1">{project.client}</h2>
+                        <div className="flex items-center gap-2 text-primary-100 mb-4">
+                            <MapPin size={16} />
+                            <span className="font-medium">{project.address || 'Nincs cím megadva'}</span>
+                        </div>
+                    </div>
+                </div>
+                <div className="p-4 grid grid-cols-2 gap-4 bg-white">
+                    <a href={`tel:${project.phone}`} className={`flex items-center gap-3 p-3 rounded-xl bg-gray-50 hover:bg-green-50 transition-colors group ${!project.phone && 'opacity-50 pointer-events-none'}`}>
+                        <div className="w-10 h-10 rounded-full bg-white shadow-sm flex items-center justify-center text-gray-500 group-hover:text-green-600">
+                            <Phone size={20} />
                         </div>
                         <div>
-                            <div className="font-medium text-gray-900">PDF</div>
-                            <div className="text-xs text-gray-500">Munkalap</div>
+                            <div className="text-xs text-gray-500">Telefonszám</div>
+                            <div className="font-medium text-gray-900">{project.phone || '-'}</div>
                         </div>
-                        <ChevronRight size={16} className="ml-auto text-gray-400" />
+                    </a>
+                    <a href={`mailto:${project.email}`} className={`flex items-center gap-3 p-3 rounded-xl bg-gray-50 hover:bg-blue-50 transition-colors group ${!project.email && 'opacity-50 pointer-events-none'}`}>
+                        <div className="w-10 h-10 rounded-full bg-white shadow-sm flex items-center justify-center text-gray-500 group-hover:text-blue-600">
+                            <Mail size={20} />
+                        </div>
+                        <div>
+                            <div className="text-xs text-gray-500">Email cím</div>
+                            <div className="font-medium text-gray-900 truncate max-w-[100px]">{project.email || '-'}</div>
+                        </div>
+                    </a>
+                </div>
+            </Card>
+
+            {/* Rooms Section - Redesigned Input */}
+            <div className="mb-6">
+                <div className="flex justify-between items-center mb-4">
+                    <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2">
+                        <Layers size={20} className="text-primary-600" />
+                        Helyiségek
+                        <span className="bg-gray-200 text-gray-600 text-xs px-2 py-0.5 rounded-full">{(project.rooms || []).length}</span>
+                    </h3>
+                </div>
+
+                <div className="space-y-3 mb-6">
+                    {(project.rooms || []).map((r, idx) => (
+                        <div key={idx} className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex justify-between items-center group">
+                            <div className="flex items-center gap-3">
+                                <div className="w-2 h-2 rounded-full bg-primary-400"></div>
+                                <span className="font-medium text-gray-800">{r}</span>
+                            </div>
+                            <button
+                                onClick={() => handleDeleteRoom(r)}
+                                className="p-2 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                            >
+                                <Trash2 size={18} />
+                            </button>
+                        </div>
+                    ))}
+                    {(project.rooms || []).length === 0 && (
+                        <div className="text-center py-8 bg-gray-50 rounded-xl border border-dashed border-gray-300">
+                            <Home size={32} className="mx-auto text-gray-400 mb-2" />
+                            <p className="text-gray-500">Még nincsenek helyiségek felvéve.</p>
+                        </div>
+                    )}
+                </div>
+
+                {/* New Room Input - Properly Done */}
+                <div className="bg-white p-5 rounded-xl shadow-md border border-gray-100 relative overflow-hidden">
+                    <div className="absolute top-0 left-0 w-1 h-full bg-secondary-500"></div>
+                    <h4 className="font-semibold text-gray-900 mb-4">Új helyiség felvétele</h4>
+                    <div className="flex flex-col gap-3">
+                        <Input
+                            placeholder="Pl. Nappali"
+                            label="Megnevezés"
+                            value={newRoom}
+                            onChange={(e) => setNewRoom(e.target.value)}
+                            icon={<Home size={18} />}
+                            className="w-full"
+                        />
+                        <div className="flex gap-3">
+                            <div className="w-1/3">
+                                <Input
+                                    type="number"
+                                    placeholder="0"
+                                    label="Méret (m²)"
+                                    value={newRoomSize}
+                                    onChange={(e) => setNewRoomSize(e.target.value)}
+                                    className="w-full"
+                                />
+                            </div>
+                            <div className="flex-1 flex items-end">
+                                <Button
+                                    onClick={handleAddRoom}
+                                    className="w-full h-[46px] mb-4 bg-gray-900 hover:bg-gray-800 text-white shadow-lg"
+                                    disabled={!newRoom}
+                                >
+                                    <Plus size={20} className="mr-2" /> Hozzáadás
+                                </Button>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
 
+            {/* Quick Actions */}
             <div className="mb-8">
-                <h3 className="text-lg font-semibold mb-3 text-gray-800">Megjegyzés</h3>
-                <Card className="text-sm text-gray-600">
-                    {project.note || 'Nincs megjegyzés ehhez a munkához.'}
-                </Card>
+                <h3 className="text-lg font-bold text-gray-800 mb-4">Műveletek</h3>
+                <div className="grid grid-cols-2 gap-3">
+                    <div
+                        onClick={() => navigate(`/shop?project=${id}`)}
+                        className="bg-purple-600 text-white p-4 rounded-xl shadow-lg shadow-purple-200 flex flex-col justify-between h-28 cursor-pointer active:scale-95 transition-all relative overflow-hidden"
+                    >
+                        <div className="absolute -right-4 -bottom-4 opacity-20">
+                            <ShoppingCart size={80} />
+                        </div>
+                        <ShoppingCart size={24} />
+                        <div>
+                            <div className="font-bold text-lg">Anyagok</div>
+                            <div className="text-purple-100 text-xs">Lista kezelése</div>
+                        </div>
+                    </div>
+
+                    <div
+                        onClick={generateProjectPDF}
+                        className="bg-blue-600 text-white p-4 rounded-xl shadow-lg shadow-blue-200 flex flex-col justify-between h-28 cursor-pointer active:scale-95 transition-all relative overflow-hidden"
+                    >
+                        <div className="absolute -right-4 -bottom-4 opacity-20">
+                            <FileText size={80} />
+                        </div>
+                        <FileText size={24} />
+                        <div>
+                            <div className="font-bold text-lg">PDF Export</div>
+                            <div className="text-blue-100 text-xs">Munkalap letöltése</div>
+                        </div>
+                    </div>
+                </div>
             </div>
 
-            <Button variant="danger" onClick={handleDeleteProject} icon={<Trash2 size={18} />} className="w-full">
-                Ügyfél törlése
-            </Button>
+            <div className="mb-10 text-center">
+                <button
+                    onClick={handleDeleteProject}
+                    className="text-red-500 text-sm font-medium hover:text-red-700 hover:underline flex items-center justify-center mx-auto"
+                >
+                    <Trash2 size={16} className="mr-1" /> Projekt és adatok törlése
+                </button>
+            </div>
         </div>
     );
 }
