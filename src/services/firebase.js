@@ -15,13 +15,8 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 export const db = getFirestore(app);
-enableIndexedDbPersistence(db).catch((err) => {
-    if (err.code == 'failed-precondition') {
-        console.warn('Multiple tabs open, persistence can only be enabled in one tab at a a time.');
-    } else if (err.code == 'unimplemented') {
-        console.warn('The current browser does not support all of the features required to enable persistence');
-    }
-});
+// Persistence temporarily disabled due to stability issues on some devices
+// enableIndexedDbPersistence(db).catch((err) => { ... });
 export const auth = getAuth(app);
 export const storage = getStorage(app);
 export const googleProvider = new GoogleAuthProvider();

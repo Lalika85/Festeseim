@@ -292,18 +292,20 @@ export default function QuoteBuilder() {
     return (
         <div className="view-container pb-24">
             <div className="flex items-center justify-between mb-6">
-                <div className="flex items-center gap-3">
-                    <Button variant="secondary" onClick={() => navigate(-1)} className="!p-2.5 rounded-full shadow-sm border-0 bg-white">
-                        <ArrowLeft size={22} className="text-gray-700" />
+                <div className="flex items-center gap-2">
+                    <Button variant="secondary" onClick={() => navigate(-1)} className="!p-2 shadow-sm border-0 bg-white rounded-full">
+                        <ArrowLeft size={20} className="text-gray-700" />
                     </Button>
-                    <h1 className="text-2xl font-bold text-gray-900">Árajánlat</h1>
+                    <h1 className="text-xl md:text-2xl font-bold text-gray-900 truncate">Árajánlat</h1>
                 </div>
                 <div className="flex gap-2">
-                    <Button variant="secondary" onClick={() => setShowTemplatesModal(true)} icon={<FolderOpen size={18} />}>
-                        Sablonok
+                    <Button variant="secondary" onClick={() => setShowTemplatesModal(true)} className="!px-3 !py-2">
+                        <FolderOpen size={18} className="md:mr-2" />
+                        <span className="hidden md:inline">Sablonok</span>
                     </Button>
-                    <Button variant="primary" onClick={() => setIsSavingTemplate(true)} icon={<Save size={18} />}>
-                        Mentés
+                    <Button variant="primary" onClick={() => setIsSavingTemplate(true)} className="!px-3 !py-2">
+                        <Save size={18} className="md:mr-2" />
+                        <span className="hidden md:inline">Mentés</span>
                     </Button>
                 </div>
             </div>
@@ -394,7 +396,7 @@ export default function QuoteBuilder() {
                                     value={item.vat}
                                     onChange={(e) => handleItemChange(item.id, 'vat', e.target.value === 'AAM' || e.target.value === 'EU' || e.target.value === 'K.AFA' ? e.target.value : parseFloat(e.target.value))}
                                     options={VAT_RATES}
-                                    className="!mb-0"
+                                    className="!mb-0 !text-xs !px-1"
                                 />
                             </div>
                             <div className="col-span-6 md:col-span-1 text-right pb-3 font-medium text-gray-700">

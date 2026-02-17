@@ -18,6 +18,10 @@ git commit -m "Feat: UI Redesign 2.0, Quote Builder, Shop Manager, Calendar Quic
 Write-Host "Pushing to GitHub..." -ForegroundColor Cyan
 git push
 
+# 3. Deploy Rules (Hotfix)
+Write-Host "Deploying Firestore & Storage Rules..." -ForegroundColor Cyan
+firebase deploy --only firestore:rules, storage 
+
 if ($LASTEXITCODE -eq 0) {
     Write-Host "Deployment successful! Changes pushed to GitHub." -ForegroundColor Green
     Write-Host "Check GitHub Actions for build status: https://github.com/Lalika85/Festeseim/actions" -ForegroundColor Yellow

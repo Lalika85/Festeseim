@@ -71,6 +71,7 @@ export default function ShopManager() {
             setNewItem({ product: '', qty: 1, unit: 'db', note: '', photoUrl: '' });
         } catch (err) {
             console.error("Error adding item:", err);
+            alert(`Hiba a mentéskor: ${err.message}`);
         } finally {
             setLoading(false);
         }
@@ -98,7 +99,7 @@ export default function ShopManager() {
             setNewItem(prev => ({ ...prev, photoUrl: url }));
         } catch (err) {
             console.error("Upload error:", err);
-            alert('Hiba a feltöltéskor!');
+            alert(`Hiba a feltöltéskor: ${err.message}`);
         } finally {
             setIsUploading(false);
         }
