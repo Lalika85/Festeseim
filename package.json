@@ -13,6 +13,8 @@
         "@capacitor/android": "^8.1.0",
         "@capacitor/cli": "^8.1.0",
         "@capacitor/core": "^8.1.0",
+        "@capacitor/filesystem": "^8.1.2",
+        "@capacitor/share": "^8.0.1",
         "firebase": "^10.8.0",
         "jspdf": "^2.5.1",
         "lucide-react": "^0.331.0",
