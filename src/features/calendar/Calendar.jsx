@@ -1,10 +1,13 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, Loader } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { loadUserCollection } from '../../services/firestore';
 import { auth, googleProvider } from '../../services/firebase';
 import { signInWithPopup } from 'firebase/auth';
+import Card from '../../components/ui/Card';
+import Button from '../../components/ui/Button';
 
-const Calendar = () => {
+export default function Calendar() {
     const { currentUser } = useAuth();
     const [currentDate, setCurrentDate] = useState(new Date());
     const [projects, setProjects] = useState([]);
@@ -12,8 +15,12 @@ const Calendar = () => {
     const [loading, setLoading] = useState(true);
     const [isGoogleConnected, setIsGoogleConnected] = useState(!!localStorage.getItem('google_access_token'));
 
-    const calColors = ["#1a237e", "#c62828", "#2e7d32", "#f57f17", "#00838f", "#6a1b9a", "#ad1457", "#283593", "#4e342e", "#455a64"];
-    const getProjectColor = (id) => calColors[id % calColors.length];
+    const calColors = ["#1d4ed8", "#b91c1c", "#15803d", "#c2410c", "#0e7490", "#7e22ce", "#be185d", "#4338ca"];
+    const getProjectColor = (id) => {
+        if (!id) return calColors[0];
+        const strId = String(id);
+        return calColors[strId.charCodeAt(0) % calColors.length];
+    };
 
     const fetchGoogleEvents = useCallback(async () => {
         const token = localStorage.getItem('google_access_token');
@@ -49,8 +56,8 @@ const Calendar = () => {
                     loadUserCollection(currentUser.uid, 'projects'),
                     fetchGoogleEvents()
                 ]);
-                setProjects(pData);
-                setGoogleEvents(gData);
+                setProjects(pData || []);
+                setGoogleEvents(gData || []);
             } catch (err) {
                 console.error("Calendar data load error:", err);
             } finally {
@@ -63,9 +70,8 @@ const Calendar = () => {
     const handleGoogleLogin = async () => {
         try {
             const result = await signInWithPopup(auth, googleProvider);
-            const credential = result.credential; // This might be null if not linked? No, popup with provider should return it.
-            // In Firebase v10+, the credential is on the result.
-            const token = credential.accessToken;
+            const credential = result.credential;
+            const token = credential?.accessToken;
             if (token) {
                 localStorage.setItem('google_access_token', token);
                 setIsGoogleConnected(true);
@@ -96,7 +102,8 @@ const Calendar = () => {
         const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
         const dayProjects = projects.filter(p => p.start && p.end && dateStr >= p.start && dateStr <= p.end);
         const dayGoogle = googleEvents.filter(e => {
-            const start = (e.start.dateTime || e.start.date).slice(0, 10);
+            if (!e.start) return false;
+            const start = (e.start.dateTime || e.start.date || '').slice(0, 10);
             return start === dateStr;
         });
 
@@ -118,9 +125,9 @@ const Calendar = () => {
             const mEnd = `${year}-${String(month + 1).padStart(2, '0')}-${daysInMonth}`;
             return p.start <= mEnd && p.end >= mStart;
         }).map(p => ({ ...p, type: 'project', date: p.start })),
-        ...googleEvents.map(e => ({
+        ...googleEvents.filter(e => e.start && (e.start.dateTime || e.start.date)).map(e => ({
             id: e.id,
-            client: e.summary,
+            client: e.summary || 'Névtelen esemény',
             start: (e.start.dateTime || e.start.date),
             end: (e.end.dateTime || e.end.date),
             type: 'google',
@@ -130,77 +137,82 @@ const Calendar = () => {
 
     return (
         <div className="view-container">
-            <div className="section-header">
-                <h1>Naptár</h1>
+            <div className="flex justify-between items-center mb-6">
+                <h1 className="text-2xl font-bold text-gray-900">Naptár</h1>
                 {!isGoogleConnected && (
-                    <button className="btn btn-secondary" onClick={handleGoogleLogin} style={{ height: '36px', padding: '0 12px', fontSize: '13px' }}>
-                        <i className="fab fa-google"></i> Google
-                    </button>
+                    <Button variant="secondary" onClick={handleGoogleLogin} className="!py-1.5 !px-3 !text-xs">
+                        Google Connect
+                    </Button>
                 )}
             </div>
 
-            <div className="card" style={{ padding: '1rem' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-                    <button className="btn-icon" onClick={() => changeMonth(-1)}><i className="fas fa-chevron-left"></i></button>
-                    <h3 style={{ border: 'none', margin: 0, padding: 0 }}>{year} {monthNames[month]}</h3>
-                    <button className="btn-icon" onClick={() => changeMonth(1)}><i className="fas fa-chevron-right"></i></button>
+            <Card className="!p-4 mb-6">
+                <div className="flex justify-between items-center mb-6">
+                    <Button variant="ghost" onClick={() => changeMonth(-1)} className="!p-1">
+                        <ChevronLeft size={24} />
+                    </Button>
+                    <h3 className="text-lg font-bold text-gray-800">{year} {monthNames[month]}</h3>
+                    <Button variant="ghost" onClick={() => changeMonth(1)} className="!p-1">
+                        <ChevronRight size={24} />
+                    </Button>
                 </div>
 
-                <div className="cal-weekdays" style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', textAlign: 'center', fontSize: '12px', color: 'var(--text-muted)', marginBottom: '10px' }}>
+                <div className="grid grid-cols-7 mb-2 text-center text-xs text-gray-400 font-medium">
                     <div>Hé</div><div>Ke</div><div>Sze</div><div>Csü</div><div>Pé</div><div>Szo</div><div>Va</div>
                 </div>
 
-                <div className="cal-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '4px' }}>
+                <div className="grid grid-cols-7 gap-1">
                     {days.map((d, x) => (
-                        <div key={x} className={`cal-day ${d.isToday ? 'today' : ''}`} style={{
-                            height: '50px',
-                            display: 'flex',
-                            flexDirection: 'column',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            background: d.type === 'empty' ? 'transparent' : 'var(--bg-app)',
-                            borderRadius: '8px',
-                            border: d.isToday ? '2px solid var(--primary)' : 'none',
-                            position: 'relative',
-                            fontSize: '14px',
-                            fontWeight: d.isToday ? 'bold' : 'normal'
-                        }}>
-                            {d.num}
-                            <div style={{ display: 'flex', gap: '2px', position: 'absolute', bottom: '4px' }}>
-                                {d.events?.map((e, idx) => (
-                                    <div key={idx} style={{ width: '4px', height: '4px', borderRadius: '50%', background: e.color }}></div>
-                                ))}
-                            </div>
+                        <div key={x} className={`h-12 flex flex-col items-center justify-center rounded-lg relative ${d.type === 'empty' ? '' : 'bg-gray-50'
+                            } ${d.isToday ? 'ring-2 ring-primary-500 font-bold bg-primary-50' : ''}`}>
+                            {d.type !== 'empty' && (
+                                <>
+                                    <span className={`text-sm ${d.isToday ? 'text-primary-700' : 'text-gray-700'}`}>{d.num}</span>
+                                    <div className="flex gap-0.5 mt-1">
+                                        {d.events?.slice(0, 4).map((e, idx) => (
+                                            <div key={idx} className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: e.color }}></div>
+                                        ))}
+                                    </div>
+                                </>
+                            )}
                         </div>
                     ))}
                 </div>
-            </div>
+            </Card>
 
-            <div className="detail-section">
-                <div className="section-title">Események</div>
+            <div>
+                <h3 className="text-lg font-semibold mb-3 text-gray-800">Események</h3>
                 {loading ? (
-                    <p className="text-center">Betöltés...</p>
+                    <div className="text-center py-6">
+                        <Loader className="animate-spin mx-auto text-primary-500" />
+                        <p className="text-gray-500 mt-2">Betöltés...</p>
+                    </div>
                 ) : allMonthEvents.length === 0 ? (
-                    <div className="card text-center" style={{ color: 'var(--text-muted)' }}>Nincs esemény ebben a hónapban.</div>
+                    <Card className="text-center py-6 text-gray-500 italic">
+                        Nincs esemény ebben a hónapban.
+                    </Card>
                 ) : (
-                    allMonthEvents.map((e, idx) => (
-                        <div key={idx} className="list-item" style={{ cursor: e.type === 'project' ? 'pointer' : 'default' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: e.type === 'project' ? getProjectColor(e.id) : '#4285F4' }}></div>
+                    <div className="space-y-3">
+                        {allMonthEvents.map((e, idx) => (
+                            <div key={idx} className="bg-white p-3 rounded-xl border border-gray-200 shadow-sm flex items-center gap-3">
+                                <div
+                                    className="w-2.5 h-2.5 rounded-full flex-shrink-0"
+                                    style={{ background: e.type === 'project' ? getProjectColor(e.id || 'x') : '#4285F4' }}
+                                ></div>
                                 <div>
-                                    <div style={{ fontWeight: 'bold' }}>{e.client}</div>
-                                    <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
-                                        {e.type === 'project' ? `${e.start} - ${e.end}` : new Date(e.date).toLocaleTimeString('hu-HU', { hour: '2-digit', minute: '2-digit' })}
+                                    <div className="font-semibold text-gray-900">{e.client}</div>
+                                    <div className="text-xs text-gray-500">
+                                        {e.type === 'project' ?
+                                            `${e.start} - ${e.end}` :
+                                            new Date(e.date).toLocaleTimeString('hu-HU', { hour: '2-digit', minute: '2-digit' })
+                                        }
                                     </div>
                                 </div>
                             </div>
-                            {e.type === 'project' && <i className="fas fa-chevron-right" style={{ color: 'var(--border)' }}></i>}
-                        </div>
-                    ))
+                        ))}
+                    </div>
                 )}
             </div>
         </div>
     );
-};
-
-export default Calendar;
+}

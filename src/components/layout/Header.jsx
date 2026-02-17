@@ -1,24 +1,17 @@
 import React from 'react';
+import { LogOut } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
+import Button from '../ui/Button';
 
-const Header = () => {
-    const { currentUser, logout } = useAuth();
+export default function Header() {
+    const { logout } = useAuth();
 
     return (
-        <header className="app-header">
-            <div className="header-content">
-                <div id="user-display">{currentUser?.email}</div>
-                <div style={{ display: 'flex', gap: '15px', alignItems: 'center' }}>
-                    <button className="btn-icon" onClick={() => { }}>
-                        <i className="fas fa-bars"></i>
-                    </button>
-                    <button id="header-logout-btn" className="btn-icon" onClick={logout}>
-                        <i className="fas fa-sign-out-alt"></i>
-                    </button>
-                </div>
-            </div>
+        <header className="bg-white border-b border-gray-200 px-4 py-3 flex justify-between items-center">
+            <h1 className="text-xl font-bold text-primary-600">Festőnapló</h1>
+            <Button variant="ghost" icon={<LogOut size={20} />} onClick={logout}>
+                Kijelentkezés
+            </Button>
         </header>
     );
-};
-
-export default Header;
+}
