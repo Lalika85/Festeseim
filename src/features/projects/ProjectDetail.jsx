@@ -117,7 +117,8 @@ export default function ProjectDetail() {
     if (loading) return <div className="text-center py-12"><div className="animate-spin text-4xl mb-2">⏳</div><p className="text-gray-500">Betöltés...</p></div>;
     if (!project) return null;
 
-    const mapUrl = project.address ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(project.address)}` : '#';
+
+    const mapUrl = project.address ? `geo:0,0?q=${encodeURIComponent(project.address)}` : '#';
 
     return (
         <div className="pb-10">
@@ -189,20 +190,57 @@ export default function ProjectDetail() {
                 </div>
 
                 <div className="space-y-3 mb-6">
-                    {(project.rooms || []).map((r, idx) => (
-                        <div key={idx} className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex justify-between items-center group">
-                            <div className="flex items-center gap-3">
-                                <div className="w-2 h-2 rounded-full bg-primary-400"></div>
-                                <span className="font-medium text-gray-800">{r}</span>
+                    {(project.rooms || []).map((r, idx) => {
+                        const isObject = typeof r === 'object';
+                        const name = isObject ? r.name : r;
+                        const size = isObject ? r.size : '';
+                        const comment = isObject ? r.comment : '';
+
+                        return (
+                            <div key={idx} className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 group">
+                                <div className="flex justify-between items-start mb-2">
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-2 h-2 rounded-full bg-primary-400"></div>
+                                        <div>
+                                            <span className="font-medium text-gray-800">{name}</span>
+                                            {size && <span className="text-gray-500 text-sm ml-2">({size} m²)</span>}
+                                        </div>
+                                    </div>
+                                    <button
+                                        onClick={() => handleDeleteRoom(r)}
+                                        className="p-1.5 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                                    >
+                                        <Trash2 size={16} />
+                                    </button>
+                                </div>
+                                <div className="pl-5">
+                                    <Input
+                                        placeholder="Belső megjegyzés a helyiséghez..."
+                                        value={comment || ''}
+                                        onChange={(e) => {
+                                            const updatedRooms = [...project.rooms];
+                                            updatedRooms[idx] = isObject ? { ...r, comment: e.target.value } : { name: r, size: '', comment: e.target.value };
+                                            setProject(prev => ({ ...prev, rooms: updatedRooms }));
+                                            // Auto-save logic could go here or require manual save button
+                                            // For now we'll just update state, user needs to save properly via a "Save changes" mechanism if we strictly follow standard, 
+                                            // but checking the file, there is no global save button. 
+                                            // The handleDeleteRoom saves immediately. 
+                                            // We should probably add an "onBlur" save or a save button near the comment.
+                                            // Let's add an onBlur save.
+                                        }}
+                                        onBlur={async () => {
+                                            if (!currentUser) return;
+                                            try {
+                                                const docRef = doc(db, 'users', currentUser.uid, 'projects', project.id);
+                                                await updateDoc(docRef, { rooms: project.rooms });
+                                            } catch (err) { console.error("Auto-save room error", err); }
+                                        }}
+                                        className="!mb-0 !text-sm"
+                                    />
+                                </div>
                             </div>
-                            <button
-                                onClick={() => handleDeleteRoom(r)}
-                                className="p-2 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
-                            >
-                                <Trash2 size={18} />
-                            </button>
-                        </div>
-                    ))}
+                        );
+                    })}
                     {(project.rooms || []).length === 0 && (
                         <div className="text-center py-8 bg-gray-50 rounded-xl border border-dashed border-gray-300">
                             <Home size={32} className="mx-auto text-gray-400 mb-2" />
@@ -211,18 +249,19 @@ export default function ProjectDetail() {
                     )}
                 </div>
 
-                {/* New Room Input - Properly Done */}
-                <div className="bg-white p-5 rounded-xl shadow-md border border-gray-100 relative overflow-hidden">
-                    <div className="absolute top-0 left-0 w-1 h-full bg-secondary-500"></div>
-                    <h4 className="font-semibold text-gray-900 mb-4">Új helyiség felvétele</h4>
-                    <div className="flex flex-col gap-3">
+                {/* New Room Input */}
+                <Card className="shadow-md border-primary-100 overflow-hidden !p-0">
+                    <div className="bg-gray-50 px-4 py-3 border-b border-gray-100 font-medium text-gray-700">
+                        Új helyiség felvétele
+                    </div>
+                    <div className="p-4 flex flex-col gap-3">
                         <Input
                             placeholder="Pl. Nappali"
                             label="Megnevezés"
                             value={newRoom}
                             onChange={(e) => setNewRoom(e.target.value)}
                             icon={<Home size={18} />}
-                            className="w-full"
+                            className="w-full !mb-0"
                         />
                         <div className="flex gap-3">
                             <div className="w-1/3">
@@ -232,13 +271,26 @@ export default function ProjectDetail() {
                                     label="Méret (m²)"
                                     value={newRoomSize}
                                     onChange={(e) => setNewRoomSize(e.target.value)}
-                                    className="w-full"
+                                    className="w-full !mb-0"
                                 />
                             </div>
                             <div className="flex-1 flex items-end">
                                 <Button
-                                    onClick={handleAddRoom}
-                                    className="w-full h-[46px] mb-4 bg-gray-900 hover:bg-gray-800 text-white shadow-lg"
+                                    onClick={async () => {
+                                        if (!newRoom || !project) return;
+                                        const newRoomObj = { name: newRoom, size: newRoomSize, comment: '' };
+                                        const updatedRooms = [...(project.rooms || []), newRoomObj];
+                                        try {
+                                            const docRef = doc(db, 'users', currentUser.uid, 'projects', project.id);
+                                            await updateDoc(docRef, { rooms: updatedRooms });
+                                            setProject({ ...project, rooms: updatedRooms });
+                                            setNewRoom('');
+                                            setNewRoomSize('');
+                                        } catch (err) {
+                                            console.error("Error adding room:", err);
+                                        }
+                                    }}
+                                    className="w-full h-[46px] bg-gray-900 hover:bg-gray-800 text-white shadow-lg"
                                     disabled={!newRoom}
                                 >
                                     <Plus size={20} className="mr-2" /> Hozzáadás
@@ -246,8 +298,30 @@ export default function ProjectDetail() {
                             </div>
                         </div>
                     </div>
-                </div>
+                </Card>
             </div>
+
+            {/* General Note Section */}
+            <Card header="Általános Megjegyzés" className="mb-6 shadow-md border-gray-200">
+                <div className="relative">
+                    <textarea
+                        className="w-full h-32 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent resize-none"
+                        placeholder="Kapukód, speciális kérések, stb..."
+                        value={project.note || ''}
+                        onChange={(e) => setProject({ ...project, note: e.target.value })}
+                        onBlur={async () => {
+                            if (!currentUser) return;
+                            try {
+                                const docRef = doc(db, 'users', currentUser.uid, 'projects', project.id);
+                                await updateDoc(docRef, { note: project.note });
+                            } catch (err) { console.error("Auto-save note error", err); }
+                        }}
+                    ></textarea>
+                    <div className="absolute bottom-3 right-3 text-xs text-gray-400 pointer-events-none">
+                        Automatikusan mentve
+                    </div>
+                </div>
+            </Card>
 
             {/* Quick Actions */}
             <div className="mb-8">

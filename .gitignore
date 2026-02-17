@@ -30,3 +30,8 @@ legacy/
 android/app/src/main/assets/public
 android/app/build
 android/.gradle
+
+# Environment variables
+.env
+.env.local
+.env.*

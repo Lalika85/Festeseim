@@ -58,6 +58,24 @@ export default function Dashboard() {
                         </div>
                         <span className="text-sm font-medium text-gray-700">Új Munka Hozzáadása</span>
                     </button>
+                    <button
+                        onClick={() => navigate('/quote')}
+                        className="flex items-center justify-center p-4 bg-white border border-gray-200 rounded-xl shadow-sm hover:bg-gray-50 transition-colors gap-3"
+                    >
+                        <div className="w-10 h-10 bg-indigo-100 rounded-full flex items-center justify-center">
+                            <FileText className="text-indigo-600" size={20} />
+                        </div>
+                        <span className="text-sm font-medium text-gray-700">Árajánlat Készítése</span>
+                    </button>
+                    <button
+                        onClick={() => navigate('/shop')}
+                        className="flex items-center justify-center p-4 bg-white border border-gray-200 rounded-xl shadow-sm hover:bg-gray-50 transition-colors gap-3"
+                    >
+                        <div className="w-10 h-10 bg-emerald-100 rounded-full flex items-center justify-center">
+                            <ShoppingBag className="text-emerald-600" size={20} />
+                        </div>
+                        <span className="text-sm font-medium text-gray-700">Bevásárlólista</span>
+                    </button>
                 </div>
             </div>
 

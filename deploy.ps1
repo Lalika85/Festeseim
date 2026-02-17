@@ -13,7 +13,7 @@ Write-Host "Adding changes to git..." -ForegroundColor Cyan
 git add .
 
 Write-Host "Committing changes..." -ForegroundColor Cyan
-git commit -m "UI Redesign 2.0: Tailwind CSS, New Components, Calendar Fix"
+git commit -m "Feat: UI Redesign 2.0, Quote Builder, Shop Manager, Calendar Quick Edit"
 
 Write-Host "Pushing to GitHub..." -ForegroundColor Cyan
 git push
@@ -21,7 +21,8 @@ git push
 if ($LASTEXITCODE -eq 0) {
     Write-Host "Deployment successful! Changes pushed to GitHub." -ForegroundColor Green
     Write-Host "Check GitHub Actions for build status: https://github.com/Lalika85/Festeseim/actions" -ForegroundColor Yellow
-} else {
+}
+else {
     Write-Host "Push failed. Please check your git configuration." -ForegroundColor Red
 }
 

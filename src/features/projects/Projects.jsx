@@ -72,8 +72,8 @@ export default function Projects() {
                             key={status}
                             onClick={() => setStatusFilter(status)}
                             className={`px-4 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${statusFilter === status
-                                    ? 'bg-primary-600 text-white'
-                                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                                ? 'bg-primary-600 text-white'
+                                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                                 }`}
                         >
                             {status === 'all' ? 'Minden' :
@@ -115,7 +115,9 @@ export default function Projects() {
                                 {p.address && (
                                     <div className="flex items-center text-sm text-gray-600">
                                         <MapPin size={16} className="mr-2 text-gray-400" />
-                                        {p.address}
+                                        <a href={`geo:0,0?q=${encodeURIComponent(p.address)}`} onClick={(e) => e.stopPropagation()} className="hover:text-primary-600 hover:underline">
+                                            {p.address}
+                                        </a>
                                     </div>
                                 )}
                                 {p.phone && (

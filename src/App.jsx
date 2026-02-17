@@ -11,6 +11,8 @@ import ProjectForm from './features/projects/ProjectForm';
 import Calendar from './features/calendar/Calendar';
 import Profile from './features/profile/Profile';
 import Settings from './features/settings/Settings';
+import QuoteBuilder from './features/quote/QuoteBuilder';
+import ShopManager from './features/shop/ShopManager';
 
 const ProtectedRoute = ({ children }) => {
     const { currentUser } = useAuth();
@@ -44,6 +46,10 @@ function AppContent() {
 
                     {/* Settings */}
                     <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+
+                    {/* Tools */}
+                    <Route path="/quote" element={<ProtectedRoute><QuoteBuilder /></ProtectedRoute>} />
+                    <Route path="/shop" element={<ProtectedRoute><ShopManager /></ProtectedRoute>} />
 
                     {/* Fallback */}
                     <Route path="*" element={<Navigate to="/" />} />

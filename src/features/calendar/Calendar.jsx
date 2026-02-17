@@ -1,19 +1,35 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, Loader } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, Loader, Edit3, X, Save, ExternalLink } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import { loadUserCollection } from '../../services/firestore';
-import { auth, googleProvider } from '../../services/firebase';
+import { auth, googleProvider, db } from '../../services/firebase';
 import { signInWithPopup } from 'firebase/auth';
+import { doc, updateDoc } from 'firebase/firestore';
 import Card from '../../components/ui/Card';
 import Button from '../../components/ui/Button';
+import Modal from '../../components/ui/Modal';
+import Input from '../../components/ui/Input';
+import Select from '../../components/ui/Select';
 
 export default function Calendar() {
     const { currentUser } = useAuth();
+    const navigate = useNavigate();
     const [currentDate, setCurrentDate] = useState(new Date());
     const [projects, setProjects] = useState([]);
     const [googleEvents, setGoogleEvents] = useState([]);
     const [loading, setLoading] = useState(true);
     const [isGoogleConnected, setIsGoogleConnected] = useState(!!localStorage.getItem('google_access_token'));
+
+    // Modal State
+    const [selectedEvent, setSelectedEvent] = useState(null);
+    const [isFormatSaving, setIsFormatSaving] = useState(false);
+    const [editForm, setEditForm] = useState({
+        status: '',
+        note: '',
+        start: '',
+        end: ''
+    });
 
     const calColors = ["#1d4ed8", "#b91c1c", "#15803d", "#c2410c", "#0e7490", "#7e22ce", "#be185d", "#4338ca"];
     const getProjectColor = (id) => {
@@ -47,25 +63,26 @@ export default function Calendar() {
         }
     }, [currentDate]);
 
+    const loadData = useCallback(async () => {
+        if (!currentUser) return;
+        setLoading(true);
+        try {
+            const [pData, gData] = await Promise.all([
+                loadUserCollection(currentUser.uid, 'projects'),
+                fetchGoogleEvents()
+            ]);
+            setProjects(pData || []);
+            setGoogleEvents(gData || []);
+        } catch (err) {
+            console.error("Calendar data load error:", err);
+        } finally {
+            setLoading(false);
+        }
+    }, [currentUser, fetchGoogleEvents]);
+
     useEffect(() => {
-        const loadData = async () => {
-            if (!currentUser) return;
-            setLoading(true);
-            try {
-                const [pData, gData] = await Promise.all([
-                    loadUserCollection(currentUser.uid, 'projects'),
-                    fetchGoogleEvents()
-                ]);
-                setProjects(pData || []);
-                setGoogleEvents(gData || []);
-            } catch (err) {
-                console.error("Calendar data load error:", err);
-            } finally {
-                setLoading(false);
-            }
-        };
         loadData();
-    }, [currentUser, currentDate, fetchGoogleEvents]);
+    }, [loadData]);
 
     const handleGoogleLogin = async () => {
         try {
@@ -87,6 +104,35 @@ export default function Calendar() {
     const changeMonth = (delta) => {
         const next = new Date(currentDate.getFullYear(), currentDate.getMonth() + delta, 1);
         setCurrentDate(next);
+    };
+
+    const openEventModal = (e) => {
+        if (e.type === 'google') return; // Read-only for Google events currently
+        setSelectedEvent(e);
+        setEditForm({
+            status: e.status || 'active',
+            note: e.note || '',
+            start: e.start || '',
+            end: e.end || ''
+        });
+    };
+
+    const handleSaveEvent = async () => {
+        if (!selectedEvent || !currentUser) return;
+        setIsFormatSaving(true);
+        try {
+            const docRef = doc(db, 'users', currentUser.uid, 'projects', selectedEvent.id);
+            await updateDoc(docRef, editForm);
+
+            // Update local state
+            setProjects(prev => prev.map(p => p.id === selectedEvent.id ? { ...p, ...editForm } : p));
+            setSelectedEvent(null);
+        } catch (err) {
+            console.error("Error updating project:", err);
+            alert("Hiba mentéskor!");
+        } finally {
+            setIsFormatSaving(false);
+        }
     };
 
     // Calendar Grid Logic
@@ -112,7 +158,7 @@ export default function Calendar() {
             num: i,
             isToday: new Date().toDateString() === new Date(year, month, i).toDateString(),
             events: [
-                ...dayProjects.map(p => ({ color: getProjectColor(p.id), type: 'project' })),
+                ...dayProjects.map(p => ({ ...p, color: getProjectColor(p.id), type: 'project' })),
                 ...dayGoogle.map(() => ({ color: '#4285F4', type: 'google' }))
             ]
         });
@@ -163,17 +209,28 @@ export default function Calendar() {
 
                 <div className="grid grid-cols-7 gap-1">
                     {days.map((d, x) => (
-                        <div key={x} className={`h-12 flex flex-col items-center justify-center rounded-lg relative ${d.type === 'empty' ? '' : 'bg-gray-50'
+                        <div key={x} className={`min-h-[3rem] flex flex-col items-center justify-start py-1 rounded-lg relative ${d.type === 'empty' ? '' : 'bg-gray-50'
                             } ${d.isToday ? 'ring-2 ring-primary-500 font-bold bg-primary-50' : ''}`}>
                             {d.type !== 'empty' && (
-                                <>
-                                    <span className={`text-sm ${d.isToday ? 'text-primary-700' : 'text-gray-700'}`}>{d.num}</span>
-                                    <div className="flex gap-0.5 mt-1">
-                                        {d.events?.slice(0, 4).map((e, idx) => (
-                                            <div key={idx} className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: e.color }}></div>
+                                <div className="w-full flex flex-col items-center cursor-pointer" onClick={() => {
+                                    // Maybe open day view? For now just show existing
+                                }}>
+                                    <span className={`text-sm mb-1 ${d.isToday ? 'text-primary-700' : 'text-gray-700'}`}>{d.num}</span>
+                                    <div className="flex gap-0.5 mt-0.5 flex-wrap justify-center px-1">
+                                        {d.events?.map((e, idx) => (
+                                            <div
+                                                key={idx}
+                                                className="w-2 h-2 rounded-full cursor-pointer hover:scale-125 transition-transform"
+                                                style={{ backgroundColor: e.color }}
+                                                title={e.client}
+                                                onClick={(ev) => {
+                                                    ev.stopPropagation();
+                                                    if (e.type === 'project') openEventModal(e);
+                                                }}
+                                            ></div>
                                         ))}
                                     </div>
-                                </>
+                                </div>
                             )}
                         </div>
                     ))}
@@ -194,7 +251,11 @@ export default function Calendar() {
                 ) : (
                     <div className="space-y-3">
                         {allMonthEvents.map((e, idx) => (
-                            <div key={idx} className="bg-white p-3 rounded-xl border border-gray-200 shadow-sm flex items-center gap-3">
+                            <div
+                                key={idx}
+                                onClick={() => e.type === 'project' && openEventModal(e)}
+                                className={`bg-white p-3 rounded-xl border border-gray-200 shadow-sm flex items-center gap-3 transition-colors ${e.type === 'project' ? 'cursor-pointer hover:border-primary-300' : ''}`}
+                            >
                                 <div
                                     className="w-2.5 h-2.5 rounded-full flex-shrink-0"
                                     style={{ background: e.type === 'project' ? getProjectColor(e.id || 'x') : '#4285F4' }}
@@ -213,6 +274,76 @@ export default function Calendar() {
                     </div>
                 )}
             </div>
+
+            {/* Quick Edit Modal */}
+            <Modal
+                isOpen={!!selectedEvent}
+                onClose={() => setSelectedEvent(null)}
+                title="Gyors Szerkesztés"
+            >
+                {selectedEvent && (
+                    <div className="space-y-4">
+                        <div className="flex justify-between items-center mb-2">
+                            <h4 className="text-xl font-bold text-gray-900">{selectedEvent.client}</h4>
+                            <Button
+                                variant="secondary"
+                                icon={<ExternalLink size={16} />}
+                                onClick={() => navigate(`/projects/${selectedEvent.id}`)}
+                                className="!py-1 !px-2 !text-xs"
+                            >
+                                Adatlap
+                            </Button>
+                        </div>
+
+                        <Select
+                            label="Státusz"
+                            value={editForm.status}
+                            onChange={(e) => setEditForm({ ...editForm, status: e.target.value })}
+                            options={[
+                                { value: 'active', label: 'Aktív' },
+                                { value: 'suspend', label: 'Felfüggesztve' },
+                                { value: 'done', label: 'Kész' }
+                            ]}
+                        />
+
+                        <div className="grid grid-cols-2 gap-3">
+                            <Input
+                                type="date"
+                                label="Kezdés"
+                                value={editForm.start}
+                                onChange={(e) => setEditForm({ ...editForm, start: e.target.value })}
+                            />
+                            <Input
+                                type="date"
+                                label="Vége"
+                                value={editForm.end}
+                                onChange={(e) => setEditForm({ ...editForm, end: e.target.value })}
+                            />
+                        </div>
+
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Megjegyzés</label>
+                            <textarea
+                                className="w-full border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-primary-500 outline-none"
+                                rows={3}
+                                value={editForm.note}
+                                onChange={(e) => setEditForm({ ...editForm, note: e.target.value })}
+                            ></textarea>
+                        </div>
+
+                        <div className="pt-2">
+                            <Button
+                                onClick={handleSaveEvent}
+                                loading={isFormatSaving}
+                                className="w-full"
+                                icon={<Save size={18} />}
+                            >
+                                Mentés
+                            </Button>
+                        </div>
+                    </div>
+                )}
+            </Modal>
         </div>
     );
 }
