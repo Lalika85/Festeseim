@@ -1,6 +1,7 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './hooks/useAuth';
+import { ProjectsProvider } from './hooks/useProjects';
 import Header from './components/layout/Header';
 import BottomNav from './components/layout/BottomNav';
 import Login from './features/profile/Login';
@@ -11,7 +12,9 @@ import ProjectForm from './features/projects/ProjectForm';
 import Calendar from './features/calendar/Calendar';
 import Profile from './features/profile/Profile';
 import Settings from './features/settings/Settings';
-import QuoteBuilder from './features/quote/QuoteBuilder';
+import QuoteList from './features/quote/QuoteList';
+import QuoteEditor from './features/quote/QuoteEditor';
+import ClientQuoteView from './features/quote/ClientQuoteView';
 import ShopManager from './features/shop/ShopManager';
 
 const ProtectedRoute = ({ children }) => {
@@ -48,8 +51,13 @@ function AppContent() {
                     <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
 
                     {/* Tools */}
-                    <Route path="/quote" element={<ProtectedRoute><QuoteBuilder /></ProtectedRoute>} />
+                    <Route path="/quote" element={<ProtectedRoute><QuoteList /></ProtectedRoute>} />
+                    <Route path="/quote/new" element={<ProtectedRoute><QuoteEditor /></ProtectedRoute>} />
+                    <Route path="/quote/edit/:id" element={<ProtectedRoute><QuoteEditor /></ProtectedRoute>} />
                     <Route path="/shop" element={<ProtectedRoute><ShopManager /></ProtectedRoute>} />
+
+                    {/* Public Client View */}
+                    <Route path="/quote/view/:userId/:quoteId" element={<ClientQuoteView />} />
 
                     {/* Fallback */}
                     <Route path="*" element={<Navigate to="/" />} />
@@ -64,9 +72,11 @@ function AppContent() {
 function App() {
     return (
         <AuthProvider>
-            <Router>
-                <AppContent />
-            </Router>
+            <ProjectsProvider>
+                <Router>
+                    <AppContent />
+                </Router>
+            </ProjectsProvider>
         </AuthProvider>
     );
 }

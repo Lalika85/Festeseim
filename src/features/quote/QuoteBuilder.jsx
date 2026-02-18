@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { jsPDF } from 'jspdf';
 import { useAuth } from '../../hooks/useAuth';
 import { db, storage } from '../../services/firebase';
 import { collection, getDocs, addDoc, deleteDoc, doc } from 'firebase/firestore';
@@ -13,6 +12,7 @@ import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input';
 import Select from '../../components/ui/Select';
 import Modal from '../../components/ui/Modal';
+import { generateQuotePDF } from '../../services/pdfGenerator';
 
 const VAT_RATES = [
     { value: 27, label: '27% (Általános)' },
@@ -165,124 +165,13 @@ export default function QuoteBuilder() {
         }
     }
 
-    const generatePDF = async (action = 'download') => {
-        // action: 'download' (browser), 'share' (mobile)
-        const doc = new jsPDF();
-        const seller = companies.find(c => c.id === formData.sellerId) || {};
-
-        // ... (Header, Seller, Buyer setup same as before) ...
-        // Simplified for brevity, assume full PDF generation code here or keep existing
-
-        doc.setFontSize(22);
-        doc.text("ÁRAJÁNLAT", 105, 20, { align: "center" });
-
-        doc.setFontSize(10);
-        doc.setTextColor(100);
-        doc.text(`Dátum: ${formData.date}`, 14, 30);
-        doc.text(`Érvényes: ${formData.expirationDays} napig`, 14, 35);
-
-        // Seller & Buyer
-        doc.setFontSize(12);
-        doc.setTextColor(0);
-
-        // Seller details
-        doc.setFont(undefined, 'bold');
-        doc.text("Kivitelező:", 14, 50);
-        doc.setFont(undefined, 'normal');
-        doc.text(seller.name || "Saját Vállalkozás", 14, 56);
-        doc.text(seller.address || "", 14, 62);
-        doc.text(`Adószám: ${seller.taxNumber || "-"}`, 14, 68);
-        doc.text(`Tel: ${seller.phone || "-"}`, 14, 74); // Adjusted Y
-
-        // Buyer details
-        doc.setFont(undefined, 'bold');
-        doc.text("Megrendelő:", 110, 50);
-        doc.setFont(undefined, 'normal');
-        doc.text(formData.buyerName || "Ügyfél neve", 110, 56);
-        doc.text(formData.buyerAddress || "", 110, 62);
-
-        // Table
-        let y = 100;
-        doc.setFillColor(240, 240, 240);
-        doc.rect(14, y - 6, 180, 8, 'F');
-        doc.setFont(undefined, 'bold');
-        doc.text("Megnevezés", 16, y);
-        doc.text("Menny.", 100, y, { align: 'right' });
-        doc.text("Egységár", 130, y, { align: 'right' });
-        doc.text("ÁFA", 150, y, { align: 'right' });
-        doc.text("Összesen", 190, y, { align: 'right' });
-
-        y += 10;
-        doc.setFont(undefined, 'normal');
-
-        formData.items.forEach(item => {
-            if (y > 270) { doc.addPage(); y = 20; }
-            doc.text(item.description || "Tétel", 16, y);
-            doc.text(`${item.qty} ${item.unit}`, 100, y, { align: 'right' });
-            doc.text(`${Number(item.price).toLocaleString()} Ft`, 130, y, { align: 'right' });
-
-            // Display valid tax label
-            const vatLabel = typeof item.vat === 'string' ? item.vat : `${item.vat}%`;
-            doc.text(vatLabel, 150, y, { align: 'right' });
-
-            // Calculate line total for display (net)
-            const lineTotal = item.qty * item.price;
-            doc.text(`${lineTotal.toLocaleString()} Ft`, 190, y, { align: 'right' });
-            y += 8;
-        });
-
-        // Totals
-        y += 10;
-        const totals = calculateTotals();
-        doc.line(14, y, 194, y);
-        y += 10;
-        doc.text("Nettó összesen:", 130, y);
-        doc.text(`${totals.net.toLocaleString()} Ft`, 190, y, { align: 'right' });
-        y += 6;
-        doc.text("ÁFA tartalom:", 130, y);
-        doc.text(`${totals.vat.toLocaleString()} Ft`, 190, y, { align: 'right' });
-        y += 8;
-        doc.setFontSize(14);
-        doc.setFont(undefined, 'bold');
-        doc.text("Bruttó végösszeg:", 130, y);
-        doc.text(`${totals.gross.toLocaleString()} Ft`, 190, y, { align: 'right' });
-
-        // Note
-        if (formData.note) {
-            y += 20;
-            doc.setFontSize(10);
-            doc.setFont(undefined, 'normal');
-            doc.text("Megjegyzés:", 14, y);
-            const splitNote = doc.splitTextToSize(formData.note, 180);
-            doc.text(splitNote, 14, y + 6);
-        }
-
-        const fileName = `arajanlat_${formData.buyerName.replace(/\s+/g, '_')}_${formData.date}.pdf`;
-
-        if (action === 'download') {
-            doc.save(fileName);
-        } else if (action === 'share') {
-            try {
-                const base64PDF = doc.output('datauristring').split(',')[1];
-                await Filesystem.writeFile({
-                    path: fileName,
-                    data: base64PDF,
-                    directory: Directory.Cache,
-                });
-                const fileResult = await Filesystem.getUri({
-                    directory: Directory.Cache,
-                    path: fileName,
-                });
-                await Share.share({
-                    title: 'Árajánlat Megosztása',
-                    text: `Árajánlat: ${formData.buyerName}`,
-                    url: fileResult.uri,
-                    dialogTitle: 'Árajánlat küldése',
-                });
-            } catch (err) {
-                console.error('Error sharing PDF:', err);
-                alert('Nem sikerült megosztani a PDF-et. Próbáld meg letölteni.');
-            }
+    const handleGeneratePDF = async (action = 'download') => {
+        try {
+            const seller = companies.find(c => c.id === formData.sellerId) || {};
+            await generateQuotePDF(formData, seller, action);
+        } catch (err) {
+            console.error('PDF Generation Error:', err);
+            alert('Hiba a PDF generálásakor: ' + err.message);
         }
     };
 
@@ -439,7 +328,7 @@ export default function QuoteBuilder() {
             {/* Bottom Floating Action Bar */}
             <div className="fixed bottom-0 left-0 right-0 p-4 bg-white border-t border-gray-200 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] z-40 flex gap-3">
                 <Button
-                    onClick={() => generatePDF('download')}
+                    onClick={() => handleGeneratePDF('download')}
                     variant="secondary"
                     className="flex-1"
                     icon={<FileDown size={20} />}
@@ -447,7 +336,7 @@ export default function QuoteBuilder() {
                     Letöltés
                 </Button>
                 <Button
-                    onClick={() => generatePDF('share')}
+                    onClick={() => handleGeneratePDF('share')}
                     className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white"
                     icon={<Share2 size={20} />}
                 >

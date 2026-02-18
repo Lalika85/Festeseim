@@ -2,12 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import { db } from '../../services/firebase';
-import { doc, getDoc, updateDoc, deleteDoc } from 'firebase/firestore';
-import { jsPDF } from 'jspdf';
+import { doc, getDoc, updateDoc, deleteDoc, collection, query, where, onSnapshot } from 'firebase/firestore';
+import { generateWorksheetPDF } from '../../services/pdfGenerator';
 import {
     ArrowLeft, Edit, Trash2, Phone, Mail, MapPin,
     Map, Plus, X, ShoppingCart, FileText, ChevronRight,
-    User, Home, Layers
+    User, Home, Layers, Receipt
 } from 'lucide-react';
 import Card from '../../components/ui/Card';
 import Button from '../../components/ui/Button';
@@ -22,6 +22,7 @@ export default function ProjectDetail() {
     const [loading, setLoading] = useState(true);
     const [newRoom, setNewRoom] = useState('');
     const [newRoomSize, setNewRoomSize] = useState('');
+    const [materials, setMaterials] = useState([]);
 
     useEffect(() => {
         const fetchProject = async () => {
@@ -41,7 +42,19 @@ export default function ProjectDetail() {
                 setLoading(false);
             }
         };
+
+        // Listen for materials associated with this project
+        let unsubscribeMaterials = () => { };
+        if (currentUser && id) {
+            const mQuery = query(collection(db, 'users', currentUser.uid, 'shopping_items'), where('projectId', '==', id));
+            unsubscribeMaterials = onSnapshot(mQuery, (snapshot) => {
+                const list = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                setMaterials(list);
+            });
+        }
+
         fetchProject();
+        return () => unsubscribeMaterials();
     }, [id, currentUser, navigate]);
 
     const handleAddRoom = async () => {
@@ -83,42 +96,32 @@ export default function ProjectDetail() {
         }
     };
 
-    const generateProjectPDF = () => {
-        const doc = new jsPDF();
-        const n = (t) => t ? String(t).normalize("NFD").replace(/[\u0300-\u036f]/g, "") : "";
+    const handleGenerateWorksheet = async () => {
+        try {
+            await generateWorksheetPDF(project, materials, { showMaterials: true, showPrices: true });
+        } catch (err) {
+            console.error("PDF Error:", err);
+            alert("Hiba a PDF generálásakor!");
+        }
+    };
 
-        doc.setFontSize(20);
-        doc.text("MUNKALAP - ADATLAP", 105, 20, { align: "center" });
-
-        doc.setFontSize(12);
-        doc.text(`Ugyfel: ${n(project.client)}`, 10, 40);
-        doc.text(`Cim: ${n(project.address)}`, 10, 47);
-        doc.text(`Tel: ${n(project.phone)}`, 10, 54);
-        doc.text(`Email: ${n(project.email)}`, 10, 61);
-
-        doc.line(10, 70, 200, 70);
-        doc.text("HELYISEGEK:", 10, 80);
-
-        let y = 90;
-        (project.rooms || []).forEach((r, idx) => {
-            doc.text(`${idx + 1}. ${n(r)}`, 15, y);
-            y += 7;
+    const handleCreateQuote = () => {
+        navigate('/quote/new', {
+            state: {
+                clientData: {
+                    name: project.client,
+                    address: project.address,
+                    email: project.email
+                }
+            }
         });
-
-        y += 10;
-        doc.text("MEGJEGYZES:", 10, y);
-        y += 7;
-        const splitNote = doc.splitTextToSize(n(project.note || "Nincs megj."), 180);
-        doc.text(splitNote, 10, y);
-
-        doc.save(`munkalap_${n(project.client).replace(/\s/g, '_')}.pdf`);
     };
 
     if (loading) return <div className="text-center py-12"><div className="animate-spin text-4xl mb-2">⏳</div><p className="text-gray-500">Betöltés...</p></div>;
     if (!project) return null;
 
 
-    const mapUrl = project.address ? `geo:0,0?q=${encodeURIComponent(project.address)}` : '#';
+    const mapUrl = project.address ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(project.address)}` : '#';
 
     return (
         <div className="pb-10">
@@ -151,9 +154,18 @@ export default function ProjectDetail() {
                             </Badge>
                         </div>
                         <h2 className="text-3xl font-bold mb-1">{project.client}</h2>
-                        <div className="flex items-center gap-2 text-primary-100 mb-4">
-                            <MapPin size={16} />
-                            <span className="font-medium">{project.address || 'Nincs cím megadva'}</span>
+                        <div className="flex items-center justify-between gap-2 text-primary-100 mb-4">
+                            <a
+                                href={mapUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="flex items-center gap-2 hover:text-white transition-colors group/address"
+                            >
+                                <MapPin size={16} className="group-hover/address:scale-110 transition-transform" />
+                                <span className="font-medium underline underline-offset-4 decoration-white/30 group-hover/address:decoration-white">
+                                    {project.address || 'Nincs cím megadva'}
+                                </span>
+                            </a>
                         </div>
                     </div>
                 </div>
@@ -323,26 +335,41 @@ export default function ProjectDetail() {
                 </div>
             </Card>
 
+            {/* Material Summary Card */}
+            <Card className="mb-6 shadow-md border-purple-100 overflow-hidden !p-0">
+                <div className="bg-purple-50 px-4 py-3 border-b border-purple-100 flex justify-between items-center">
+                    <div className="flex items-center gap-2 font-medium text-purple-900">
+                        <ShoppingCart size={18} className="text-purple-600" />
+                        Anyagszükséglet
+                    </div>
+                    <Badge className="bg-purple-600 text-white border-0">
+                        {materials.length} tétel
+                    </Badge>
+                </div>
+                <div className="p-4 flex justify-between items-center bg-white">
+                    <div>
+                        <div className="text-sm text-gray-500">Becsült anyagköltség</div>
+                        <div className="text-xl font-bold text-gray-900">
+                            {materials.reduce((sum, m) => sum + (parseInt(m.price || 0) * (m.qty || 1)), 0).toLocaleString()} Ft
+                        </div>
+                    </div>
+                    <Button
+                        variant="secondary"
+                        size="sm"
+                        onClick={() => navigate(`/shop?project=${id}`)}
+                        className="!py-2 text-purple-600 border-purple-200 hover:bg-purple-50"
+                    >
+                        Kezelés <ChevronRight size={16} className="ml-1" />
+                    </Button>
+                </div>
+            </Card>
+
             {/* Quick Actions */}
             <div className="mb-8">
                 <h3 className="text-lg font-bold text-gray-800 mb-4">Műveletek</h3>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-2 gap-4">
                     <div
-                        onClick={() => navigate(`/shop?project=${id}`)}
-                        className="bg-purple-600 text-white p-4 rounded-xl shadow-lg shadow-purple-200 flex flex-col justify-between h-28 cursor-pointer active:scale-95 transition-all relative overflow-hidden"
-                    >
-                        <div className="absolute -right-4 -bottom-4 opacity-20">
-                            <ShoppingCart size={80} />
-                        </div>
-                        <ShoppingCart size={24} />
-                        <div>
-                            <div className="font-bold text-lg">Anyagok</div>
-                            <div className="text-purple-100 text-xs">Lista kezelése</div>
-                        </div>
-                    </div>
-
-                    <div
-                        onClick={generateProjectPDF}
+                        onClick={handleGenerateWorksheet}
                         className="bg-blue-600 text-white p-4 rounded-xl shadow-lg shadow-blue-200 flex flex-col justify-between h-28 cursor-pointer active:scale-95 transition-all relative overflow-hidden"
                     >
                         <div className="absolute -right-4 -bottom-4 opacity-20">
@@ -352,6 +379,20 @@ export default function ProjectDetail() {
                         <div>
                             <div className="font-bold text-lg">PDF Export</div>
                             <div className="text-blue-100 text-xs">Munkalap letöltése</div>
+                        </div>
+                    </div>
+
+                    <div
+                        onClick={handleCreateQuote}
+                        className="bg-indigo-600 text-white p-4 rounded-xl shadow-lg shadow-indigo-200 flex flex-col justify-between h-28 cursor-pointer active:scale-95 transition-all relative overflow-hidden"
+                    >
+                        <div className="absolute -right-4 -bottom-4 opacity-20">
+                            <Receipt size={80} />
+                        </div>
+                        <Receipt size={24} />
+                        <div>
+                            <div className="font-bold text-lg">Árajánlat</div>
+                            <div className="text-indigo-100 text-xs">Új ajánlat készítése</div>
                         </div>
                     </div>
                 </div>

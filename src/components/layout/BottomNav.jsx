@@ -1,12 +1,13 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { Home, Users, Calendar, Settings } from 'lucide-react';
+import { Home, Users, Calendar, Settings, User } from 'lucide-react';
 
 export default function BottomNav() {
     const navItems = [
         { path: '/', icon: Home, label: 'Főoldal' },
         { path: '/projects', icon: Users, label: 'Ügyfelek' },
         { path: '/calendar', icon: Calendar, label: 'Naptár' },
+        { path: '/profile', icon: User, label: 'Profil' },
         { path: '/settings', icon: Settings, label: 'Beállítások' }
     ];
 
