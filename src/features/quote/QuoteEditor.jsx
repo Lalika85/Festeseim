@@ -227,17 +227,18 @@ export default function QuoteEditor() {
                         <p className="text-sm text-gray-500">Készíts professzionális ajánlatokat percek alatt</p>
                     </div>
                 </div>
-                <div className="flex items-center gap-2">
-                    <Button variant="secondary" onClick={() => navigate('/quote')}>
+                <div className="flex items-center flex-wrap gap-2 justify-end">
+                    <Button variant="secondary" size="sm" onClick={() => navigate('/quote')} className="bg-white">
                         Mégse
                     </Button>
-                    <Button variant="secondary" onClick={() => setActiveTab(activeTab === 'editor' ? 'branding' : 'editor')}>
-                        {activeTab === 'editor' ? <Palette size={18} className="mr-2" /> : <FileText size={18} className="mr-2" />}
-                        {activeTab === 'editor' ? 'Arculat' : 'Szerkesztés'}
+                    <Button variant="secondary" size="sm" onClick={() => setActiveTab(activeTab === 'editor' ? 'branding' : 'editor')} className="bg-white">
+                        {activeTab === 'editor' ? <Palette size={16} className="xs:mr-2" /> : <FileText size={16} className="xs:mr-2" />}
+                        <span className="hidden xs:inline">{activeTab === 'editor' ? 'Arculat' : 'Szerkesztés'}</span>
                     </Button>
                     {id && (
                         <Button
-                            className="bg-green-600 hover:bg-green-700 text-white shadow-lg shadow-green-100"
+                            size="sm"
+                            className="bg-green-600 hover:bg-green-700 text-white shadow-md shadow-green-100"
                             onClick={() => {
                                 setActiveTab('branding');
                                 setTimeout(() => {
@@ -245,11 +246,11 @@ export default function QuoteEditor() {
                                 }, 100);
                             }}
                         >
-                            <Send size={18} className="mr-2" /> Küldés
+                            <Send size={16} className="xs:mr-2" /> <span className="hidden xs:inline">Küldés</span>
                         </Button>
                     )}
-                    <Button className="bg-primary-600 hover:bg-primary-700 text-white shadow-lg shadow-primary-100" onClick={handleSave}>
-                        <Save size={18} className="mr-2" /> Mentés
+                    <Button size="sm" className="bg-primary-600 hover:bg-primary-700 text-white shadow-md shadow-primary-100" onClick={handleSave}>
+                        <Save size={16} className="xs:mr-2" /> <span className="hidden xs:inline">Mentés</span>
                     </Button>
                 </div>
             </div>
