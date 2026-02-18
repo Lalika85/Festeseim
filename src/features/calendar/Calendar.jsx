@@ -86,9 +86,34 @@ export default function Calendar() {
 
     const handleGoogleLogin = async () => {
         try {
-            const result = await signInWithPopup(auth, googleProvider);
-            const credential = result.credential;
-            const token = credential?.accessToken;
+            const isNative = window.Capacitor?.isNative;
+            let token = null;
+
+            if (isNative) {
+                // Native Google Sign-In
+                try {
+                    const { FirebaseAuthentication } = await import('@capacitor-firebase/authentication');
+                    const result = await FirebaseAuthentication.signInWithGoogle();
+                    const idToken = result.credential?.idToken;
+
+                    if (idToken) {
+                        // Bridge to Web SDK for Firestore access
+                        const { GoogleAuthProvider, signInWithCredential } = await import('firebase/auth');
+                        const credential = GoogleAuthProvider.credential(idToken);
+                        await signInWithCredential(auth, credential);
+                        token = result.credential?.accessToken; // Or use idToken as needed for API
+                    }
+                } catch (nativeErr) {
+                    console.error("Native Google Login failed:", nativeErr);
+                    throw nativeErr; // Re-throw to handle in outer catch
+                }
+            } else {
+                // Web Google Sign-In
+                const result = await signInWithPopup(auth, googleProvider);
+                const credential = result.credential;
+                token = credential?.accessToken;
+            }
+
             if (token) {
                 localStorage.setItem('google_access_token', token);
                 setIsGoogleConnected(true);
@@ -97,7 +122,7 @@ export default function Calendar() {
             }
         } catch (error) {
             console.error("Google login error:", error);
-            alert("Google bejelentkezés sikertelen!");
+            alert("Google bejelentkezés sikertelen! " + error.message);
         }
     };
 
