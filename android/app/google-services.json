@@ -1,0 +1,29 @@
+{
+    "project_info": {
+        "project_number": "1082153493197",
+        "project_id": "festonaplo-2026",
+        "storage_bucket": "festonaplo-2026.firebasestorage.app"
+    },
+    "client": [
+        {
+            "client_info": {
+                "mobilesdk_app_id": "1:1082153493197:android:c8557c1511fe52e95fff84",
+                "android_client_info": {
+                    "package_name": "com.vallalkozoi.app"
+                }
+            },
+            "oauth_client": [],
+            "api_key": [
+                {
+                    "current_key": "AIzaSyBfkD2CfqgOPp2-3gxyj07kYM2usMKhpdc"
+                }
+            ],
+            "services": {
+                "appinvite_service": {
+                    "other_platform_oauth_client": []
+                }
+            }
+        }
+    ],
+    "configuration_version": "1"
+}
