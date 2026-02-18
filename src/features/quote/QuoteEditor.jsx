@@ -235,6 +235,19 @@ export default function QuoteEditor() {
                         {activeTab === 'editor' ? <Palette size={18} className="mr-2" /> : <FileText size={18} className="mr-2" />}
                         {activeTab === 'editor' ? 'Arculat' : 'Szerkesztés'}
                     </Button>
+                    {id && (
+                        <Button
+                            className="bg-green-600 hover:bg-green-700 text-white shadow-lg shadow-green-100"
+                            onClick={() => {
+                                setActiveTab('branding');
+                                setTimeout(() => {
+                                    document.getElementById('sharing-section')?.scrollIntoView({ behavior: 'smooth' });
+                                }, 100);
+                            }}
+                        >
+                            <Send size={18} className="mr-2" /> Küldés
+                        </Button>
+                    )}
                     <Button className="bg-primary-600 hover:bg-primary-700 text-white shadow-lg shadow-primary-100" onClick={handleSave}>
                         <Save size={18} className="mr-2" /> Mentés
                     </Button>
@@ -287,7 +300,7 @@ export default function QuoteEditor() {
                         </div>
                     </Card>
 
-                    <Card title="Megosztás & Előnézet" icon={<Share2 className="text-primary-600" />} className="bg-primary-50 border-primary-100">
+                    <Card id="sharing-section" title="Megosztás & Előnézet" icon={<Share2 className="text-primary-600" />} className="bg-primary-50 border-primary-100">
                         {id ? (
                             <>
                                 <div className="flex flex-col md:flex-row gap-4 mb-6">
