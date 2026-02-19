@@ -26,6 +26,7 @@ dist-ssr
 # Legacy code
 legacy/
 
+
 # Android generated assets (contain secrets in JS bundles)
 android/app/src/main/assets/public
 android/app/build
@@ -35,3 +36,6 @@ android/.gradle
 .env
 .env.local
 .env.*
+
+# Firebase Config
+android/app/google-services.json
