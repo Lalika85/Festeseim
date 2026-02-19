@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { useQuotes } from '../../hooks/useQuotes';
-import { CheckCircle2, FileText, Download, Printer, User, Building2, MapPin, Mail, Phone, Calendar, Info } from 'lucide-react';
+import { useAuth } from '../../hooks/useAuth';
+import { CheckCircle2, FileText, Download, Printer, User, Building2, MapPin, Mail, Phone, Calendar, Info, ArrowLeft } from 'lucide-react';
 import Card from '../../components/ui/Card';
 import Button from '../../components/ui/Button';
 import Badge from '../../components/ui/Badge';
@@ -9,6 +10,8 @@ import SignaturePad from '../../components/ui/SignaturePad';
 
 export default function ClientQuoteView() {
     const { userId, quoteId } = useParams();
+    const navigate = useNavigate();
+    const { currentUser } = useAuth();
     const { getPublicQuote, updateStatus, saveQuote } = useQuotes();
 
     const [data, setData] = useState(null);
@@ -80,6 +83,15 @@ export default function ClientQuoteView() {
             {/* Branded Header Stripe */}
             <div style={{ backgroundColor: primaryColor }} className="h-2 w-full sticky top-0 z-50 shadow-sm"></div>
 
+            {/* Back Button for Owner */}
+            {currentUser && (
+                <div className="max-w-4xl mx-auto px-4 mt-6">
+                    <Button variant="secondary" onClick={() => navigate(-1)} className="bg-white hover:bg-gray-100 border-gray-200 text-gray-600 shadow-sm">
+                        <ArrowLeft size={18} className="mr-2" /> Vissza az alkalmazásba
+                    </Button>
+                </div>
+            )}
+
             <div className="max-w-4xl mx-auto px-4 py-8">
                 {/* Logo & Header */}
                 <div className="flex flex-col md:flex-row justify-between items-start gap-8 mb-12">
@@ -138,7 +150,8 @@ export default function ClientQuoteView() {
 
                 {/* Main Content Card */}
                 <Card className="!p-0 overflow-hidden border-0 shadow-2xl rounded-3xl mb-12">
-                    <div className="bg-gray-50 px-8 py-4 border-b border-gray-100 overflow-x-auto">
+                    {/* Desktop Table View */}
+                    <div className="hidden md:block bg-gray-50 px-8 py-4 border-b border-gray-100 overflow-x-auto">
                         <table className="w-full text-left">
                             <thead className="text-[10px] uppercase font-bold text-gray-400 tracking-widest">
                                 <tr>
@@ -166,6 +179,38 @@ export default function ClientQuoteView() {
                                 ))}
                             </tbody>
                         </table>
+                    </div>
+
+                    {/* Mobile List View */}
+                    <div className="md:hidden bg-white">
+                        {quote.items.map((item, idx) => (
+                            <div key={idx} className={`p-5 border-b border-gray-100 ${item.isOptional ? 'bg-amber-50/30' : ''}`}>
+                                <div className="font-bold text-gray-900 mb-3 text-lg leading-snug">{item.description}</div>
+                                <div className="grid grid-cols-2 gap-y-3 gap-x-4 text-sm">
+                                    <div>
+                                        <p className="text-[10px] text-gray-400 uppercase font-bold mb-0.5">Mennyiség</p>
+                                        <p className="font-medium text-gray-700">{item.qty} {item.unit}</p>
+                                    </div>
+                                    <div className="text-right">
+                                        <p className="text-[10px] text-gray-400 uppercase font-bold mb-0.5">Egységár</p>
+                                        <p className="font-medium text-gray-700">{item.price?.toLocaleString()} Ft</p>
+                                    </div>
+                                    <div className="col-span-2 pt-2 border-t border-gray-50 flex justify-between items-end">
+                                        <div>
+                                            <p className="text-[10px] text-gray-400 uppercase font-bold mb-0.5">ÁFA</p>
+                                            <p className="font-medium text-gray-700">{item.vat}%</p>
+                                        </div>
+                                        <div className="text-right">
+                                            <p className="text-[10px] text-gray-400 uppercase font-bold mb-0.5">Tétel Összesen</p>
+                                            <p className="font-extrabold text-gray-900 text-lg">
+                                                {(item.qty * item.price * (1 + (typeof item.vat === 'number' ? item.vat : 0) / 100)).toLocaleString()} Ft
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                                {item.isOptional && <p className="text-[10px] text-amber-600 font-bold uppercase mt-3 py-1 px-2 organic-gray-100 inline-block rounded">Opcionális tétel</p>}
+                            </div>
+                        ))}
                     </div>
 
                     <div className="p-8 bg-gray-900 text-white flex flex-col md:flex-row justify-between gap-8">

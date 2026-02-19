@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
-import { useQuotes } from '../../hooks/useQuotes';
+import { useQuotes, PUBLIC_BASE_URL } from '../../hooks/useQuotes';
 import { db, storage } from '../../services/firebase';
 import { collection, getDocs, doc, getDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
@@ -212,7 +212,7 @@ export default function QuoteEditor() {
         }
     };
 
-    const publicUrl = `${window.location.origin}/quote/view/${currentUser?.uid}/${id}`;
+    const publicUrl = `${PUBLIC_BASE_URL}/quote/view/${currentUser?.uid}/${id}`;
 
     return (
         <div className="pb-24 max-w-4xl mx-auto px-4">
