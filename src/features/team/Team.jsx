@@ -60,17 +60,10 @@ export default function Team() {
 
         // Email küldése EmailJS-szel
         const templateParams = {
-            to_email: inviteEmail,
-<<<<<<< HEAD
-            from_name: currentUser.displayName || 'Vállalkozó',
-            role: inviteRole === 'admin' ? 'Admin' : 'Alkalmazott',
-            app_url: window.location.origin
-=======
             email: inviteEmail, // Backup mezőnév
             from_name: currentUser.displayName || 'Vállalkozó',
             role: inviteRole === 'admin' ? 'Admin' : 'Alkalmazott',
             app_url: import.meta.env.VITE_APP_URL || window.location.origin
->>>>>>> a973f7cc3321c12683519aacc431b9a49daac9ea
         };
 
         try {
@@ -78,12 +71,6 @@ export default function Team() {
             const templateId = import.meta.env.VITE_EMAILJS_TEMPLATE_ID;
             const publicKey = import.meta.env.VITE_EMAILJS_PUBLIC_KEY;
 
-<<<<<<< HEAD
-            if (serviceId && templateId && publicKey) {
-                await emailjs.send(serviceId, templateId, templateParams, publicKey);
-            } else {
-                console.warn('EmailJS adatok hiányoznak, csak szimulált küldés történt.');
-=======
             console.log('--- EmailJS Küldés Részletei ---');
             console.log('Címzett:', inviteEmail);
             console.log('Service ID:', serviceId);
@@ -97,7 +84,6 @@ export default function Team() {
             } else {
                 console.error('EmailJS adatok hiányoznak!', { serviceId, templateId, publicKey });
                 throw new Error('Konfigurációs hiba: Hiányzó EmailJS kulcsok a .env fájlból.');
->>>>>>> a973f7cc3321c12683519aacc431b9a49daac9ea
             }
 
             const teamRef = doc(db, 'users', currentUser.uid, 'settings', 'team');
@@ -109,14 +95,9 @@ export default function Team() {
             setShowAddModal(false);
             alert('Meghívó elküldve! Az új tag az email címével fog tudni belépni.');
         } catch (err) {
-<<<<<<< HEAD
-            console.error('Email küldési hiba:', err);
-            alert('Hiba történt a meghívó kiküldésekor (nézd meg a konzolt).');
-=======
             console.error('Email küldési hiba részletei:', err);
             const errorMsg = err?.text || err?.message || 'Ismeretlen hiba';
             alert(`Hiba történt a meghívó kiküldésekor: ${errorMsg}`);
->>>>>>> a973f7cc3321c12683519aacc431b9a49daac9ea
         }
     };
 
