@@ -17,16 +17,23 @@ import { useAuth } from './useAuth';
 export const PUBLIC_BASE_URL = 'https://festonaplo-2026.web.app';
 
 export const useQuotes = () => {
-    const { currentUser } = useAuth();
+    const { currentUser, ownerUid, isEmployee } = useAuth();
     const [quotes, setQuotes] = useState([]);
     const [branding, setBranding] = useState({ logoUrl: null, primaryColor: '#2563eb' });
     const [loading, setLoading] = useState(true);
 
-    const quotesRef = currentUser ? collection(db, 'users', currentUser.uid, 'quotes') : null;
-    const brandingRef = currentUser ? doc(db, 'users', currentUser.uid, 'settings', 'branding') : null;
-
     useEffect(() => {
-        if (!currentUser) return;
+        if (!currentUser || !ownerUid) return;
+
+        // Employees don't get to see or load any quotes
+        if (isEmployee) {
+            setQuotes([]);
+            setLoading(false);
+            return;
+        }
+
+        const quotesRef = collection(db, 'users', ownerUid, 'quotes');
+        const brandingRef = doc(db, 'users', ownerUid, 'settings', 'branding');
 
         // Listen for quotes
         const q = query(quotesRef, orderBy('createdAt', 'desc'));
@@ -47,10 +54,10 @@ export const useQuotes = () => {
             unsubscribeQuotes();
             unsubscribeBranding();
         };
-    }, [currentUser]);
+    }, [currentUser, ownerUid, isEmployee]);
 
     const saveQuote = async (quoteData) => {
-        if (!currentUser) return;
+        if (!currentUser || !ownerUid || isEmployee) return;
         const data = {
             ...quoteData,
             updatedAt: new Date().toISOString(),
@@ -58,8 +65,9 @@ export const useQuotes = () => {
             status: quoteData.status || 'draft'
         };
 
+        const quotesRef = collection(db, 'users', ownerUid, 'quotes');
         if (quoteData.id) {
-            const docRef = doc(db, 'users', currentUser.uid, 'quotes', quoteData.id);
+            const docRef = doc(db, 'users', ownerUid, 'quotes', quoteData.id);
             await updateDoc(docRef, data);
             return quoteData.id;
         } else {
@@ -69,18 +77,19 @@ export const useQuotes = () => {
     };
 
     const deleteQuote = async (id) => {
-        if (!currentUser) return;
-        await deleteDoc(doc(db, 'users', currentUser.uid, 'quotes', id));
+        if (!currentUser || !ownerUid || isEmployee) return;
+        await deleteDoc(doc(db, 'users', ownerUid, 'quotes', id));
     };
 
     const updateStatus = async (id, status) => {
-        if (!currentUser) return;
-        const docRef = doc(db, 'users', currentUser.uid, 'quotes', id);
+        if (!currentUser || !ownerUid || isEmployee) return;
+        const docRef = doc(db, 'users', ownerUid, 'quotes', id);
         await updateDoc(docRef, { status, updatedAt: new Date().toISOString() });
     };
 
     const updateBranding = async (newBranding) => {
-        if (!currentUser) return;
+        if (!currentUser || !ownerUid || isEmployee) return;
+        const brandingRef = doc(db, 'users', ownerUid, 'settings', 'branding');
         await setDoc(brandingRef, newBranding, { merge: true });
     };
 

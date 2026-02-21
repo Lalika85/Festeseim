@@ -6,7 +6,7 @@ import { collection, doc, setDoc, updateDoc, deleteDoc, onSnapshot, query } from
 const ProjectsContext = createContext();
 
 export const ProjectsProvider = ({ children }) => {
-    const { currentUser } = useAuth();
+    const { currentUser, ownerUid } = useAuth();
     const [projects, setProjects] = useState([]);
     const [companies, setCompanies] = useState([]);
 
@@ -18,7 +18,7 @@ export const ProjectsProvider = ({ children }) => {
     const loading = !projectsLoaded || !companiesLoaded;
 
     useEffect(() => {
-        if (!currentUser?.uid) {
+        if (!currentUser?.uid || !ownerUid) {
             setProjects([]);
             setCompanies([]);
             setProjectsLoaded(true); // Ready (empty)
@@ -26,12 +26,12 @@ export const ProjectsProvider = ({ children }) => {
             return;
         }
 
-        // Reset to loading on user change
+        // Reset to loading on user/owner change
         setProjectsLoaded(false);
         setCompaniesLoaded(false);
 
         // Projects Listener
-        const qProjects = query(collection(db, 'users', currentUser.uid, 'projects'));
+        const qProjects = query(collection(db, 'users', ownerUid, 'projects'));
         const unsubProjects = onSnapshot(qProjects, (snapshot) => {
             console.log('Projects loaded. From cache?', snapshot.metadata.fromCache);
             const list = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
@@ -44,7 +44,7 @@ export const ProjectsProvider = ({ children }) => {
         });
 
         // Companies Listener
-        const qCompanies = query(collection(db, 'users', currentUser.uid, 'companies'));
+        const qCompanies = query(collection(db, 'users', ownerUid, 'companies'));
         const unsubCompanies = onSnapshot(qCompanies, (snapshot) => {
             console.log('Companies loaded. From cache?', snapshot.metadata.fromCache);
             const list = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
@@ -59,53 +59,54 @@ export const ProjectsProvider = ({ children }) => {
             unsubProjects();
             unsubCompanies();
         };
-    }, [currentUser?.uid]);
+    }, [currentUser?.uid, ownerUid]);
 
     // --- Projects CRUD (Fire & Forget) ---
 
     const addProject = async (formData) => {
-        if (!currentUser?.uid) return;
+        if (!ownerUid) return;
         const newId = String(Date.now());
         const newProject = { ...formData, id: newId, rooms: [], docs: [] };
 
         // Firestore update (UI updates automatically via onSnapshot)
-        const docRef = doc(db, 'users', currentUser.uid, 'projects', newId);
+        const docRef = doc(db, 'users', ownerUid, 'projects', newId);
         setDoc(docRef, newProject).catch(err => console.error("addProject error:", err));
 
         return newId;
     };
 
     const updateProject = async (id, data) => {
-        if (!currentUser?.uid) return;
-        const docRef = doc(db, 'users', currentUser.uid, 'projects', id);
+        if (!ownerUid) return;
+        const docRef = doc(db, 'users', ownerUid, 'projects', id);
         updateDoc(docRef, data).catch(err => console.error("updateProject error:", err));
     };
 
     const deleteProject = async (id) => {
-        if (!currentUser?.uid) return;
-        const docRef = doc(db, 'users', currentUser.uid, 'projects', id);
+        if (!ownerUid) return;
+        const docRef = doc(db, 'users', ownerUid, 'projects', id);
         deleteDoc(docRef).catch(err => console.error("deleteProject error:", err));
     };
 
     // --- Companies CRUD ---
 
     const addCompany = async (companyData) => {
-        if (!currentUser?.uid) return;
-        const newRef = doc(collection(db, 'users', currentUser.uid, 'companies'));
-        const newCompany = { ...companyData, id: newRef.id };
-        setDoc(newRef, newCompany).catch(err => console.error("addCompany error:", err));
-        return newRef.id;
+        if (!ownerUid) return;
+        const newRef = collection(db, 'users', ownerUid, 'companies');
+        const docRef = doc(newRef);
+        const newCompany = { ...companyData, id: docRef.id };
+        setDoc(docRef, newCompany).catch(err => console.error("addCompany error:", err));
+        return docRef.id;
     };
 
     const updateCompany = async (id, data) => {
-        if (!currentUser?.uid) return;
-        const docRef = doc(db, 'users', currentUser.uid, 'companies', id);
+        if (!ownerUid) return;
+        const docRef = doc(db, 'users', ownerUid, 'companies', id);
         updateDoc(docRef, data).catch(err => console.error("updateCompany error:", err));
     };
 
     const deleteCompany = async (id) => {
-        if (!currentUser?.uid) return;
-        const docRef = doc(db, 'users', currentUser.uid, 'companies', id);
+        if (!ownerUid) return;
+        const docRef = doc(db, 'users', ownerUid, 'companies', id);
         deleteDoc(docRef).catch(err => console.error("deleteCompany error:", err));
     };
 

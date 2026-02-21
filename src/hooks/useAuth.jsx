@@ -1,11 +1,14 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { auth } from '../services/firebase';
+import { auth, db } from '../services/firebase';
 import { onAuthStateChanged, signOut, signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'firebase/auth';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
 
 const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
     const [currentUser, setCurrentUser] = useState(null);
+    const [role, setRole] = useState('admin');
+    const [ownerUid, setOwnerUid] = useState(null);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
@@ -14,36 +17,90 @@ export const AuthProvider = ({ children }) => {
 
         let unsubscribe;
 
+        const fetchRoleInfo = async (uid, email) => {
+            try {
+                const profileRef = doc(db, 'users', uid, 'settings', 'profile');
+                const snap = await getDoc(profileRef);
+
+                if (snap.exists() && snap.data().role) {
+                    const data = snap.data();
+                    setRole(data.role);
+                    setOwnerUid(data.ownerUid || uid);
+                } else if (email) {
+                    // Try to discover invite if no role is set or profile is new
+                    const inviteRef = doc(db, 'invites', email.toLowerCase());
+                    const inviteSnap = await getDoc(inviteRef);
+
+                    if (inviteSnap.exists()) {
+                        const inviteData = inviteSnap.data();
+                        const newProfile = {
+                            email: email,
+                            role: inviteData.role || 'employee',
+                            ownerUid: inviteData.ownerUid,
+                            ownerName: inviteData.ownerName || '',
+                            joinedAt: new Date().toISOString()
+                        };
+                        // Auto-provision profile
+                        await setDoc(profileRef, newProfile);
+                        setRole(newProfile.role);
+                        setOwnerUid(newProfile.ownerUid);
+                    } else {
+                        // Default to admin if no invite found
+                        setRole('admin');
+                        setOwnerUid(uid);
+                    }
+                } else {
+                    setRole('admin');
+                    setOwnerUid(uid);
+                }
+            } catch (err) {
+                console.error("Error fetching role info:", err);
+                setRole('admin');
+                setOwnerUid(uid);
+            }
+        };
+
         const setupAuth = async () => {
             if (isNative) {
                 // Native Auth Listener
                 try {
-                    // Initialize or check current user from native layer
                     const result = await import('@capacitor-firebase/authentication').then(m => m.FirebaseAuthentication.getCurrentUser());
                     if (result.user) {
                         setCurrentUser(result.user);
+                        await fetchRoleInfo(result.user.uid, result.user.email);
                     }
 
-                    // Listen for changes
                     await import('@capacitor-firebase/authentication').then(m => {
-                        m.FirebaseAuthentication.addListener('authStateChange', (change) => {
+                        m.FirebaseAuthentication.addListener('authStateChange', async (change) => {
                             setCurrentUser(change.user);
+                            if (change.user) {
+                                await fetchRoleInfo(change.user.uid, change.user.email);
+                            } else {
+                                setRole('admin');
+                                setOwnerUid(null);
+                            }
                             setLoading(false);
                         });
                     });
                 } catch (err) {
                     console.error("Native auth setup failed:", err);
-                    // Fallback to web auth if native fails
-                    unsubscribe = onAuthStateChanged(auth, (user) => {
+                    unsubscribe = onAuthStateChanged(auth, async (user) => {
                         setCurrentUser(user);
+                        if (user) await fetchRoleInfo(user.uid, user.email);
                         setLoading(false);
                     });
                 }
                 setLoading(false);
             } else {
                 // Web Auth Listener
-                unsubscribe = onAuthStateChanged(auth, (user) => {
+                unsubscribe = onAuthStateChanged(auth, async (user) => {
                     setCurrentUser(user);
+                    if (user) {
+                        await fetchRoleInfo(user.uid, user.email);
+                    } else {
+                        setRole('admin');
+                        setOwnerUid(null);
+                    }
                     setLoading(false);
                 });
             }
@@ -53,8 +110,6 @@ export const AuthProvider = ({ children }) => {
 
         return () => {
             if (unsubscribe) unsubscribe();
-            // Native listeners are persistent or require removeListener which is complex here, 
-            // but for a singleton Provider it's acceptable.
             import('@capacitor-firebase/authentication').then(m => m.FirebaseAuthentication.removeAllListeners());
         };
     }, []);
@@ -65,6 +120,10 @@ export const AuthProvider = ({ children }) => {
 
     const value = {
         currentUser,
+        role,
+        ownerUid,
+        isAdmin: role === 'admin',
+        isEmployee: role === 'employee',
         login,
         register,
         logout,

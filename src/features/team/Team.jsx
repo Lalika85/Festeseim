@@ -91,6 +91,15 @@ export default function Team() {
                 members: [...members, newMember]
             });
 
+            // Add to global invites for discovery by the employee upon login
+            const inviteRef = doc(db, 'invites', inviteEmail.toLowerCase());
+            await setDoc(inviteRef, {
+                ownerUid: currentUser.uid,
+                role: inviteRole,
+                ownerName: currentUser.displayName || 'Vállalkozó',
+                invitedAt: new Date().toISOString()
+            });
+
             setInviteEmail('');
             setShowAddModal(false);
             alert('Meghívó elküldve! Az új tag az email címével fog tudni belépni.');

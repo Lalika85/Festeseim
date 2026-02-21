@@ -10,7 +10,7 @@ import Input from '../../components/ui/Input';
 import { User, Building2, Wallet, Phone, Mail, Upload, Download, LogOut, Camera, CheckCircle } from 'lucide-react';
 
 const Profile = () => {
-    const { currentUser, logout } = useAuth();
+    const { currentUser, logout, isAdmin } = useAuth();
     const { showToast } = useToast();
     const [profile, setProfile] = useState({
         name: '',
@@ -19,7 +19,7 @@ const Profile = () => {
         phone: '',
         email: '',
         bank: '',
-        note: '', // Added note field if needed, or remove
+        note: '',
         logo: null
     });
     const [loading, setLoading] = useState(true);
@@ -73,6 +73,7 @@ const Profile = () => {
     };
 
     const exportData = async () => {
+        if (!isAdmin) return;
         try {
             const [p, s, q] = await Promise.all([
                 loadUserCollection(currentUser.uid, 'projects'),
@@ -101,6 +102,7 @@ const Profile = () => {
     };
 
     const importData = (e) => {
+        if (!isAdmin) return;
         const file = e.target.files[0];
         if (!file) return;
 
@@ -109,9 +111,7 @@ const Profile = () => {
             try {
                 const data = JSON.parse(ev.target.result);
                 if (window.confirm('FIGYELEM! Ezzel felülírod a jelenlegi adatokat. Biztosan folytatod?')) {
-                    // Sync profile
                     if (data.profile) await syncSettings(currentUser.uid, 'profile', data.profile);
-                    // Sync collections
                     if (data.projects) for (const item of data.projects) await syncItem(currentUser.uid, 'projects', item);
                     if (data.shopItems) for (const item of data.shopItems) await syncItem(currentUser.uid, 'shopItems', item);
                     if (data.quotes) for (const item of data.quotes) await syncItem(currentUser.uid, 'quotes', item);
@@ -133,7 +133,7 @@ const Profile = () => {
             <div className="flex justify-between items-center mb-6">
                 <div>
                     <h1 className="text-2xl font-bold text-gray-900 leading-tight">Profilom</h1>
-                    <p className="text-sm text-gray-500">Vállalkozás adatai</p>
+                    <p className="text-sm text-gray-500">{isAdmin ? 'Vállalkozás adatai' : 'Saját adatok'}</p>
                 </div>
                 <Button variant="danger" onClick={logout} className="!p-2.5 rounded-full shadow-sm bg-red-50 text-red-600 border-red-100 hover:bg-red-100">
                     <LogOut size={20} />
@@ -156,47 +156,19 @@ const Profile = () => {
                             <input type="file" hidden accept="image/*" onChange={handleLogoUpload} disabled={uploading} />
                         </label>
                     </div>
-                    <p className="text-sm text-gray-500 mb-0">Érintsd meg a kamera ikont a logó cseréjéhez</p>
+                    <p className="text-sm text-gray-500 mb-0">Érintsd meg a kamera ikont a kép cseréjéhez</p>
                 </Card>
 
-                {/* Company Info */}
-                <Card className="mb-6" header="Cégadatok">
+                {/* Profil adatok - Mindenki számára látható */}
+                <Card className="mb-6" header="Felhasználói profil">
                     <Input
-                        label="Cégnév / Vállalkozó neve"
+                        label="Az Ön neve"
                         name="name"
                         value={profile.name}
                         onChange={handleChange}
                         icon={<User size={18} />}
-                        placeholder="Pl. Lakásfelújítás Kft."
+                        placeholder="Pl. Kovács Gábor"
                     />
-                    <Input
-                        label="Székhely / Lakcím"
-                        name="address"
-                        value={profile.address}
-                        onChange={handleChange}
-                        icon={<Building2 size={18} />}
-                        placeholder="Város, Utca, Házszám"
-                    />
-                    <Input
-                        label="Adószám"
-                        name="tax"
-                        value={profile.tax}
-                        onChange={handleChange}
-                        icon={<span className="text-xs font-bold font-mono">TAX</span>}
-                        placeholder="12345678-1-12"
-                    />
-                    <Input
-                        label="Bankszámlaszám"
-                        name="bank"
-                        value={profile.bank}
-                        onChange={handleChange}
-                        icon={<Wallet size={18} />}
-                        placeholder="HU00 0000 0000 0000..."
-                    />
-                </Card>
-
-                {/* Contact Info */}
-                <Card className="mb-8" header="Kapcsolat">
                     <Input
                         label="Telefonszám"
                         name="phone"
@@ -215,34 +187,68 @@ const Profile = () => {
                     />
                 </Card>
 
+                {/* Company Info - Admin Only */}
+                {isAdmin && (
+                    <Card className="mb-6" header="Cégadatok">
+                        <Input
+                            label="Székhely / Lakcím"
+                            name="address"
+                            value={profile.address}
+                            onChange={handleChange}
+                            icon={<Building2 size={18} />}
+                            placeholder="Város, Utca, Házszám"
+                        />
+                        <Input
+                            label="Adószám"
+                            name="tax"
+                            value={profile.tax}
+                            onChange={handleChange}
+                            icon={<span className="text-xs font-bold font-mono">TAX</span>}
+                            placeholder="12345678-1-12"
+                        />
+                        <Input
+                            label="Bankszámlaszám"
+                            name="bank"
+                            value={profile.bank}
+                            onChange={handleChange}
+                            icon={<Wallet size={18} />}
+                            placeholder="HU00 0000 0000 0000..."
+                        />
+                    </Card>
+                )}
+
                 <div className="mb-10">
                     <Button type="submit" className="w-full h-12 text-lg shadow-lg bg-primary-600 hover:bg-primary-700">
-                        <CheckCircle size={20} className="mr-2" /> Beállítások mentése
+                        <CheckCircle size={20} className="mr-2" /> Profil mentése
                     </Button>
                 </div>
             </form>
 
-            <div className="border-t border-gray-200 pt-8 pb-4">
-                <h3 className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-4 px-1">Adatkezelés</h3>
-                <div className="grid grid-cols-2 gap-4">
-                    <div
-                        onClick={exportData}
-                        className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm flex flex-col items-center justify-center gap-2 cursor-pointer active:scale-95 transition-all"
-                    >
-                        <Download size={24} className="text-blue-600" />
-                        <span className="text-sm font-medium text-gray-700">Biztonsági mentés</span>
+            {/* Admin Tools - Export/Import */}
+            {isAdmin && (
+                <div className="border-t border-gray-200 pt-8 pb-4">
+                    <h3 className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-4 px-1">Adatkezelés</h3>
+                    <div className="grid grid-cols-2 gap-4">
+                        <div
+                            onClick={exportData}
+                            className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm flex flex-col items-center justify-center gap-2 cursor-pointer active:scale-95 transition-all"
+                        >
+                            <Download size={24} className="text-blue-600" />
+                            <span className="text-sm font-medium text-gray-700">Biztonsági mentés</span>
+                        </div>
+                        <label className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm flex flex-col items-center justify-center gap-2 cursor-pointer active:scale-95 transition-all">
+                            <Upload size={24} className="text-green-600" />
+                            <span className="text-sm font-medium text-gray-700">Visszatöltés</span>
+                            <input type="file" hidden accept=".json" onChange={importData} />
+                        </label>
                     </div>
-                    <label className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm flex flex-col items-center justify-center gap-2 cursor-pointer active:scale-95 transition-all">
-                        <Upload size={24} className="text-green-600" />
-                        <span className="text-sm font-medium text-gray-700">Visszatöltés</span>
-                        <input type="file" hidden accept=".json" onChange={importData} />
-                    </label>
                 </div>
-                <p className="text-xs text-center text-gray-400 mt-6">
-                    Minden adatot a készülékeden és a felhőben tárolunk titkosítva.
-                    <br />Verzió: 6.0.0
-                </p>
-            </div>
+            )}
+
+            <p className="text-xs text-center text-gray-400 mt-6">
+                Minden adatot a készülékeden és a felhőben tárolunk titkosítva.
+                <br />Verzió: 6.0.0
+            </p>
         </div>
     );
 };

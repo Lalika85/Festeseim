@@ -14,7 +14,7 @@ import { useNotifications } from '../../contexts/NotificationContext';
 import { useProjects } from '../../hooks/useProjects';
 
 export default function Settings() {
-    const { currentUser, logout } = useAuth();
+    const { currentUser, logout, isAdmin } = useAuth();
     const [companies, setCompanies] = useState([]);
     const [loading, setLoading] = useState(false);
 
@@ -161,43 +161,45 @@ export default function Settings() {
         <div className="view-container">
             <h1 className="text-2xl font-bold mb-6">Beállítások</h1>
 
-            <Card header="Saját Cégeim" className="mb-6">
-                <div className="space-y-4">
-                    {companies.map(comp => (
-                        <div key={comp.id} className="border border-gray-200 rounded-xl p-4 flex items-center justify-between bg-gray-50">
-                            <div className="flex items-center gap-4">
-                                {comp.logoUrl ? (
-                                    <img src={comp.logoUrl} alt="Logo" className="w-12 h-12 object-contain bg-white rounded-lg border border-gray-200" />
-                                ) : (
-                                    <div className="w-12 h-12 bg-white rounded-lg border border-gray-200 flex items-center justify-center text-gray-400">
-                                        <Briefcase size={24} />
+            {isAdmin && (
+                <Card header="Saját Cégeim" className="mb-6">
+                    <div className="space-y-4">
+                        {companies.map(comp => (
+                            <div key={comp.id} className="border border-gray-200 rounded-xl p-4 flex items-center justify-between bg-gray-50">
+                                <div className="flex items-center gap-4">
+                                    {comp.logoUrl ? (
+                                        <img src={comp.logoUrl} alt="Logo" className="w-12 h-12 object-contain bg-white rounded-lg border border-gray-200" />
+                                    ) : (
+                                        <div className="w-12 h-12 bg-white rounded-lg border border-gray-200 flex items-center justify-center text-gray-400">
+                                            <Briefcase size={24} />
+                                        </div>
+                                    )}
+                                    <div>
+                                        <h4 className="font-bold text-gray-900">{comp.name}</h4>
+                                        <p className="text-sm text-gray-500">{comp.taxNumber}</p>
                                     </div>
-                                )}
-                                <div>
-                                    <h4 className="font-bold text-gray-900">{comp.name}</h4>
-                                    <p className="text-sm text-gray-500">{comp.taxNumber}</p>
+                                </div>
+                                <div className="flex gap-2">
+                                    <Button variant="secondary" onClick={() => openModal(comp)} className="!p-2">
+                                        <Edit2 size={16} />
+                                    </Button>
+                                    <Button variant="secondary" onClick={() => handleDelete(comp.id)} className="!p-2 text-red-500 hover:bg-red-50">
+                                        <Trash2 size={16} />
+                                    </Button>
                                 </div>
                             </div>
-                            <div className="flex gap-2">
-                                <Button variant="secondary" onClick={() => openModal(comp)} className="!p-2">
-                                    <Edit2 size={16} />
-                                </Button>
-                                <Button variant="secondary" onClick={() => handleDelete(comp.id)} className="!p-2 text-red-500 hover:bg-red-50">
-                                    <Trash2 size={16} />
-                                </Button>
-                            </div>
-                        </div>
-                    ))}
+                        ))}
 
-                    {companies.length === 0 && (
-                        <p className="text-center text-gray-500 py-4">Még nincs cég felvéve.</p>
-                    )}
+                        {companies.length === 0 && (
+                            <p className="text-center text-gray-500 py-4">Még nincs cég felvéve.</p>
+                        )}
 
-                    <Button onClick={() => openModal()} className="w-full" icon={<Plus size={18} />}>
-                        Új Cég Hozzáadása
-                    </Button>
-                </div>
-            </Card>
+                        <Button onClick={() => openModal()} className="w-full" icon={<Plus size={18} />}>
+                            Új Cég Hozzáadása
+                        </Button>
+                    </div>
+                </Card>
+            )}
 
             <Card header="Fiók" className="mb-6">
                 <div className="flex items-center gap-3 mb-4">

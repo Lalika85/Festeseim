@@ -1,12 +1,20 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { Home, Users, Calendar, Settings, User } from 'lucide-react';
+import { Home, Users, Calendar, Settings, User, ShoppingBag, Calculator } from 'lucide-react';
+import { useAuth } from '../../hooks/useAuth';
 
 export default function BottomNav() {
+    const { isAdmin, isEmployee } = useAuth();
+
     const navItems = [
         { path: '/', icon: Home, label: 'Főoldal' },
-        { path: '/projects', icon: Users, label: 'Ügyfelek' },
-        { path: '/calendar', icon: Calendar, label: 'Naptár' },
+        ...(isAdmin ? [
+            { path: '/projects', icon: Users, label: 'Ügyfelek' },
+            { path: '/calendar', icon: Calendar, label: 'Naptár' },
+        ] : [
+            { path: '/shop', icon: ShoppingBag, label: 'Bolt' },
+            { path: '/calculator', icon: Calculator, label: 'Kalkulátor' },
+        ]),
         { path: '/profile', icon: User, label: 'Profil' },
         { path: '/settings', icon: Settings, label: 'Beállítások' }
     ];
