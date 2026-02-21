@@ -62,6 +62,13 @@ export default function Team() {
             return;
         }
 
+        // Check for duplicate email
+        const isDuplicate = members.some(m => m.email.toLowerCase() === inviteEmail.toLowerCase());
+        if (isDuplicate) {
+            alert('Ez az email cím már szerepel a csapatban!');
+            return;
+        }
+
         const newMember = {
             id: Math.random().toString(36).substr(2, 9),
             email: inviteEmail,
