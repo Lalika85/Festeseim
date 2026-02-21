@@ -60,3 +60,6 @@ jobs:
           token: ${{ secrets.FIREBASE_TOKEN }}
           groups: testers
           file: android/app/build/outputs/apk/debug/app-debug.apk
+
+      - name: Deploy to Firebase Hosting
+        run: npx firebase-tools deploy --only hosting --token ${{ secrets.FIREBASE_TOKEN }}
