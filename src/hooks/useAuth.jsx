@@ -22,9 +22,9 @@ export const AuthProvider = ({ children }) => {
                 const profileRef = doc(db, 'users', uid, 'settings', 'profile');
                 const snap = await getDoc(profileRef);
 
-                if (snap.exists() && snap.data().role) {
+                if (snap.exists()) {
                     const data = snap.data();
-                    setRole(data.role);
+                    setRole(data.role || 'admin');
                     setOwnerUid(data.ownerUid || uid);
                 } else if (email) {
                     // Try to discover invite if no role is set or profile is new
