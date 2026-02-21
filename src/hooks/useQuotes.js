@@ -14,6 +14,8 @@ import {
 } from 'firebase/firestore';
 import { useAuth } from './useAuth';
 
+export const PUBLIC_BASE_URL = 'https://festonaplo-2026.web.app';
+
 export const useQuotes = () => {
     const { currentUser } = useAuth();
     const [quotes, setQuotes] = useState([]);
