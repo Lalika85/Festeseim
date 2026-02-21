@@ -151,12 +151,16 @@ const Profile = () => {
                                 <User size={48} className="text-gray-300" />
                             )}
                         </div>
-                        <label className="absolute bottom-0 right-0 w-10 h-10 bg-primary-600 rounded-full flex items-center justify-center text-white shadow-md cursor-pointer hover:bg-primary-700 transition-colors">
-                            {uploading ? <div className="animate-spin text-xs">⏳</div> : <Camera size={18} />}
-                            <input type="file" hidden accept="image/*" onChange={handleLogoUpload} disabled={uploading} />
-                        </label>
+                        {isAdmin && (
+                            <label className="absolute bottom-0 right-0 w-10 h-10 bg-primary-600 rounded-full flex items-center justify-center text-white shadow-md cursor-pointer hover:bg-primary-700 transition-colors">
+                                {uploading ? <div className="animate-spin text-xs">⏳</div> : <Camera size={18} />}
+                                <input type="file" hidden accept="image/*" onChange={handleLogoUpload} disabled={uploading} />
+                            </label>
+                        )}
                     </div>
-                    <p className="text-sm text-gray-500 mb-0">Érintsd meg a kamera ikont a kép cseréjéhez</p>
+                    <p className="text-sm text-gray-500 mb-0">
+                        {isAdmin ? 'Érintsd meg a kamera ikont a kép cseréjéhez' : 'Profilkép'}
+                    </p>
                 </Card>
 
                 {/* Profil adatok - Mindenki számára látható */}
@@ -168,6 +172,7 @@ const Profile = () => {
                         onChange={handleChange}
                         icon={<User size={18} />}
                         placeholder="Pl. Kovács Gábor"
+                        disabled={!isAdmin}
                     />
                     <Input
                         label="Telefonszám"
@@ -176,6 +181,7 @@ const Profile = () => {
                         onChange={handleChange}
                         icon={<Phone size={18} />}
                         type="tel"
+                        disabled={!isAdmin}
                     />
                     <Input
                         label="Email cím"
@@ -184,6 +190,7 @@ const Profile = () => {
                         onChange={handleChange}
                         icon={<Mail size={18} />}
                         type="email"
+                        disabled={!isAdmin}
                     />
                 </Card>
 
@@ -218,9 +225,16 @@ const Profile = () => {
                 )}
 
                 <div className="mb-10">
-                    <Button type="submit" className="w-full h-12 text-lg shadow-lg bg-primary-600 hover:bg-primary-700">
-                        <CheckCircle size={20} className="mr-2" /> Profil mentése
-                    </Button>
+                    {isAdmin ? (
+                        <Button type="submit" className="w-full h-12 text-lg shadow-lg bg-primary-600 hover:bg-primary-700">
+                            <CheckCircle size={20} className="mr-2" /> Profil mentése
+                        </Button>
+                    ) : (
+                        <div className="bg-amber-50 border border-amber-100 p-4 rounded-2xl flex items-center gap-3 text-amber-700 shadow-sm">
+                            <Shield size={20} className="shrink-0" />
+                            <p className="text-xs font-medium">A profilmódosítás az alkalmazottak számára le van tiltva. Kérjük, forduljon az adminisztrátorhoz, ha változtatni szeretne.</p>
+                        </div>
+                    )}
                 </div>
             </form>
 

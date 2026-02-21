@@ -6,8 +6,9 @@ import Button from '../../components/ui/Button';
 import Badge from '../../components/ui/Badge';
 import Input from '../../components/ui/Input';
 import { db } from '../../services/firebase';
-import { doc, onSnapshot, updateDoc, setDoc, collection, query } from 'firebase/firestore';
+import { doc, onSnapshot, updateDoc, setDoc, collection, query, where, getDocs, addDoc } from 'firebase/firestore';
 import { useAuth } from '../../hooks/useAuth';
+import { useProjects } from '../../hooks/useProjects';
 
 export default function Team() {
     const { currentUser } = useAuth();
@@ -15,8 +16,16 @@ export default function Team() {
     const [showAddModal, setShowAddModal] = useState(false);
     const [showEditModal, setShowEditModal] = useState(false);
     const [editingMember, setEditingMember] = useState(null);
+    const [inviteName, setInviteName] = useState('');
     const [inviteEmail, setInviteEmail] = useState('');
     const [inviteRole, setInviteRole] = useState('employee');
+    const [showShareModal, setShowShareModal] = useState(false);
+    const [shareData, setShareData] = useState({
+        projectId: '',
+        employeeUid: '',
+        note: ''
+    });
+    const { projects } = useProjects();
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
@@ -48,19 +57,24 @@ export default function Team() {
     }, [currentUser]);
 
     const handleInvite = async () => {
-        if (!inviteEmail) return;
+        if (!inviteEmail || !inviteName) {
+            alert('Kérlek add meg a nevet és az email címet is!');
+            return;
+        }
 
         const newMember = {
             id: Math.random().toString(36).substr(2, 9),
             email: inviteEmail,
             role: inviteRole,
+            name: inviteName,
             status: 'invited',
             invitedAt: new Date().toISOString()
         };
 
         // Email küldése EmailJS-szel
         const templateParams = {
-            email: inviteEmail, // Backup mezőnév
+            email: inviteEmail,
+            to_name: inviteName,
             from_name: currentUser.displayName || 'Vállalkozó',
             role: inviteRole === 'admin' ? 'Admin' : 'Alkalmazott',
             app_url: import.meta.env.VITE_APP_URL || window.location.origin
@@ -71,19 +85,12 @@ export default function Team() {
             const templateId = import.meta.env.VITE_EMAILJS_TEMPLATE_ID;
             const publicKey = import.meta.env.VITE_EMAILJS_PUBLIC_KEY;
 
-            console.log('--- EmailJS Küldés Részletei ---');
-            console.log('Címzett:', inviteEmail);
-            console.log('Service ID:', serviceId);
-            console.log('Template ID:', templateId);
-            console.log('Public Key:', publicKey ? 'Rendben (vágva...)' : 'HIÁNYZIK');
-
             if (serviceId && templateId && publicKey) {
                 emailjs.init(publicKey);
-                const res = await emailjs.send(serviceId, templateId, templateParams);
-                console.log('EmailJS sikeres válasz:', res);
+                await emailjs.send(serviceId, templateId, templateParams);
             } else {
-                console.error('EmailJS adatok hiányoznak!', { serviceId, templateId, publicKey });
-                throw new Error('Konfigurációs hiba: Hiányzó EmailJS kulcsok a .env fájlból.');
+                console.error('EmailJS adatok hiányoznak!');
+                throw new Error('Konfigurációs hiba: Hiányzó EmailJS kulcsok.');
             }
 
             const teamRef = doc(db, 'users', currentUser.uid, 'settings', 'team');
@@ -96,17 +103,71 @@ export default function Team() {
             await setDoc(inviteRef, {
                 ownerUid: currentUser.uid,
                 role: inviteRole,
+                name: inviteName,
                 ownerName: currentUser.displayName || 'Vállalkozó',
                 invitedAt: new Date().toISOString()
             });
 
             setInviteEmail('');
+            setInviteName('');
             setShowAddModal(false);
-            alert('Meghívó elküldve! Az új tag az email címével fog tudni belépni.');
+            alert('Meghívó elküldve!');
         } catch (err) {
-            console.error('Email küldési hiba részletei:', err);
-            const errorMsg = err?.text || err?.message || 'Ismeretlen hiba';
-            alert(`Hiba történt a meghívó kiküldésekor: ${errorMsg}`);
+            console.error('Email hiba:', err);
+            alert(`Hiba történt: ${err.message}`);
+        }
+    };
+
+    const handleShare = async () => {
+        if (!shareData.projectId || !shareData.employeeUid) {
+            alert('Kérlek válassz ügyfelet és alkalmazottat is!');
+            return;
+        }
+
+        try {
+            setLoading(true);
+            const selectedProject = projects.find(p => p.id === shareData.projectId);
+
+            // 1. Fetch shopping items for this project
+            const shopQuery = query(
+                collection(db, 'users', currentUser.uid, 'shopping_items'),
+                where('projectId', '==', shareData.projectId)
+            );
+            const shopSnap = await getDocs(shopQuery);
+            const shopItems = shopSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+            // 2. Create Assignment
+            const assignment = {
+                projectId: shareData.projectId,
+                clientName: selectedProject?.client || 'Ismeretlen Ügyfél',
+                location: selectedProject?.location || '',
+                note: shareData.note,
+                items: shopItems,
+                assignedAt: new Date().toISOString(),
+                status: 'pending',
+                ownerUid: currentUser.uid,
+                ownerName: currentUser.displayName || 'Vállalkozó'
+            };
+
+            await addDoc(collection(db, 'users', shareData.employeeUid, 'assignments'), assignment);
+
+            // 3. Notify Employee
+            await addDoc(collection(db, 'users', shareData.employeeUid, 'notifications'), {
+                type: 'new_work',
+                title: 'Új munka érkezett!',
+                body: `${selectedProject?.client || 'Ügyfél'} munkáját kiosztotta neked az admin.`,
+                createdAt: new Date().toISOString(),
+                read: false
+            });
+
+            setShareData({ projectId: '', employeeUid: '', note: '' });
+            setShowShareModal(false);
+            setLoading(false);
+            alert('Munka sikeresen kiosztva!');
+        } catch (err) {
+            console.error('Sharing error:', err);
+            alert('Hiba történt a megosztás során.');
+            setLoading(false);
         }
     };
 
@@ -141,13 +202,23 @@ export default function Team() {
                     </h1>
                     <p className="text-gray-500 text-sm truncate">Alkalmazottak kezelése</p>
                 </div>
-                <Button
-                    onClick={() => setShowAddModal(true)}
-                    className="shrink-0 whitespace-nowrap shadow-md shadow-primary-100"
-                    size="sm"
-                >
-                    <UserPlus size={18} className="mr-2" /> Új tag
-                </Button>
+                <div className="flex gap-2 shrink-0">
+                    <Button
+                        variant="secondary"
+                        onClick={() => setShowShareModal(true)}
+                        className="whitespace-nowrap shadow-sm"
+                        size="sm"
+                    >
+                        <Briefcase size={18} className="mr-2" /> Munka megosztása
+                    </Button>
+                    <Button
+                        onClick={() => setShowAddModal(true)}
+                        className="whitespace-nowrap shadow-md shadow-primary-100"
+                        size="sm"
+                    >
+                        <UserPlus size={18} className="mr-2" /> Új tag
+                    </Button>
+                </div>
             </header>
 
             <div className="grid gap-3">
@@ -204,12 +275,70 @@ export default function Team() {
                 ))}
             </div>
 
+            {/* Share Work Modal */}
+            {showShareModal && (
+                <div className="fixed inset-0 z-50 bg-gray-900/40 backdrop-blur-sm flex items-center justify-center p-4">
+                    <div className="bg-white w-full max-w-md rounded-3xl shadow-2xl p-6 animate-in slide-in-from-bottom-4 duration-300">
+                        <h2 className="text-xl font-bold text-gray-900 mb-4 tracking-tight">Munka kiosztása</h2>
+                        <div className="space-y-4">
+                            <div>
+                                <label className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2 block">Ügyfél kiválasztása</label>
+                                <select
+                                    className="w-full h-11 px-4 bg-gray-50 border border-gray-100 rounded-xl text-sm focus:ring-2 focus:ring-primary-500 outline-none"
+                                    value={shareData.projectId}
+                                    onChange={(e) => setShareData({ ...shareData, projectId: e.target.value })}
+                                >
+                                    <option value="">Válassz ügyfelet...</option>
+                                    {projects.map(p => (
+                                        <option key={p.id} value={p.id}>{p.client}</option>
+                                    ))}
+                                </select>
+                            </div>
+
+                            <div>
+                                <label className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2 block">Alkalmazott kiválasztása</label>
+                                <select
+                                    className="w-full h-11 px-4 bg-gray-50 border border-gray-100 rounded-xl text-sm focus:ring-2 focus:ring-primary-500 outline-none"
+                                    value={shareData.employeeUid}
+                                    onChange={(e) => setShareData({ ...shareData, employeeUid: e.target.value })}
+                                >
+                                    <option value="">Válassz alkalmazottat...</option>
+                                    {members.filter(m => m.role === 'employee' && m.status === 'active').map(m => (
+                                        <option key={m.id} value={m.id}>{m.name || m.email}</option>
+                                    ))}
+                                </select>
+                            </div>
+
+                            <div>
+                                <label className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2 block">Megjegyzés / Instrukciók</label>
+                                <textarea
+                                    className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl text-sm focus:ring-2 focus:ring-primary-500 outline-none min-h-[100px]"
+                                    placeholder="Írj ide kiegészítő instrukciókat..."
+                                    value={shareData.note}
+                                    onChange={(e) => setShareData({ ...shareData, note: e.target.value })}
+                                />
+                            </div>
+                        </div>
+                        <div className="grid grid-cols-2 gap-3 mt-8">
+                            <Button variant="secondary" onClick={() => setShowShareModal(false)}>Mégse</Button>
+                            <Button onClick={handleShare} disabled={!shareData.projectId || !shareData.employeeUid}>Kiosztás</Button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {/* Invite Modal */}
             {showAddModal && (
                 <div className="fixed inset-0 z-50 bg-gray-900/40 backdrop-blur-sm flex items-center justify-center p-4">
                     <div className="bg-white w-full max-w-md rounded-3xl shadow-2xl p-6 animate-in slide-in-from-bottom-4 duration-300">
                         <h2 className="text-xl font-bold text-gray-900 mb-4 tracking-tight">Új csapattag meghívása</h2>
                         <div className="space-y-4">
+                            <Input
+                                label="Név"
+                                placeholder="Példa Béla"
+                                value={inviteName}
+                                onChange={(e) => setInviteName(e.target.value)}
+                            />
                             <Input
                                 label="Email cím"
                                 placeholder="alkalmazott@email.com"
@@ -236,7 +365,7 @@ export default function Team() {
                         </div>
                         <div className="grid grid-cols-2 gap-3 mt-8">
                             <Button variant="secondary" onClick={() => setShowAddModal(false)}>Mégse</Button>
-                            <Button onClick={handleInvite} disabled={!inviteEmail}>Meghívó küldése</Button>
+                            <Button onClick={handleInvite} disabled={!inviteEmail || !inviteName}>Meghívó küldése</Button>
                         </div>
                     </div>
                 </div>

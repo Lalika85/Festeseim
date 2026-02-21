@@ -13,7 +13,7 @@ export const NotificationProvider = ({ children }) => {
     const { showToast } = useToast();
     const { projects } = useProjects();
     const isInitialLoad = useRef(true);
-    const settings = useRef({ upcomingWork: true, quoteAccepted: true });
+    const settings = useRef({ upcomingWork: true, quoteAccepted: true, newWorkAssigned: true });
 
     // --- DIAGNOSTIC LOGGER ---
     const logToStorage = (message, type = 'info') => {
@@ -153,8 +153,28 @@ export const NotificationProvider = ({ children }) => {
             logToStorage(`Foreground: ${n.title}`, 'info');
         });
 
+        // 4. Generic Notifications Observer (New Member, Work Assigned)
+        const notifPath = `users/${currentUser.uid}/notifications`;
+        const notifQ = collection(db, 'users', currentUser.uid, 'notifications');
+
+        const unsubscribeNotifs = onSnapshot(notifQ, (snapshot) => {
+            snapshot.docChanges().forEach((change) => {
+                if (change.type === 'added') {
+                    const data = change.doc.data();
+
+                    // Skip if initial load or already read
+                    if (data.read || isInitialLoad.current) return;
+
+                    logToStorage(`New Notification: ${data.title}`, 'success');
+                    scheduleNotification(data.title, data.body);
+                    showToast(data.title, 'info');
+                }
+            });
+        });
+
         return () => {
             unsubscribe();
+            unsubscribeNotifs();
             listenerPromise.then(h => {
                 if (h && typeof h.remove === 'function') {
                     h.remove();

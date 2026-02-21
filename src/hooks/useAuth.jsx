@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { auth, db } from '../services/firebase';
 import { onAuthStateChanged, signOut, signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'firebase/auth';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc, collection, addDoc, updateDoc } from 'firebase/firestore';
 
 const AuthContext = createContext();
 
@@ -35,6 +35,7 @@ export const AuthProvider = ({ children }) => {
                         const inviteData = inviteSnap.data();
                         const newProfile = {
                             email: email,
+                            displayName: inviteData.name || '',
                             role: inviteData.role || 'employee',
                             ownerUid: inviteData.ownerUid,
                             ownerName: inviteData.ownerName || '',
@@ -42,6 +43,29 @@ export const AuthProvider = ({ children }) => {
                         };
                         // Auto-provision profile
                         await setDoc(profileRef, newProfile);
+
+                        // Notify Admin
+                        await addDoc(collection(db, 'users', inviteData.ownerUid, 'notifications'), {
+                            type: 'new_member',
+                            title: 'Új csapattag csatlakozott!',
+                            body: `${newProfile.displayName || email} elfogadta a meghívást.`,
+                            createdAt: new Date().toISOString(),
+                            read: false
+                        });
+
+                        // Update team member status in admin's settings/team
+                        const teamRef = doc(db, 'users', inviteData.ownerUid, 'settings', 'team');
+                        const teamSnap = await getDoc(teamRef);
+                        if (teamSnap.exists()) {
+                            const teamData = teamSnap.data();
+                            const updatedMembers = teamData.members.map(m =>
+                                m.email.toLowerCase() === email.toLowerCase()
+                                    ? { ...m, name: newProfile.displayName, status: 'active', joinedAt: newProfile.joinedAt, id: uid }
+                                    : m
+                            );
+                            await updateDoc(teamRef, { members: updatedMembers });
+                        }
+
                         setRole(newProfile.role);
                         setOwnerUid(newProfile.ownerUid);
                     } else {

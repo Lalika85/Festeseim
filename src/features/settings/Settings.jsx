@@ -14,7 +14,7 @@ import { useNotifications } from '../../contexts/NotificationContext';
 import { useProjects } from '../../hooks/useProjects';
 
 export default function Settings() {
-    const { currentUser, logout, isAdmin } = useAuth();
+    const { currentUser, logout, isAdmin, isEmployee } = useAuth();
     const [companies, setCompanies] = useState([]);
     const [loading, setLoading] = useState(false);
 
@@ -35,7 +35,8 @@ export default function Settings() {
     const { showToast } = useToast();
     const [notifications, setNotifications] = useState({
         upcomingWork: true,
-        quoteAccepted: true
+        quoteAccepted: true,
+        newWorkAssigned: true
     });
     const [isNotifySaving, setIsNotifySaving] = useState(false);
     const { projects } = useProjects();
@@ -239,26 +240,49 @@ export default function Settings() {
                         </label>
                     </div>
 
-                    <div className="flex items-center justify-between p-3 bg-gray-50 rounded-2xl border border-gray-100">
-                        <div className="flex items-center gap-3">
-                            <div className="p-2 bg-green-100 text-green-600 rounded-lg">
-                                <CheckCircle size={18} />
+                    {isAdmin ? (
+                        <div className="flex items-center justify-between p-3 bg-gray-50 rounded-2xl border border-gray-100">
+                            <div className="flex items-center gap-3">
+                                <div className="p-2 bg-green-100 text-green-600 rounded-lg">
+                                    <CheckCircle size={18} />
+                                </div>
+                                <div>
+                                    <div className="text-sm font-bold text-gray-900">Árajánlat elfogadás</div>
+                                    <div className="text-xs text-gray-500">Jelezzen, ha aláírták az ajánlatot</div>
+                                </div>
                             </div>
-                            <div>
-                                <div className="text-sm font-bold text-gray-900">Árajánlat elfogadás</div>
-                                <div className="text-xs text-gray-500">Jelezzen, ha aláírták az ajánlatot</div>
-                            </div>
+                            <label className="relative inline-flex items-center cursor-pointer">
+                                <input
+                                    type="checkbox"
+                                    className="sr-only peer"
+                                    checked={notifications.quoteAccepted}
+                                    onChange={(e) => setNotifications(prev => ({ ...prev, quoteAccepted: e.target.checked }))}
+                                />
+                                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary-600"></div>
+                            </label>
                         </div>
-                        <label className="relative inline-flex items-center cursor-pointer">
-                            <input
-                                type="checkbox"
-                                className="sr-only peer"
-                                checked={notifications.quoteAccepted}
-                                onChange={(e) => setNotifications(prev => ({ ...prev, quoteAccepted: e.target.checked }))}
-                            />
-                            <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary-600"></div>
-                        </label>
-                    </div>
+                    ) : (
+                        <div className="flex items-center justify-between p-3 bg-gray-50 rounded-2xl border border-gray-100">
+                            <div className="flex items-center gap-3">
+                                <div className="p-2 bg-primary-100 text-primary-600 rounded-lg">
+                                    <BellRing size={18} />
+                                </div>
+                                <div>
+                                    <div className="text-sm font-bold text-gray-900">Új munka kiosztva</div>
+                                    <div className="text-xs text-gray-500">Értesítés, ha új projektet kap</div>
+                                </div>
+                            </div>
+                            <label className="relative inline-flex items-center cursor-pointer">
+                                <input
+                                    type="checkbox"
+                                    className="sr-only peer"
+                                    checked={notifications.newWorkAssigned}
+                                    onChange={(e) => setNotifications(prev => ({ ...prev, newWorkAssigned: e.target.checked }))}
+                                />
+                                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary-600"></div>
+                            </label>
+                        </div>
+                    )}
 
                     <Button
                         onClick={handleSaveNotifications}
