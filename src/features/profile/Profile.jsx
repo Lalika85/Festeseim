@@ -2,6 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../hooks/useAuth';
 import { loadUserSettings, syncSettings, loadUserCollection, syncItem } from '../../services/firestore';
 import { useToast } from '../../hooks/useToast';
+import { storage } from '../../services/firebase';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import Card from '../../components/ui/Card';
+import Button from '../../components/ui/Button';
+import Input from '../../components/ui/Input';
+import { User, Building2, Wallet, Phone, Mail, Upload, Download, LogOut, Camera, CheckCircle } from 'lucide-react';
 
 const Profile = () => {
     const { currentUser, logout } = useAuth();
@@ -13,15 +19,17 @@ const Profile = () => {
         phone: '',
         email: '',
         bank: '',
+        note: '', // Added note field if needed, or remove
         logo: null
     });
     const [loading, setLoading] = useState(true);
+    const [uploading, setUploading] = useState(false);
 
     useEffect(() => {
         const fetchProfile = async () => {
             if (!currentUser) return;
-            const data = await loadUserSettings(currentUser.uid, 'profile');
-            if (data) setProfile(prev => ({ ...prev, ...data }));
+            const profileData = await loadUserSettings(currentUser.uid, 'profile');
+            if (profileData) setProfile(prev => ({ ...prev, ...profileData }));
             setLoading(false);
         };
         fetchProfile();
@@ -32,14 +40,24 @@ const Profile = () => {
         setProfile(prev => ({ ...prev, [name]: value }));
     };
 
-    const handleLogoUpload = (e) => {
+    const handleLogoUpload = async (e) => {
         const file = e.target.files[0];
-        if (file) {
-            const reader = new FileReader();
-            reader.onload = (ev) => {
-                setProfile(prev => ({ ...prev, logo: ev.target.result }));
-            };
-            reader.readAsDataURL(file);
+        if (!file) return;
+        setUploading(true);
+
+        try {
+            const storagePath = `user_logos/${currentUser.uid}/logo_${Date.now()}`;
+            const storageRef = ref(storage, storagePath);
+            const snapshot = await uploadBytes(storageRef, file);
+            const downloadURL = await getDownloadURL(snapshot.ref);
+
+            setProfile(prev => ({ ...prev, logo: downloadURL }));
+            showToast('Logó feltöltve!', 'success');
+        } catch (error) {
+            console.error("Logo upload error:", error);
+            showToast('Hiba a logó feltöltésekor!', 'danger');
+        } finally {
+            setUploading(false);
         }
     };
 
@@ -74,7 +92,7 @@ const Profile = () => {
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = `painters_log_backup_${new Date().toISOString().slice(0, 10)}.json`;
+            a.download = `festonaplo_mentes_${new Date().toISOString().slice(0, 10)}.json`;
             a.click();
             showToast('Adatmentés kész!', 'success');
         } catch (err) {
@@ -90,7 +108,7 @@ const Profile = () => {
         reader.onload = async (ev) => {
             try {
                 const data = JSON.parse(ev.target.result);
-                if (window.confirm('Ezzel felülírod a jelenlegi adatokat. Folytatod?')) {
+                if (window.confirm('FIGYELEM! Ezzel felülírod a jelenlegi adatokat. Biztosan folytatod?')) {
                     // Sync profile
                     if (data.profile) await syncSettings(currentUser.uid, 'profile', data.profile);
                     // Sync collections
@@ -99,6 +117,7 @@ const Profile = () => {
                     if (data.quotes) for (const item of data.quotes) await syncItem(currentUser.uid, 'quotes', item);
 
                     showToast('Importálás sikeres! Frissíts rá.', 'success');
+                    setTimeout(() => window.location.reload(), 1500);
                 }
             } catch (err) {
                 showToast('Érvénytelen fájlformátum!', 'danger');
@@ -107,72 +126,122 @@ const Profile = () => {
         reader.readAsText(file);
     };
 
-    if (loading) return <div className="text-center mt-4">Betöltés...</div>;
+    if (loading) return <div className="text-center py-12"><div className="animate-spin text-4xl mb-2">⏳</div><p className="text-gray-500">Betöltés...</p></div>;
 
     return (
-        <div className="view-container">
-            <div className="section-header">
-                <h1>Profil</h1>
-                <button className="btn btn-text" onClick={logout} style={{ color: 'var(--danger)' }}>
-                    Kijelentkezés
-                </button>
+        <div className="pb-20">
+            <div className="flex justify-between items-center mb-6">
+                <div>
+                    <h1 className="text-2xl font-bold text-gray-900 leading-tight">Profilom</h1>
+                    <p className="text-sm text-gray-500">Vállalkozás adatai</p>
+                </div>
+                <Button variant="danger" onClick={logout} className="!p-2.5 rounded-full shadow-sm bg-red-50 text-red-600 border-red-100 hover:bg-red-100">
+                    <LogOut size={20} />
+                </Button>
             </div>
 
-            <form onSubmit={handleSave} className="card">
-                <div id="logo-preview-container" style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
-                    {profile.logo ? (
-                        <img
-                            src={profile.logo}
-                            id="logo-preview"
-                            alt="Logo preview"
-                            style={{ maxHeight: '80px', borderRadius: '8px', marginBottom: '10px' }}
-                        />
-                    ) : (
-                        <div style={{ padding: '20px', background: 'var(--bg-app)', borderRadius: '8px', color: 'var(--text-muted)' }}>
-                            <i className="fas fa-image fa-2x"></i>
-                            <div>Nincs logó</div>
+            <form onSubmit={handleSave}>
+                {/* Logo Section */}
+                <Card className="mb-6 text-center !p-6">
+                    <div className="relative inline-block mb-4 group">
+                        <div className="w-32 h-32 rounded-full bg-gray-100 flex items-center justify-center overflow-hidden border-4 border-white shadow-lg mx-auto">
+                            {profile.logo ? (
+                                <img src={profile.logo} alt="Logo" className="w-full h-full object-cover" />
+                            ) : (
+                                <User size={48} className="text-gray-300" />
+                            )}
                         </div>
-                    )}
-                    <label className="btn btn-secondary mt-2" style={{ display: 'inline-flex', cursor: 'pointer' }}>
-                        <i className="fas fa-upload"></i> Logó feltöltése
-                        <input type="file" hidden accept="image/*" onChange={handleLogoUpload} />
-                    </label>
+                        <label className="absolute bottom-0 right-0 w-10 h-10 bg-primary-600 rounded-full flex items-center justify-center text-white shadow-md cursor-pointer hover:bg-primary-700 transition-colors">
+                            {uploading ? <div className="animate-spin text-xs">⏳</div> : <Camera size={18} />}
+                            <input type="file" hidden accept="image/*" onChange={handleLogoUpload} disabled={uploading} />
+                        </label>
+                    </div>
+                    <p className="text-sm text-gray-500 mb-0">Érintsd meg a kamera ikont a logó cseréjéhez</p>
+                </Card>
+
+                {/* Company Info */}
+                <Card className="mb-6" header="Cégadatok">
+                    <Input
+                        label="Cégnév / Vállalkozó neve"
+                        name="name"
+                        value={profile.name}
+                        onChange={handleChange}
+                        icon={<User size={18} />}
+                        placeholder="Pl. Lakásfelújítás Kft."
+                    />
+                    <Input
+                        label="Székhely / Lakcím"
+                        name="address"
+                        value={profile.address}
+                        onChange={handleChange}
+                        icon={<Building2 size={18} />}
+                        placeholder="Város, Utca, Házszám"
+                    />
+                    <Input
+                        label="Adószám"
+                        name="tax"
+                        value={profile.tax}
+                        onChange={handleChange}
+                        icon={<span className="text-xs font-bold font-mono">TAX</span>}
+                        placeholder="12345678-1-12"
+                    />
+                    <Input
+                        label="Bankszámlaszám"
+                        name="bank"
+                        value={profile.bank}
+                        onChange={handleChange}
+                        icon={<Wallet size={18} />}
+                        placeholder="HU00 0000 0000 0000..."
+                    />
+                </Card>
+
+                {/* Contact Info */}
+                <Card className="mb-8" header="Kapcsolat">
+                    <Input
+                        label="Telefonszám"
+                        name="phone"
+                        value={profile.phone}
+                        onChange={handleChange}
+                        icon={<Phone size={18} />}
+                        type="tel"
+                    />
+                    <Input
+                        label="Email cím"
+                        name="email"
+                        value={profile.email}
+                        onChange={handleChange}
+                        icon={<Mail size={18} />}
+                        type="email"
+                    />
+                </Card>
+
+                <div className="mb-10">
+                    <Button type="submit" className="w-full h-12 text-lg shadow-lg bg-primary-600 hover:bg-primary-700">
+                        <CheckCircle size={20} className="mr-2" /> Beállítások mentése
+                    </Button>
                 </div>
-
-                <label>Cégnév / Név</label>
-                <input name="name" value={profile.name} onChange={handleChange} placeholder="Pl. Lakásfelújítás Kft." />
-
-                <label>Cím</label>
-                <input name="address" value={profile.address} onChange={handleChange} placeholder="Város, Utca, Házszám" />
-
-                <label>Adószám</label>
-                <input name="tax" value={profile.tax} onChange={handleChange} placeholder="12345678-1-12" />
-
-                <label>Telefonszám</label>
-                <input name="phone" value={profile.phone} onChange={handleChange} type="tel" />
-
-                <label>Email</label>
-                <input name="email" value={profile.email} onChange={handleChange} type="email" />
-
-                <label>Bankszámlaszám</label>
-                <input name="bank" value={profile.bank} onChange={handleChange} placeholder="HU00 0000 0000 0000" />
-
-                <button type="submit" className="btn btn-primary full-width mt-4">
-                    Beállítások mentése
-                </button>
             </form>
 
-            <div className="detail-section">
-                <div className="section-title">Adatvédelem & Biztonság</div>
-                <div className="card">
-                    <button className="btn btn-secondary full-width mb-2" onClick={exportData} style={{ marginBottom: '10px' }}>
-                        <i className="fas fa-download"></i> Teljes adatmentés (JSON)
-                    </button>
-                    <label className="btn btn-secondary full-width" style={{ cursor: 'pointer' }}>
-                        <i className="fas fa-upload"></i> Adatvisszatöltés
+            <div className="border-t border-gray-200 pt-8 pb-4">
+                <h3 className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-4 px-1">Adatkezelés</h3>
+                <div className="grid grid-cols-2 gap-4">
+                    <div
+                        onClick={exportData}
+                        className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm flex flex-col items-center justify-center gap-2 cursor-pointer active:scale-95 transition-all"
+                    >
+                        <Download size={24} className="text-blue-600" />
+                        <span className="text-sm font-medium text-gray-700">Biztonsági mentés</span>
+                    </div>
+                    <label className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm flex flex-col items-center justify-center gap-2 cursor-pointer active:scale-95 transition-all">
+                        <Upload size={24} className="text-green-600" />
+                        <span className="text-sm font-medium text-gray-700">Visszatöltés</span>
                         <input type="file" hidden accept=".json" onChange={importData} />
                     </label>
                 </div>
+                <p className="text-xs text-center text-gray-400 mt-6">
+                    Minden adatot a készülékeden és a felhőben tárolunk titkosítva.
+                    <br />Verzió: 6.0.0
+                </p>
             </div>
         </div>
     );

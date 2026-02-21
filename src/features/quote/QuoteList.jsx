@@ -10,11 +10,13 @@ import {
 import Card from '../../components/ui/Card';
 import Button from '../../components/ui/Button';
 import Badge from '../../components/ui/Badge';
+import { Share } from '@capacitor/share';
+import { PUBLIC_BASE_URL } from '../../hooks/useQuotes';
 
 export default function QuoteList() {
     const navigate = useNavigate();
     const { currentUser } = useAuth();
-    const { quotes, loading, deleteQuote, branding } = useQuotes();
+    const { quotes, loading, deleteQuote, branding, updateStatus } = useQuotes();
     const [searchTerm, setSearchTerm] = useState('');
 
     const filteredQuotes = quotes.filter(q =>
@@ -137,15 +139,42 @@ export default function QuoteList() {
 
                                     <div className="flex items-center gap-2">
                                         <button
-                                            onClick={(e) => {
+                                            onClick={async (e) => {
                                                 e.stopPropagation();
-                                                const url = `${window.location.origin}/quote/view/${currentUser.uid}/${q.id}`;
+                                                const url = `${PUBLIC_BASE_URL}/quote/view/${currentUser.uid}/${q.id}`;
                                                 window.open(url, '_blank');
                                             }}
                                             className="p-2 text-gray-400 hover:text-primary-600 hover:bg-primary-50 rounded-xl transition-all"
                                             title="Ügyfél nézet megnyitása"
                                         >
                                             <Eye size={20} />
+                                        </button>
+                                        <button
+                                            onClick={async (e) => {
+                                                e.stopPropagation();
+                                                const url = `${PUBLIC_BASE_URL}/quote/view/${currentUser.uid}/${q.id}`;
+
+                                                try {
+                                                    await Share.share({
+                                                        title: `Árajánlat #${q.number}`,
+                                                        text: `Küldtem neked egy árajánlatot (${q.buyerName}). Itt tudod megtekinteni és aláírni:`,
+                                                        url: url,
+                                                        dialogTitle: 'Árajánlat megosztása',
+                                                    });
+
+                                                    if (!q.status || q.status === 'draft') {
+                                                        await updateStatus(q.id, 'sent');
+                                                    }
+                                                } catch (err) {
+                                                    console.warn('Share error:', err);
+                                                    navigator.clipboard.writeText(url);
+                                                    alert('Link másolva a vágólapra!');
+                                                }
+                                            }}
+                                            className="p-2 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-xl transition-all"
+                                            title="Megosztás"
+                                        >
+                                            <Share2 size={20} />
                                         </button>
                                         <button
                                             onClick={(e) => handleDelete(q.id, e)}

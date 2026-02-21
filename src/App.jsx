@@ -1,7 +1,8 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './hooks/useAuth';
-import { ProjectsProvider } from './hooks/useProjects';
+import { ProjectsProvider, useProjects } from './hooks/useProjects';
+import { NotificationProvider, useNotifications } from './contexts/NotificationContext';
 import Header from './components/layout/Header';
 import BottomNav from './components/layout/BottomNav';
 import Login from './features/profile/Login';
@@ -16,6 +17,8 @@ import QuoteList from './features/quote/QuoteList';
 import QuoteEditor from './features/quote/QuoteEditor';
 import ClientQuoteView from './features/quote/ClientQuoteView';
 import ShopManager from './features/shop/ShopManager';
+import Calculator from './features/calculator/Calculator';
+import Team from './features/team/Team';
 
 const ProtectedRoute = ({ children }) => {
     const { currentUser } = useAuth();
@@ -25,6 +28,10 @@ const ProtectedRoute = ({ children }) => {
 
 function AppContent() {
     const { currentUser } = useAuth();
+    const { projects } = useProjects();
+
+    // Global notification listener is now inside Provider
+    useNotifications();
 
     return (
         <div className="app-container">
@@ -55,6 +62,8 @@ function AppContent() {
                     <Route path="/quote/new" element={<ProtectedRoute><QuoteEditor /></ProtectedRoute>} />
                     <Route path="/quote/edit/:id" element={<ProtectedRoute><QuoteEditor /></ProtectedRoute>} />
                     <Route path="/shop" element={<ProtectedRoute><ShopManager /></ProtectedRoute>} />
+                    <Route path="/calculator" element={<ProtectedRoute><Calculator /></ProtectedRoute>} />
+                    <Route path="/team" element={<ProtectedRoute><Team /></ProtectedRoute>} />
 
                     {/* Public Client View */}
                     <Route path="/quote/view/:userId/:quoteId" element={<ClientQuoteView />} />
@@ -73,9 +82,11 @@ function App() {
     return (
         <AuthProvider>
             <ProjectsProvider>
-                <Router>
-                    <AppContent />
-                </Router>
+                <NotificationProvider>
+                    <Router>
+                        <AppContent />
+                    </Router>
+                </NotificationProvider>
             </ProjectsProvider>
         </AuthProvider>
     );

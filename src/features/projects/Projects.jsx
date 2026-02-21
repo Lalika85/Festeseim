@@ -6,6 +6,8 @@ import { loadUserCollection } from '../../services/firestore';
 import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input';
 import Badge from '../../components/ui/Badge';
+import { doc, onSnapshot } from 'firebase/firestore';
+import { db } from '../../services/firebase';
 
 export default function Projects() {
     const { currentUser } = useAuth();
@@ -13,12 +15,15 @@ export default function Projects() {
     const [filteredProjects, setFilteredProjects] = useState([]);
     const [search, setSearch] = useState('');
     const [statusFilter, setStatusFilter] = useState('all');
+    const [teamMap, setTeamMap] = useState({});
     const [loading, setLoading] = useState(true);
     const navigate = useNavigate();
 
     useEffect(() => {
+        if (!currentUser) return;
+
+        // Fetch projects
         const fetchProjects = async () => {
-            if (!currentUser) return;
             try {
                 const data = await loadUserCollection(currentUser.uid, 'projects');
                 setProjects(data);
@@ -30,6 +35,21 @@ export default function Projects() {
             }
         };
         fetchProjects();
+
+        // Fetch team for name mapping
+        const teamRef = doc(db, 'users', currentUser.uid, 'settings', 'team');
+        const unsubTeam = onSnapshot(teamRef, (docSnap) => {
+            if (docSnap.exists()) {
+                const data = docSnap.data();
+                const map = {};
+                (data.members || []).forEach(m => {
+                    map[m.id] = m.name || m.email;
+                });
+                setTeamMap(map);
+            }
+        });
+
+        return () => unsubTeam();
     }, [currentUser]);
 
     useEffect(() => {
@@ -105,7 +125,17 @@ export default function Projects() {
                             className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm active:scale-[0.99] transition-all cursor-pointer hover:border-primary-200"
                         >
                             <div className="flex justify-between items-start mb-2">
-                                <h3 className="font-semibold text-lg text-gray-900">{p.client}</h3>
+                                <div>
+                                    <h3 className="font-semibold text-lg text-gray-900">{p.client}</h3>
+                                    {p.assignedTo && teamMap[p.assignedTo] && (
+                                        <div className="flex items-center gap-1.5 mt-1">
+                                            <div className="w-4 h-4 rounded-full bg-blue-100 flex items-center justify-center">
+                                                <div className="w-1.5 h-1.5 rounded-full bg-blue-600"></div>
+                                            </div>
+                                            <span className="text-[10px] font-bold text-blue-600 uppercase tracking-tight">Felelős: {teamMap[p.assignedTo]}</span>
+                                        </div>
+                                    )}
+                                </div>
                                 <Badge variant={p.status === 'done' ? 'success' : p.status === 'suspend' ? 'warning' : 'info'}>
                                     {p.status === 'done' ? 'Kész' : p.status === 'suspend' ? 'Felfügg.' : 'Aktív'}
                                 </Badge>

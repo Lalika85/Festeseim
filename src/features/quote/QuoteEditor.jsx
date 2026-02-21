@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
-import { useQuotes } from '../../hooks/useQuotes';
+import { useQuotes, PUBLIC_BASE_URL } from '../../hooks/useQuotes';
 import { db, storage } from '../../services/firebase';
 import { collection, getDocs, doc, getDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
@@ -9,13 +9,14 @@ import {
     ArrowLeft, Plus, Trash2, Save, Eye, Palette,
     Image as ImageIcon, CheckCircle2, ChevronUp, ChevronDown,
     Settings, FileText, Send, Share2, Download, AlertCircle,
-    MessageCircle, Mail, Copy, ExternalLink
+    MessageCircle, Mail, Copy, ExternalLink, Edit
 } from 'lucide-react';
 import Card from '../../components/ui/Card';
 import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input';
 import Select from '../../components/ui/Select';
 import Badge from '../../components/ui/Badge';
+import Modal from '../../components/ui/Modal';
 
 const VAT_RATES = [
     { value: 27, label: '27% (Általános)' },
@@ -43,9 +44,23 @@ export default function QuoteEditor() {
         buyerName: '',
         buyerAddress: '',
         buyerEmail: '',
-        items: [{ id: Date.now().toString(), description: '', qty: 1, unit: 'm²', price: 0, vat: 27, isOptional: false }],
+        items: [],
         note: '',
-        status: 'draft'
+        status: 'draft',
+        projectId: '',
+        clientId: ''
+    });
+
+    const [isItemModalOpen, setIsItemModalOpen] = useState(false);
+    const [editingItem, setEditingItem] = useState(null);
+    const [modalData, setModalData] = useState({
+        id: '',
+        description: '',
+        qty: '',
+        unit: 'm²',
+        price: '',
+        vat: 27,
+        isOptional: false
     });
 
     const [isUploading, setIsUploading] = useState(false);
@@ -77,33 +92,80 @@ export default function QuoteEditor() {
             if (existing) setFormData(existing);
         } else if (location.state?.clientData) {
             // Pre-fill from ProjectDetail
-            const { name, address, email } = location.state.clientData;
+            const { name, address, email, projectId, clientId } = location.state.clientData;
             setFormData(prev => ({
                 ...prev,
                 buyerName: name || '',
                 buyerAddress: address || '',
-                buyerEmail: email || ''
+                buyerEmail: email || '',
+                projectId: projectId || '',
+                clientId: clientId || ''
             }));
         }
 
         fetchCompanies();
     }, [currentUser, id, quotes, location.state]);
 
+    // AI Item Listener
+    useEffect(() => {
+        const handleAIItem = (e) => {
+            const item = e.detail;
+            const newItem = {
+                id: Date.now().toString() + Math.random(),
+                description: item.description || '',
+                qty: item.qty || 1,
+                unit: item.unit || 'm²',
+                price: item.price || 0,
+                vat: item.vat || 27,
+                isOptional: item.isOptional || false
+            };
+
+            setFormData(prev => ({
+                ...prev,
+                items: [...prev.items, newItem]
+            }));
+        };
+
+        window.addEventListener('ai_add_quote_item', handleAIItem);
+        return () => window.removeEventListener('ai_add_quote_item', handleAIItem);
+    }, []);
+
     const handleAddItem = () => {
-        setFormData({
-            ...formData,
-            items: [...formData.items, { id: Date.now().toString(), description: '', qty: 1, unit: 'm²', price: 0, vat: 27, isOptional: false }]
+        setEditingItem(null);
+        setModalData({
+            id: Date.now().toString(),
+            description: '',
+            qty: '',
+            unit: 'm²',
+            price: '',
+            vat: 27,
+            isOptional: false
         });
+        setIsItemModalOpen(true);
+    };
+
+    const handleEditItem = (index) => {
+        setEditingItem(index);
+        const item = formData.items[index];
+        setModalData({ ...item });
+        setIsItemModalOpen(true);
+    };
+
+    const handleSaveItem = (e) => {
+        e.preventDefault();
+        const newItems = [...formData.items];
+        if (editingItem !== null) {
+            newItems[editingItem] = modalData;
+        } else {
+            newItems.push(modalData);
+        }
+        setFormData({ ...formData, items: newItems });
+        setIsItemModalOpen(false);
     };
 
     const handleRemoveItem = (index) => {
+        if (!window.confirm('Biztosan törlöd ezt a tételt?')) return;
         const newItems = formData.items.filter((_, i) => i !== index);
-        setFormData({ ...formData, items: newItems });
-    };
-
-    const updateItem = (index, field, value) => {
-        const newItems = [...formData.items];
-        newItems[index] = { ...newItems[index], [field]: value };
         setFormData({ ...formData, items: newItems });
     };
 
@@ -212,7 +274,7 @@ export default function QuoteEditor() {
         }
     };
 
-    const publicUrl = `${window.location.origin}/quote/view/${currentUser?.uid}/${id}`;
+    const publicUrl = `${PUBLIC_BASE_URL}/quote/view/${currentUser?.uid}/${id}`;
 
     return (
         <div className="pb-24 max-w-4xl mx-auto px-4">
@@ -227,31 +289,34 @@ export default function QuoteEditor() {
                         <p className="text-sm text-gray-500">Készíts professzionális ajánlatokat percek alatt</p>
                     </div>
                 </div>
-                <div className="flex items-center flex-wrap gap-2 justify-end">
-                    <Button variant="secondary" size="sm" onClick={() => navigate('/quote')} className="bg-white">
+                <div className="flex items-center gap-2">
+                    <Button variant="secondary" size="sm" onClick={() => navigate('/quote')} className="bg-white shadow-sm border-gray-200">
                         Mégse
                     </Button>
-                    <Button variant="secondary" size="sm" onClick={() => setActiveTab(activeTab === 'editor' ? 'branding' : 'editor')} className="bg-white">
+                    <Button variant="secondary" size="sm" onClick={() => setActiveTab(activeTab === 'editor' ? 'branding' : 'editor')} className="bg-white shadow-sm border-gray-200 whitespace-nowrap">
                         {activeTab === 'editor' ? <Palette size={16} className="xs:mr-2" /> : <FileText size={16} className="xs:mr-2" />}
                         <span className="hidden xs:inline">{activeTab === 'editor' ? 'Arculat' : 'Szerkesztés'}</span>
                     </Button>
-                    {id && (
-                        <Button
-                            size="sm"
-                            className="bg-green-600 hover:bg-green-700 text-white shadow-md shadow-green-100"
-                            onClick={() => {
-                                setActiveTab('branding');
-                                setTimeout(() => {
-                                    document.getElementById('sharing-section')?.scrollIntoView({ behavior: 'smooth' });
-                                }, 100);
-                            }}
-                        >
-                            <Send size={16} className="xs:mr-2" /> <span className="hidden xs:inline">Küldés</span>
+                    <div className="h-6 w-px bg-gray-200 mx-1 hidden sm:block"></div>
+                    <div className="flex items-center gap-2">
+                        {id && (
+                            <Button
+                                size="sm"
+                                className="bg-green-600 hover:bg-green-700 text-white shadow-md shadow-green-100 whitespace-nowrap"
+                                onClick={() => {
+                                    setActiveTab('branding');
+                                    setTimeout(() => {
+                                        document.getElementById('sharing-section')?.scrollIntoView({ behavior: 'smooth' });
+                                    }, 100);
+                                }}
+                            >
+                                <Send size={16} className="xs:mr-2" /> <span className="hidden xs:inline">Küldés</span>
+                            </Button>
+                        )}
+                        <Button size="sm" className="bg-primary-600 hover:bg-primary-700 text-white shadow-md shadow-primary-100 whitespace-nowrap" onClick={handleSave}>
+                            <Save size={16} className="xs:mr-2" /> <span className="hidden xs:inline">Mentés</span>
                         </Button>
-                    )}
-                    <Button size="sm" className="bg-primary-600 hover:bg-primary-700 text-white shadow-md shadow-primary-100" onClick={handleSave}>
-                        <Save size={16} className="xs:mr-2" /> <span className="hidden xs:inline">Mentés</span>
-                    </Button>
+                    </div>
                 </div>
             </div>
 
@@ -436,87 +501,161 @@ export default function QuoteEditor() {
 
                         <div className="space-y-3">
                             {formData.items.map((item, idx) => (
-                                <div key={item.id} className={`bg-white border rounded-xl p-4 shadow-sm transition-all ${item.isOptional ? 'border-amber-200 bg-amber-50/20' : 'border-gray-200'}`}>
-                                    <div className="flex gap-4 items-start">
-                                        {/* Sort Controls */}
-                                        <div className="flex flex-col gap-1">
-                                            <button onClick={() => moveItem(idx, 'up')} className="p-1 hover:bg-gray-100 rounded text-gray-400"><ChevronUp size={16} /></button>
-                                            <button onClick={() => moveItem(idx, 'down')} className="p-1 hover:bg-gray-100 rounded text-gray-400"><ChevronDown size={16} /></button>
+                                <div
+                                    key={item.id}
+                                    className={`bg-white border rounded-xl overflow-hidden shadow-sm transition-all hover:border-primary-300 group ${item.isOptional ? 'border-amber-200 bg-amber-50/20' : 'border-gray-200'}`}
+                                >
+                                    <div className="flex">
+                                        {/* Sort area */}
+                                        <div className="bg-gray-50 flex flex-col justify-center border-r border-gray-100 px-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                            <button onClick={(e) => { e.stopPropagation(); moveItem(idx, 'up'); }} className="p-1 hover:text-primary-600 rounded" title="Felfelé"><ChevronUp size={16} /></button>
+                                            <button onClick={(e) => { e.stopPropagation(); moveItem(idx, 'down'); }} className="p-1 hover:text-primary-600 rounded" title="Lefelé"><ChevronDown size={16} /></button>
                                         </div>
 
-                                        <div className="flex-1 grid md:grid-cols-12 gap-3">
-                                            <div className="md:col-span-4">
-                                                <input
-                                                    className="w-full bg-transparent border-0 border-b border-gray-200 focus:border-primary-500 focus:ring-0 px-0 py-2 text-base font-bold text-gray-900 placeholder-gray-300 transition-all mb-1"
-                                                    placeholder="Megnevezés (pl. Festés, alapozás...)"
-                                                    value={item.description}
-                                                    onChange={e => updateItem(idx, 'description', e.target.value)}
-                                                />
-                                                <div className="flex items-center gap-2">
-                                                    <input
-                                                        type="checkbox"
-                                                        checked={item.isOptional}
-                                                        onChange={e => updateItem(idx, 'isOptional', e.target.checked)}
-                                                        className="rounded text-amber-500 focus:ring-amber-500 h-4 w-4"
-                                                    />
-                                                    <span className="text-[11px] uppercase tracking-wider font-black text-amber-600">Opcionális tétel (nem számít bele az összegbe)</span>
+                                        <div className="flex-1 p-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                                            <div className="flex-1 min-w-0">
+                                                <div className="flex items-center gap-2 mb-1">
+                                                    {item.isOptional && <Badge variant="warning" className="text-[9px] uppercase">Opcionális</Badge>}
+                                                    <h3 className="font-bold text-gray-900 truncate">{item.description || 'Névtelen tétel'}</h3>
+                                                </div>
+                                                <div className="text-xs text-gray-500 font-medium">
+                                                    {item.qty || 0} {item.unit} × {Math.round(item.price || 0).toLocaleString()} Ft
+                                                    <span className="text-gray-300 mx-2">|</span>
+                                                    ÁFA: {item.vat}%
                                                 </div>
                                             </div>
-                                            <div className="md:col-span-2">
-                                                <input
-                                                    type="number"
-                                                    className="w-full bg-transparent border-0 border-b border-gray-200 focus:border-primary-500 focus:ring-0 px-0 py-2 text-right font-bold text-gray-800"
-                                                    value={item.qty}
-                                                    onChange={e => updateItem(idx, 'qty', parseFloat(e.target.value))}
-                                                />
-                                                <select
-                                                    className="w-full bg-transparent border-0 text-[11px] font-bold text-primary-600 p-0 focus:ring-0 cursor-pointer uppercase"
-                                                    value={item.unit}
-                                                    onChange={e => updateItem(idx, 'unit', e.target.value)}
-                                                >
-                                                    {UNITS.map(u => <option key={u} value={u}>{u}</option>)}
-                                                </select>
-                                                <p className="text-[10px] text-gray-400 text-right mt-1 font-bold uppercase">Mennyiség</p>
-                                            </div>
-                                            <div className="md:col-span-3">
-                                                <div className="flex items-center gap-1 border-b border-gray-200 focus-within:border-primary-500 py-1">
-                                                    <span className="text-sm text-gray-400 font-bold">Ft</span>
-                                                    <input
-                                                        type="number"
-                                                        className="w-full bg-transparent border-0 focus:ring-0 px-0 py-1 text-right font-black text-gray-900"
-                                                        value={item.price}
-                                                        onChange={e => updateItem(idx, 'price', parseInt(e.target.value))}
-                                                    />
+
+                                            <div className="flex items-center justify-between md:justify-end gap-x-8 border-t md:border-0 pt-3 md:pt-0">
+                                                <div className={`text-right min-w-[120px] ${item.isOptional ? 'text-amber-600/60' : 'text-primary-700'}`}>
+                                                    <div className="text-[10px] uppercase font-bold opacity-60">Bruttó összesen</div>
+                                                    <div className="font-black text-xl">
+                                                        {Math.round((item.qty * item.price) * (1 + (typeof item.vat === 'number' ? item.vat : 0) / 100)).toLocaleString()} Ft
+                                                    </div>
                                                 </div>
-                                                <p className="text-[10px] text-gray-400 text-right mt-1 font-bold uppercase">Nettó egységár</p>
-                                            </div>
-                                            <div className="md:col-span-2">
-                                                <select
-                                                    className="w-full bg-transparent border-0 border-b border-gray-200 focus:border-primary-500 focus:ring-0 px-0 py-2 text-base font-black text-gray-900"
-                                                    value={item.vat}
-                                                    onChange={e => updateItem(idx, 'vat', e.target.value === 'AAM' ? 'AAM' : parseInt(e.target.value))}
-                                                >
-                                                    {VAT_RATES.map(v => <option key={v.value} value={v.value}>{v.label}</option>)}
-                                                </select>
-                                                <p className="text-[10px] text-gray-400 text-right mt-1 font-bold uppercase">ÁFA kulcs (%)</p>
-                                            </div>
-                                            <div className="md:col-span-1">
-                                                <div className="text-right py-2 font-black text-primary-700 text-base">
-                                                    {Math.round((item.qty * item.price) * (1 + (typeof item.vat === 'number' ? item.vat : 0) / 100)).toLocaleString()}
+
+                                                <div className="flex items-center gap-2 bg-gray-50 p-1 rounded-xl">
+                                                    <button
+                                                        onClick={() => handleEditItem(idx)}
+                                                        className="p-2.5 text-gray-500 hover:text-primary-600 hover:bg-white hover:shadow-sm rounded-lg transition-all"
+                                                        title="Szerkesztés"
+                                                    >
+                                                        <Edit size={18} />
+                                                    </button>
+                                                    <div className="w-px h-4 bg-gray-200"></div>
+                                                    <button
+                                                        onClick={() => handleRemoveItem(idx)}
+                                                        className="p-2.5 text-gray-500 hover:text-red-500 hover:bg-white hover:shadow-sm rounded-lg transition-all"
+                                                        title="Törlés"
+                                                    >
+                                                        <Trash2 size={18} />
+                                                    </button>
                                                 </div>
-                                                <p className="text-[10px] text-gray-400 text-right mt-1 font-bold uppercase">Bruttó összesen</p>
-                                            </div>
-                                            <div className="md:col-span-1 flex items-end justify-end">
-                                                <button onClick={() => handleRemoveItem(idx)} className="p-2 text-gray-300 hover:text-red-500 transition-colors">
-                                                    <Trash2 size={18} />
-                                                </button>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
                             ))}
+
+                            {formData.items.length === 0 && (
+                                <div className="text-center py-12 bg-gray-50 rounded-2xl border-2 border-dashed border-gray-200">
+                                    <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                                        <Plus size={32} className="text-gray-300" />
+                                    </div>
+                                    <h4 className="text-gray-900 font-bold mb-1">Még nincsenek tételek</h4>
+                                    <p className="text-sm text-gray-500 mb-6 px-4">Kattints az "Új tétel" gombra az első tétel felvételéhez</p>
+                                    <div className="flex justify-center">
+                                        <Button onClick={handleAddItem} variant="secondary" className="bg-white">
+                                            <Plus size={18} className="mr-2" /> Első tétel hozzáadása
+                                        </Button>
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     </div>
+
+                    {/* Item Management Modal */}
+                    <Modal
+                        isOpen={isItemModalOpen}
+                        onClose={() => setIsItemModalOpen(false)}
+                        title={editingItem !== null ? 'Tétel szerkesztése' : 'Új tétel hozzáadása'}
+                    >
+                        <form onSubmit={handleSaveItem} className="space-y-4">
+                            <Input
+                                label="Megnevezés"
+                                placeholder="Pl. Nappali festése..."
+                                value={modalData.description}
+                                onChange={e => setModalData({ ...modalData, description: e.target.value })}
+                                autoFocus
+                            />
+
+                            <div className="grid grid-cols-2 gap-4">
+                                <Input
+                                    label="Mennyiség"
+                                    type="number"
+                                    placeholder="0"
+                                    value={modalData.qty}
+                                    onChange={e => setModalData({ ...modalData, qty: e.target.value === '' ? '' : parseFloat(e.target.value) })}
+                                />
+                                <Select
+                                    label="Egység"
+                                    options={UNITS.map(u => ({ value: u, label: u }))}
+                                    value={modalData.unit}
+                                    onChange={e => setModalData({ ...modalData, unit: e.target.value })}
+                                />
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-4">
+                                <Input
+                                    label="Nettó egységár (Ft)"
+                                    type="number"
+                                    placeholder="0"
+                                    value={modalData.price}
+                                    onChange={e => setModalData({ ...modalData, price: e.target.value === '' ? '' : parseInt(e.target.value) })}
+                                />
+                                <Select
+                                    label="ÁFA kulcs"
+                                    options={VAT_RATES.map(v => ({ value: v.value, label: v.label }))}
+                                    value={modalData.vat}
+                                    onChange={e => setModalData({ ...modalData, vat: e.target.value === 'AAM' ? 'AAM' : parseInt(e.target.value) })}
+                                />
+                            </div>
+
+                            <div className="bg-gray-50 p-4 rounded-xl space-y-3">
+                                <label className="flex items-center gap-3 cursor-pointer group">
+                                    <div className={`w-10 h-6 rounded-full relative transition-colors ${modalData.isOptional ? 'bg-amber-500' : 'bg-gray-300'}`}>
+                                        <div className={`absolute top-1 left-1 w-4 h-4 bg-white rounded-full transition-transform ${modalData.isOptional ? 'translate-x-4' : ''}`}></div>
+                                    </div>
+                                    <input
+                                        type="checkbox"
+                                        className="hidden"
+                                        checked={modalData.isOptional}
+                                        onChange={e => setModalData({ ...modalData, isOptional: e.target.checked })}
+                                    />
+                                    <div>
+                                        <p className="text-sm font-bold text-gray-800">Opcionális tétel</p>
+                                        <p className="text-[11px] text-gray-500">Nem számít bele a végösszegbe, külön tételként jelenik meg.</p>
+                                    </div>
+                                </label>
+                            </div>
+
+                            {/* Line total summary in modal */}
+                            <div className="p-4 bg-primary-50 rounded-xl border border-primary-100 flex justify-between items-center">
+                                <span className="text-sm font-bold text-primary-800 uppercase tracking-wider">Tétel bruttó:</span>
+                                <span className="text-xl font-black text-primary-700">
+                                    {Math.round((modalData.qty * modalData.price) * (1 + (typeof modalData.vat === 'number' ? modalData.vat : 0) / 100)).toLocaleString()} Ft
+                                </span>
+                            </div>
+
+                            <div className="flex gap-3 pt-4">
+                                <Button type="button" variant="secondary" className="flex-1" onClick={() => setIsItemModalOpen(false)}>
+                                    Mégse
+                                </Button>
+                                <Button type="submit" className="flex-[2] bg-primary-600 hover:bg-primary-700 text-white">
+                                    <CheckCircle2 size={18} className="mr-2" /> {editingItem !== null ? 'Változtatások mentése' : 'Tétel hozzáadása'}
+                                </Button>
+                            </div>
+                        </form>
+                    </Modal>
 
                     {/* Summary Card */}
                     <div className="mt-12 bg-gray-900 text-white rounded-3xl p-8 shadow-2xl relative overflow-hidden">

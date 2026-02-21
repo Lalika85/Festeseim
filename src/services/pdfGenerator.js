@@ -167,6 +167,38 @@ export const generateQuotePDF = async (formData, seller, action = 'download') =>
             doc.text("Megjegyzés:", 14, y);
             const splitNote = doc.splitTextToSize(formData.note, 180);
             doc.text(splitNote, 14, y + 6);
+            y += (splitNote.length * 6) + 5;
+        }
+
+        // --- Legal Audit Trail (NEW) ---
+        if (formData.status === 'accepted' && formData.audit) {
+            y += 15;
+            if (y > 250) {
+                doc.addPage();
+                y = 20;
+            }
+
+            // Box for audit trail
+            doc.setDrawColor(200, 200, 200);
+            doc.setFillColor(249, 250, 251);
+            doc.rect(14, y, 182, 35, 'FD');
+
+            doc.setFontSize(9);
+            doc.setFont(undefined, 'bold');
+            doc.text("DIGITÁLIS AUDIT NAPLÓ (HITELLESÍTÉS)", 18, y + 7);
+
+            doc.setFontSize(8);
+            doc.setFont(undefined, 'normal');
+            doc.text(`Aláírás időpontja: ${new Date(formData.acceptedAt).toLocaleString('hu-HU')}`, 18, y + 14);
+            doc.text(`Ip cím: ${formData.audit.ip || 'Ismeretlen'}`, 18, y + 19);
+            doc.text(`Böngésző ujjlenyomat: ${formData.audit.userAgent?.substring(0, 80)}...`, 18, y + 24);
+
+            doc.setFont(undefined, 'bold');
+            doc.text(`TARTALMI INTEGRITÁS KÓD (HASH): ${formData.audit.contentHash || 'N/A'}`, 18, y + 30);
+
+            doc.setFontSize(7);
+            doc.setFont(undefined, 'italic');
+            doc.text("Ez a dokumentum elektronikusan lett aláírva és hitelesítve. A fenti adatok igazolják a dokumentum sértetlenségét.", 18, y + 38);
         }
 
         // Action Handling
@@ -199,7 +231,7 @@ export const generateQuotePDF = async (formData, seller, action = 'download') =>
     }
 };
 
-export const generateWorksheetPDF = async (project, materials = [], options = { showMaterials: true, showPrices: false }) => {
+export const generateWorksheetPDF = async (project, materials = [], options = { showMaterials: true, showPrices: false }, action = 'download') => {
     try {
         const doc = new jsPDF();
 
@@ -313,9 +345,41 @@ export const generateWorksheetPDF = async (project, materials = [], options = { 
             }
         }
 
-        doc.save(fileName);
+        // ... (previous code)
+
+        if (action === 'download' && (window.Capacitor?.isNative || true)) { // Force native path for consistency if feasible, or check platform
+            // For Android/iOS, doc.save() might not work well. 
+            // Better to write to file and share/open.
+            try {
+                const base64PDF = doc.output('datauristring').split(',')[1];
+                await Filesystem.writeFile({
+                    path: fileName,
+                    data: base64PDF,
+                    directory: Directory.Cache,
+                });
+                const fileResult = await Filesystem.getUri({
+                    directory: Directory.Cache,
+                    path: fileName,
+                });
+
+                await Share.share({
+                    title: `Munkalap: ${project.client}`,
+                    text: `Csatolva küldöm a munkalapot.`,
+                    files: [fileResult.uri],
+                    dialogTitle: 'Munkalap letöltése/megosztása',
+                });
+                return true;
+            } catch (nativeErr) {
+                console.error("Native save failed, falling back to doc.save", nativeErr);
+                doc.save(fileName); // Fallback for web
+            }
+        } else {
+            doc.save(fileName);
+        }
+
         return true;
     } catch (error) {
+        // ...
         console.error("Worksheet PDF Error:", error);
         throw error;
     }

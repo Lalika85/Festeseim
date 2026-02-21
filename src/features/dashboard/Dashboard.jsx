@@ -1,34 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { PlusCircle, FileText, ShoppingBag, ArrowRight } from 'lucide-react';
+import { PlusCircle, FileText, ShoppingBag, ArrowRight, Calculator as CalcIcon, Users } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
-import { loadUserCollection } from '../../services/firestore';
+import { useProjects } from '../../hooks/useProjects';
 import Card from '../../components/ui/Card';
 import Button from '../../components/ui/Button';
 import Badge from '../../components/ui/Badge';
 
 export default function Dashboard() {
     const { currentUser } = useAuth();
-    const [projects, setProjects] = useState([]);
-    const [loading, setLoading] = useState(true);
+    const { projects, loading } = useProjects();
     const navigate = useNavigate();
 
-    useEffect(() => {
-        const fetchStats = async () => {
-            if (!currentUser) return;
-            try {
-                const data = await loadUserCollection(currentUser.uid, 'projects');
-                setProjects(data);
-            } catch (err) {
-                console.error("Dashboard fetch error:", err);
-            } finally {
-                setLoading(false);
-            }
-        };
-        fetchStats();
-    }, [currentUser]);
-
-    const activeCount = projects.filter(p => (p.status || 'active') === 'active').length;
+    const activeCount = projects.filter(p => !p.status || p.status === 'active').length;
     const recentProjects = projects.slice(0, 3);
 
     return (
@@ -75,6 +59,24 @@ export default function Dashboard() {
                             <ShoppingBag className="text-emerald-600" size={20} />
                         </div>
                         <span className="text-sm font-medium text-gray-700">Bevásárlólista</span>
+                    </button>
+                    <button
+                        onClick={() => navigate('/calculator')}
+                        className="flex items-center justify-center p-4 bg-white border border-gray-200 rounded-xl shadow-sm hover:bg-gray-50 transition-colors gap-3"
+                    >
+                        <div className="w-10 h-10 bg-amber-100 rounded-full flex items-center justify-center">
+                            <CalcIcon className="text-amber-600" size={20} />
+                        </div>
+                        <span className="text-sm font-medium text-gray-700">Anyagkalkulátor</span>
+                    </button>
+                    <button
+                        onClick={() => navigate('/team')}
+                        className="flex items-center justify-center p-4 bg-white border border-gray-200 rounded-xl shadow-sm hover:bg-gray-50 transition-colors gap-3"
+                    >
+                        <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                            <Users className="text-blue-600" size={20} />
+                        </div>
+                        <span className="text-sm font-medium text-gray-700">Csapat</span>
                     </button>
                 </div>
             </div>

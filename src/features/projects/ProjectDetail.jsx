@@ -7,8 +7,9 @@ import { generateWorksheetPDF } from '../../services/pdfGenerator';
 import {
     ArrowLeft, Edit, Trash2, Phone, Mail, MapPin,
     Map, Plus, X, ShoppingCart, FileText, ChevronRight,
-    User, Home, Layers, Receipt
+    User, Home, Layers, Receipt, Share2
 } from 'lucide-react';
+import { Share } from '@capacitor/share';
 import Card from '../../components/ui/Card';
 import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input';
@@ -23,6 +24,7 @@ export default function ProjectDetail() {
     const [newRoom, setNewRoom] = useState('');
     const [newRoomSize, setNewRoomSize] = useState('');
     const [materials, setMaterials] = useState([]);
+    const [linkedQuotes, setLinkedQuotes] = useState([]);
 
     useEffect(() => {
         const fetchProject = async () => {
@@ -53,8 +55,21 @@ export default function ProjectDetail() {
             });
         }
 
+        // Listen for quotes associated with this project
+        let unsubscribeQuotes = () => { };
+        if (currentUser && id) {
+            const qry = query(collection(db, 'users', currentUser.uid, 'quotes'), where('projectId', '==', id));
+            unsubscribeQuotes = onSnapshot(qry, (snapshot) => {
+                const list = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                setLinkedQuotes(list);
+            });
+        }
+
         fetchProject();
-        return () => unsubscribeMaterials();
+        return () => {
+            unsubscribeMaterials();
+            unsubscribeQuotes();
+        };
     }, [id, currentUser, navigate]);
 
     const handleAddRoom = async () => {
@@ -111,7 +126,9 @@ export default function ProjectDetail() {
                 clientData: {
                     name: project.client,
                     address: project.address,
-                    email: project.email
+                    email: project.email,
+                    projectId: id,
+                    clientId: id
                 }
             }
         });
@@ -169,25 +186,37 @@ export default function ProjectDetail() {
                         </div>
                     </div>
                 </div>
-                <div className="p-4 grid grid-cols-2 gap-4 bg-white">
-                    <a href={`tel:${project.phone}`} className={`flex items-center gap-3 p-3 rounded-xl bg-gray-50 hover:bg-green-50 transition-colors group ${!project.phone && 'opacity-50 pointer-events-none'}`}>
-                        <div className="w-10 h-10 rounded-full bg-white shadow-sm flex items-center justify-center text-gray-500 group-hover:text-green-600">
-                            <Phone size={20} />
-                        </div>
-                        <div>
-                            <div className="text-xs text-gray-500">Telefonszám</div>
-                            <div className="font-medium text-gray-900">{project.phone || '-'}</div>
-                        </div>
+                <div className="p-4 grid grid-cols-4 gap-2 bg-white">
+                    <a href={`tel:${project.phone}`} className={`flex flex-col items-center justify-center p-2 rounded-xl bg-green-50 text-green-700 hover:bg-green-100 transition-colors ${!project.phone && 'opacity-50 pointer-events-none'}`}>
+                        <Phone size={20} className="mb-1" />
+                        <span className="text-[10px] font-bold uppercase">Hívás</span>
                     </a>
-                    <a href={`mailto:${project.email}`} className={`flex items-center gap-3 p-3 rounded-xl bg-gray-50 hover:bg-blue-50 transition-colors group ${!project.email && 'opacity-50 pointer-events-none'}`}>
-                        <div className="w-10 h-10 rounded-full bg-white shadow-sm flex items-center justify-center text-gray-500 group-hover:text-blue-600">
-                            <Mail size={20} />
-                        </div>
-                        <div>
-                            <div className="text-xs text-gray-500">Email cím</div>
-                            <div className="font-medium text-gray-900 truncate max-w-[100px]">{project.email || '-'}</div>
-                        </div>
+                    <a href={`mailto:${project.email}`} className={`flex flex-col items-center justify-center p-2 rounded-xl bg-blue-50 text-blue-700 hover:bg-blue-100 transition-colors ${!project.email && 'opacity-50 pointer-events-none'}`}>
+                        <Mail size={20} className="mb-1" />
+                        <span className="text-[10px] font-bold uppercase">Email</span>
                     </a>
+                    <a href={mapUrl} target="_blank" rel="noopener noreferrer" className={`flex flex-col items-center justify-center p-2 rounded-xl bg-amber-50 text-amber-700 hover:bg-amber-100 transition-colors ${!project.address && 'opacity-50 pointer-events-none'}`}>
+                        <MapPin size={20} className="mb-1" />
+                        <span className="text-[10px] font-bold uppercase">Térkép</span>
+                    </a>
+                    <button onClick={async () => {
+                        try {
+                            await Share.share({
+                                title: project.client,
+                                text: `Ügyfél adatok: ${project.client}\n${project.address}\n${project.phone}`,
+                                url: window.location.href,
+                                dialogTitle: 'Adatlap megosztása'
+                            });
+                        } catch (err) {
+                            console.error('Share failed:', err);
+                            // Fallback to clipboard if share text/url is what we want, or just alert error
+                            // But Share plugin usually handles "not supported" better or throws specific errors.
+                            // If it fails, we simply log it, as user cancellation is also an error in some platforms.
+                        }
+                    }} className="flex flex-col items-center justify-center p-2 rounded-xl bg-purple-50 text-purple-700 hover:bg-purple-100 transition-colors">
+                        <Share2 size={20} className="mb-1" />
+                        <span className="text-[10px] font-bold uppercase">Megosztás</span>
+                    </button>
                 </div>
             </Card>
 
@@ -356,11 +385,65 @@ export default function ProjectDetail() {
                     <Button
                         variant="secondary"
                         size="sm"
-                        onClick={() => navigate(`/shop?project=${id}`)}
+                        onClick={() => navigate(`/shop?project=${id}`, { state: { locked: true } })}
                         className="!py-2 text-purple-600 border-purple-200 hover:bg-purple-50"
                     >
                         Kezelés <ChevronRight size={16} className="ml-1" />
                     </Button>
+                </div>
+            </Card>
+
+            {/* Linked Quotes Section */}
+            <Card className="mb-6 shadow-md border-indigo-100 overflow-hidden !p-0">
+                <div className="bg-indigo-50 px-4 py-3 border-b border-indigo-100 flex justify-between items-center">
+                    <div className="flex items-center gap-2 font-medium text-indigo-900">
+                        <Receipt size={18} className="text-indigo-600" />
+                        Árajánlatok
+                    </div>
+                    <Badge className="bg-indigo-600 text-white border-0">
+                        {linkedQuotes.length} db
+                    </Badge>
+                </div>
+                <div className="divide-y divide-gray-100 bg-white">
+                    {linkedQuotes.length > 0 ? (
+                        linkedQuotes.map(quote => (
+                            <div
+                                key={quote.id}
+                                onClick={() => navigate(`/quote/edit/${quote.id}`)}
+                                className="p-4 flex justify-between items-center hover:bg-indigo-50/30 cursor-pointer transition-colors active:bg-indigo-50"
+                            >
+                                <div className="flex-1 min-w-0">
+                                    <div className="flex items-center gap-2 mb-1">
+                                        <span className="font-bold text-gray-900 truncate">{quote.number}</span>
+                                        <Badge
+                                            variant={quote.status === 'accepted' ? 'success' : quote.status === 'sent' ? 'primary' : 'secondary'}
+                                            className="text-[10px] px-1.5 py-0"
+                                        >
+                                            {quote.status === 'accepted' ? 'Elfogadva' : quote.status === 'sent' ? 'Elküldve' : 'Vázlat'}
+                                        </Badge>
+                                    </div>
+                                    <div className="text-xs text-gray-500">
+                                        {new Date(quote.date || quote.createdAt).toLocaleDateString()} • {Math.round(quote.totals?.gross || 0).toLocaleString()} Ft
+                                    </div>
+                                </div>
+                                <ChevronRight size={18} className="text-gray-300 ml-2 shrink-0" />
+                            </div>
+                        ))
+                    ) : (
+                        <div className="p-8 text-center bg-white">
+                            <p className="text-sm text-gray-500 italic">Még nem készült árajánlat ehhez az ügyfélhez.</p>
+                            <div className="flex justify-center mt-4">
+                                <Button
+                                    variant="secondary"
+                                    size="sm"
+                                    onClick={handleCreateQuote}
+                                    className="text-indigo-600 border-indigo-200 hover:bg-indigo-50"
+                                >
+                                    <Plus size={16} className="mr-1" /> Első árajánlat készítése
+                                </Button>
+                            </div>
+                        </div>
+                    )}
                 </div>
             </Card>
 
