@@ -11,7 +11,7 @@ import { useAuth } from '../../hooks/useAuth';
 import { useProjects } from '../../hooks/useProjects';
 
 export default function Team() {
-    const { currentUser } = useAuth();
+    const { currentUser, isAdmin } = useAuth();
     const [members, setMembers] = useState([]);
     const [showAddModal, setShowAddModal] = useState(false);
     const [showEditModal, setShowEditModal] = useState(false);
@@ -202,23 +202,25 @@ export default function Team() {
                     </h1>
                     <p className="text-gray-500 text-sm truncate">Alkalmazottak kezelése</p>
                 </div>
-                <div className="flex gap-2 shrink-0">
-                    <Button
-                        variant="secondary"
-                        onClick={() => setShowShareModal(true)}
-                        className="whitespace-nowrap shadow-sm"
-                        size="sm"
-                    >
-                        <Briefcase size={18} className="mr-2" /> Munka megosztása
-                    </Button>
-                    <Button
-                        onClick={() => setShowAddModal(true)}
-                        className="whitespace-nowrap shadow-md shadow-primary-100"
-                        size="sm"
-                    >
-                        <UserPlus size={18} className="mr-2" /> Új tag
-                    </Button>
-                </div>
+                {isAdmin && (
+                    <div className="flex gap-2 shrink-0">
+                        <Button
+                            variant="secondary"
+                            onClick={() => setShowShareModal(true)}
+                            className="whitespace-nowrap shadow-sm"
+                            size="sm"
+                        >
+                            <Briefcase size={18} className="mr-2" /> Munka megosztása
+                        </Button>
+                        <Button
+                            onClick={() => setShowAddModal(true)}
+                            className="whitespace-nowrap shadow-md shadow-primary-100"
+                            size="sm"
+                        >
+                            <UserPlus size={18} className="mr-2" /> Új tag
+                        </Button>
+                    </div>
+                )}
             </header>
 
             <div className="grid gap-3">
@@ -250,6 +252,19 @@ export default function Team() {
                                 >
                                     <Phone size={16} />
                                 </a>
+                            )}
+                            {isAdmin && member.role === 'employee' && (
+                                <button
+                                    className="p-1.5 bg-primary-50 text-primary-600 rounded-lg hover:bg-primary-100 transition-colors"
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        setShareData({ ...shareData, employeeUid: member.id });
+                                        setShowShareModal(true);
+                                    }}
+                                    title="Munka kiosztása"
+                                >
+                                    <Briefcase size={16} />
+                                </button>
                             )}
                             <a
                                 href={`mailto:${member.email}`}
