@@ -10,12 +10,14 @@
         "preview": "vite preview"
     },
     "dependencies": {
+        "@capacitor-firebase/authentication": "^8.0.1",
         "@capacitor/android": "^8.1.0",
         "@capacitor/cli": "^8.1.0",
         "@capacitor/core": "^8.1.0",
         "@capacitor/filesystem": "^8.1.2",
+        "@capacitor/local-notifications": "^8.0.1",
         "@capacitor/share": "^8.0.1",
-        "@capacitor-firebase/authentication": "^8.0.1",
+        "@emailjs/browser": "^4.4.1",
         "firebase": "^12.6.0",
         "jspdf": "^4.2.0",
         "lucide-react": "^0.331.0",

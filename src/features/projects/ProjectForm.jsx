@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import { db } from '../../services/firebase';
-import { doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc, updateDoc, onSnapshot } from 'firebase/firestore';
 import { User, Phone, Mail, MapPin, Calendar, FileText, ArrowLeft, Save } from 'lucide-react';
 import Card from '../../components/ui/Card';
 import Input from '../../components/ui/Input';
@@ -22,18 +22,32 @@ const ProjectForm = ({ isEdit = false }) => {
         note: '',
         status: 'active',
         start: '',
-        end: ''
+        end: '',
+        assignedTo: ''
     });
+    const [teamMembers, setTeamMembers] = useState([]);
     const [loading, setLoading] = useState(isEdit);
 
     useEffect(() => {
-        if (isEdit && id && currentUser) {
+        if (!currentUser) return;
+
+        // Fetch team members for assignment
+        const teamRef = doc(db, 'users', currentUser.uid, 'settings', 'team');
+        const unsubTeam = onSnapshot(teamRef, (docSnap) => {
+            if (docSnap.exists()) {
+                const data = docSnap.data();
+                const activeMembers = (data.members || []).filter(m => m.status === 'active');
+                setTeamMembers(activeMembers.map(m => ({ value: m.id, label: m.name || m.email })));
+            }
+        });
+
+        if (isEdit && id) {
             const fetchProject = async () => {
                 try {
                     const docRef = doc(db, 'users', currentUser.uid, 'projects', id);
                     const docSnap = await getDoc(docRef);
                     if (docSnap.exists()) {
-                        setFormData(docSnap.data());
+                        setFormData(prev => ({ ...prev, ...docSnap.data() }));
                     }
                 } catch (err) {
                     console.error("Error fetching project for edit:", err);
@@ -43,6 +57,8 @@ const ProjectForm = ({ isEdit = false }) => {
             };
             fetchProject();
         }
+
+        return () => unsubTeam();
     }, [isEdit, id, currentUser]);
 
     const handleChange = (e) => {
@@ -147,13 +163,24 @@ const ProjectForm = ({ isEdit = false }) => {
                             <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wider mb-4">Munka Részletei</h3>
                         </div>
 
-                        <Select
-                            label="Állapot"
-                            name="status"
-                            value={formData.status}
-                            onChange={handleChange}
-                            options={statusOptions}
-                        />
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <Select
+                                label="Állapot"
+                                name="status"
+                                value={formData.status}
+                                onChange={handleChange}
+                                options={statusOptions}
+                            />
+                            {teamMembers.length > 0 && (
+                                <Select
+                                    label="Felelős (Csapat)"
+                                    name="assignedTo"
+                                    value={formData.assignedTo}
+                                    onChange={handleChange}
+                                    options={[{ value: '', label: 'Saját magam' }, ...teamMembers]}
+                                />
+                            )}
+                        </div>
 
                         <div className="grid grid-cols-2 gap-4">
                             <Input

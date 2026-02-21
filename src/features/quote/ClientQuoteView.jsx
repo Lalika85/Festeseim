@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuotes } from '../../hooks/useQuotes';
 import { useAuth } from '../../hooks/useAuth';
+import { db } from '../../services/firebase';
+import { doc, updateDoc } from 'firebase/firestore';
 import { CheckCircle2, FileText, Download, Printer, User, Building2, MapPin, Mail, Phone, Calendar, Info, ArrowLeft } from 'lucide-react';
 import Card from '../../components/ui/Card';
 import Button from '../../components/ui/Button';
@@ -18,6 +20,34 @@ export default function ClientQuoteView() {
     const [loading, setLoading] = useState(true);
     const [isAccepted, setIsAccepted] = useState(false);
     const [showSignPad, setShowSignPad] = useState(false);
+    const [agreedToTerms, setAgreedToTerms] = useState(false);
+    const [clientIp, setClientIp] = useState('0.0.0.0');
+
+    useEffect(() => {
+        // Fetch client IP for audit trail
+        const fetchIp = async () => {
+            try {
+                const res = await fetch('https://api.ipify.org?format=json');
+                const data = await res.json();
+                setClientIp(data.ip);
+            } catch (e) {
+                console.warn('IP fetch failed', e);
+            }
+        };
+        fetchIp();
+    }, []);
+
+    const generateContentHash = (quote) => {
+        // Create a unique fingerprint of the quote content to prevent tampering
+        const content = `${quote.number}-${quote.date}-${quote.totals?.gross}-${quote.items.length}`;
+        let hash = 0;
+        for (let i = 0; i < content.length; i++) {
+            const char = content.charCodeAt(i);
+            hash = ((hash << 5) - hash) + char;
+            hash = hash & hash; // Convert to 32bit integer
+        }
+        return `FP-${Math.abs(hash).toString(16).toUpperCase()}`;
+    };
 
     useEffect(() => {
         const fetchQuote = async () => {
@@ -27,20 +57,17 @@ export default function ClientQuoteView() {
                     setData(result);
                     if (result.quote.status !== 'accepted') {
                         // Automatically update to 'viewed' if it was just 'sent'
-                        try {
-                            // We need to use updateDoc directly here because updateStatus might be restricted or require auth hooks
-                            // But since we are in Client view, we might not have auth.
-                            // The firestore rules we added allow public update for 'status' field.
-                            // We need to import db, doc, updateDoc if they are not imported or available.
-                            // Looking at imports: import { useQuotes } from '../../hooks/useQuotes';
-                            // We might need to import firebase stuff directly if useQuotes relies on auth.
-
-                            // Actually, let's keep it simple and safe.
-                            // If useQuotes.updateStatus works, great. If not, we skip it for now or implement direct call.
-                            // The original code commented it out. 
-                            // Let's implement the direct call pattern I used in festeseim-dev.
-                        } catch (e) {
-                            console.warn('Could not update viewed status', e);
+                        if (result.quote.status === 'sent') {
+                            try {
+                                const docRef = doc(db, 'users', userId, 'quotes', quoteId);
+                                await updateDoc(docRef, {
+                                    status: 'viewed',
+                                    viewedAt: new Date().toISOString(),
+                                    updatedAt: new Date().toISOString()
+                                });
+                            } catch (e) {
+                                console.warn('Could not update viewed status', e);
+                            }
                         }
                     } else {
                         setIsAccepted(true);
@@ -62,21 +89,73 @@ export default function ClientQuoteView() {
     const primaryColor = branding.primaryColor || '#2563eb';
 
     const handleAccept = async (signatureData) => {
+        if (!userId || !quoteId) {
+            alert('Hiba: Hiányzó azonosítók a linkben.');
+            return;
+        }
+
+        if (!agreedToTerms) {
+            alert('Kérjük, fogadd el a jogi nyilatkozatot a folytatáshoz!');
+            return;
+        }
+
         try {
-            // In a real app, updateStatus would work here if rules allow or use a cloud function
-            // For now we'll assume we update the quote doc directly if rules allow public write to status
-            // Note: security rules should be updated later to allow this specific field
-            await updateStatus(quoteId, 'accepted'); // This uses useQuotes which requires auth
-            // Since this is CLIENT view, useQuotes might fail if not logged in.
-            // Ideally we need a separate service call. But for this MVP prototype:
+            const docRef = doc(db, 'users', userId, 'quotes', quoteId);
+            const now = new Date().toISOString();
+            const contentHash = generateContentHash(quote);
+
+            const updatePayload = {
+                status: 'accepted',
+                acceptedAt: now,
+                signatureUrl: signatureData,
+                updatedAt: now,
+                // Audit & Legal Data
+                audit: {
+                    ip: clientIp,
+                    userAgent: navigator.userAgent,
+                    contentHash: contentHash,
+                    legalVersion: '2026-v1',
+                    consent: true
+                }
+            };
+
+            await updateDoc(docRef, updatePayload);
             setIsAccepted(true);
             setShowSignPad(false);
-            alert('Árajánlat elfogadva! Köszönjük.');
+            alert('Sikeres elfogadás! Az alkalmazás értesíteni fogja a kivitelezőt. 🎉');
         } catch (err) {
-            console.error(err);
-            alert('Hiba az elfogadás során.');
+            console.error("CRITICAL: handleAccept error:", err);
+            alert(`Hiba az elfogadás során! \nÜzenet: ${err.message}`);
         }
     };
+
+    if (isAccepted) {
+        return (
+            <div className="min-h-screen bg-white flex items-center justify-center p-4 font-inter">
+                <div className="max-w-md w-full text-center animate-in fade-in zoom-in duration-500">
+                    <div className="w-24 h-24 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-8 shadow-xl shadow-green-50">
+                        <CheckCircle2 size={48} className="text-green-600" />
+                    </div>
+                    <h1 className="text-3xl font-black text-gray-900 mb-4 tracking-tight">Köszönjük! 🎉</h1>
+                    <p className="text-gray-600 text-lg leading-relaxed mb-10">
+                        Sikeresen elfogadtad és aláírtad az árajánlatot (# {quote.number}). A kivitelező azonnal értesítést kapott erről.
+                    </p>
+                    <div className="space-y-4">
+                        <Button
+                            variant="secondary"
+                            className="w-full bg-gray-50 border-gray-200 text-gray-600"
+                            onClick={() => window.print()}
+                        >
+                            <Printer size={18} className="mr-2" /> Másolat nyomtatása / Mentése
+                        </Button>
+                        <p className="text-xs text-gray-400 font-medium uppercase tracking-widest mt-8 italic">
+                            A dokumentum jogerősnek minősül.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="min-h-screen bg-gray-50/50 pb-20 font-inter">
@@ -106,8 +185,8 @@ export default function ClientQuoteView() {
                         )}
                         <h1 className="text-4xl font-extrabold text-gray-900 tracking-tight leading-none mb-2"># {quote.number}</h1>
                         <div className="flex items-center gap-2">
-                            <Badge className={`${isAccepted ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'} border-0 px-3 py-1 font-bold uppercase tracking-wider text-[10px]`}>
-                                {isAccepted ? 'Elfogadva' : 'Hivatalos Ajánlat'}
+                            <Badge className="bg-blue-100 text-blue-700 border-0 px-3 py-1 font-bold uppercase tracking-wider text-[10px]">
+                                Hivatalos Ajánlat
                             </Badge>
                             <span className="text-sm text-gray-400">|</span>
                             <span className="text-sm text-gray-500 flex items-center gap-1.5 font-medium"><Calendar size={14} /> {quote.date}</span>
@@ -118,11 +197,9 @@ export default function ClientQuoteView() {
                         <Button variant="secondary" className="bg-white border-gray-200 text-gray-600 hover:bg-gray-50" onClick={() => window.print()}>
                             <Printer size={18} className="mr-2" /> Nyomtatás
                         </Button>
-                        {!isAccepted && (
-                            <Button style={{ backgroundColor: primaryColor }} className="text-white shadow-xl shadow-blue-100" onClick={() => setShowSignPad(true)}>
-                                <CheckCircle2 size={18} className="mr-2" /> Elfogadom & Aláírom
-                            </Button>
-                        )}
+                        <Button style={{ backgroundColor: primaryColor }} className="text-white shadow-xl shadow-blue-100" onClick={() => setShowSignPad(true)}>
+                            <CheckCircle2 size={18} className="mr-2" /> Elfogadom & Aláírom
+                        </Button>
                     </div>
                 </div>
 
@@ -248,8 +325,12 @@ export default function ClientQuoteView() {
                         </div>
                         <div className="bg-gray-50 p-4 rounded-xl border border-gray-100">
                             <div className="text-center text-[10px] text-gray-300 uppercase font-black mb-2 opacity-50">Ügyfél aláírása</div>
-                            <div className="bg-white p-2 rounded border border-gray-100">
-                                <div className="h-10 w-40 flex items-center justify-center text-gray-200 text-xs italic">Signature Image placeholder</div>
+                            <div className="bg-white p-2 rounded border border-gray-100 flex items-center justify-center">
+                                {quote.signatureUrl ? (
+                                    <img src={quote.signatureUrl} alt="Aláírás" className="h-16 object-contain" />
+                                ) : (
+                                    <div className="h-10 w-40 flex items-center justify-center text-gray-200 text-xs italic">Nincs aláírás</div>
+                                )}
                             </div>
                         </div>
                     </div>
@@ -260,10 +341,32 @@ export default function ClientQuoteView() {
             {showSignPad && (
                 <div className="fixed inset-0 z-[100] bg-gray-900/40 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto">
                     <div className="bg-white w-full max-w-lg rounded-[2.5rem] shadow-2xl p-8 relative animate-in slide-in-from-bottom-8 duration-300">
-                        <button onClick={() => setShowSignPad(false)} className="absolute top-6 right-6 p-2 text-gray-400 hover:text-gray-600 transition-colors"> Nyitás/zárás </button>
+                        <button onClick={() => setShowSignPad(false)} className="absolute top-6 right-6 p-2 text-gray-400 hover:text-gray-600 transition-colors"> Bezárás </button>
                         <h2 className="text-2xl font-black text-gray-900 mb-2">Ajánlat Elfogadása</h2>
-                        <p className="text-gray-500 text-sm mb-8 leading-relaxed">Kérjük, írd alá az ujjaddal vagy egérrel a lenti mezőben az érvényesítéshez.</p>
-                        <SignaturePad onSave={handleAccept} onClear={() => { }} />
+                        <p className="text-gray-500 text-sm mb-6 leading-relaxed italic">
+                            A dokumentum aláírásával és elküldésével Ön elfogadja az árajánlat tartalmát és kifejezi megrendelési szándékát.
+                        </p>
+
+                        <div className="bg-blue-50/50 p-4 rounded-2xl border border-blue-100 mb-6">
+                            <label className="flex items-start gap-3 cursor-pointer group">
+                                <div className="mt-1">
+                                    <input
+                                        type="checkbox"
+                                        checked={agreedToTerms}
+                                        onChange={(e) => setAgreedToTerms(e.target.checked)}
+                                        className="w-5 h-5 rounded border-blue-200 text-blue-600 focus:ring-blue-500"
+                                    />
+                                </div>
+                                <span className="text-xs text-blue-800 leading-relaxed font-medium">
+                                    Kijelentem, hogy az árajánlatban szereplő feltételeket és tételeket megismertem, és azokat változtatás nélkül elfogadom. Az aláírásommal visszavonhatatlan megrendelést adok le.
+                                </span>
+                            </label>
+                        </div>
+
+                        <div className={`transition-opacity duration-300 ${agreedToTerms ? 'opacity-100' : 'opacity-40 pointer-events-none'}`}>
+                            <p className="text-gray-500 text-[10px] uppercase font-bold tracking-wider mb-2">Írd alá az ujjaddal vagy egérrel:</p>
+                            <SignaturePad onSave={handleAccept} onClear={() => { }} />
+                        </div>
                     </div>
                 </div>
             )}

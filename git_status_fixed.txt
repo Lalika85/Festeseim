@@ -1,0 +1,45 @@
+﻿ M android/app/src/main/AndroidManifest.xml
+ M android/app/src/main/java/com/vallalkozoi/app/MainActivity.java
+ M android/app/src/main/res/drawable-v24/ic_launcher_foreground.xml
+ M android/app/src/main/res/drawable/ic_launcher_background.xml
+ M android/app/src/main/res/layout/activity_main.xml
+ M android/app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml
+ M android/app/src/main/res/mipmap-anydpi-v26/ic_launcher_round.xml
+ M android/app/src/main/res/values/ic_launcher_background.xml
+ M android/app/src/main/res/values/strings.xml
+ M android/app/src/main/res/values/styles.xml
+ M android/app/src/main/res/xml/file_paths.xml
+ M android/build.gradle
+ M android/capacitor.settings.gradle
+ M android/gradle.properties
+ M android/settings.gradle
+ M firebase.json
+ M firestore.indexes.json
+ M firestore.rules
+ M package-lock.json
+ M package.json
+ M src/App.jsx
+ M src/features/calendar/Calendar.jsx
+ M src/features/dashboard/Dashboard.jsx
+ M src/features/profile/Profile.jsx
+ M src/features/projects/ProjectDetail.jsx
+ M src/features/projects/ProjectForm.jsx
+ M src/features/projects/Projects.jsx
+ M src/features/quote/ClientQuoteView.jsx
+ M src/features/quote/QuoteEditor.jsx
+ M src/features/quote/QuoteList.jsx
+ M src/features/settings/Settings.jsx
+ M src/features/shop/ShopManager.jsx
+ M src/hooks/useQuotes.js
+ M src/index.css
+ M src/main.jsx
+ M src/services/firebase.js
+ M src/services/pdfGenerator.js
+?? .firebase/
+?? festeseim-dev/
+?? git_status_fixed.txt
+?? sha1.txt
+?? sha1_line.txt
+?? sha1_new.txt
+?? sha1_new_line.txt
+?? src/components/ai/

@@ -1,15 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import app, { db, storage } from '../../services/firebase';
 import { collection, query, where, getDocs, addDoc, updateDoc, deleteDoc, doc, orderBy, onSnapshot } from 'firebase/firestore';
 import { ref, uploadBytes, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
-import { ArrowLeft, Plus, Trash2, ShoppingBag, Upload, Image as ImageIcon, CheckCircle, Circle, Camera } from 'lucide-react';
+import { ArrowLeft, Plus, Trash2, ShoppingBag, Upload, Image as ImageIcon, CheckCircle, Circle, Camera, Calculator as CalcIcon } from 'lucide-react';
 import Card from '../../components/ui/Card';
 import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input';
 import Select from '../../components/ui/Select';
 import Modal from '../../components/ui/Modal';
+import Calculator from '../calculator/Calculator';
 
 import { useProjects } from '../../hooks/useProjects';
 
@@ -17,7 +18,9 @@ export default function ShopManager() {
     const { currentUser } = useAuth();
     const { projects } = useProjects();
     const navigate = useNavigate();
+    const location = useLocation();
     const [searchParams, setSearchParams] = useSearchParams();
+    const isLocked = location.state?.locked;
     const [items, setItems] = useState([]);
     const [selectedProject, setSelectedProject] = useState(searchParams.get('project') || '');
     const [loading, setLoading] = useState(false);
@@ -33,6 +36,7 @@ export default function ShopManager() {
         room: ''
     });
     const [isUploading, setIsUploading] = useState(false);
+    const [showCalculator, setShowCalculator] = useState(false);
 
     // Filter
     const [filter, setFilter] = useState('all'); // all, active, done
@@ -162,13 +166,25 @@ export default function ShopManager() {
 
             <div className="flex flex-col md:flex-row gap-4 mb-6">
                 <div className="flex-1">
-                    <Select
-                        label="Szűrés Ügyfél szerint"
-                        value={selectedProject}
-                        onChange={(e) => handleProjectChange(e.target.value)}
-                        options={[{ value: '', label: 'Összes / Általános' }, ...projects.map(p => ({ value: p.id, label: p.client }))]}
-                        className="!mb-0"
-                    />
+                    {isLocked ? (
+                        <div className="bg-primary-50 border border-primary-200 rounded-lg p-3 flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-full bg-primary-100 flex items-center justify-center text-primary-600 font-bold">
+                                {projects.find(p => p.id === selectedProject)?.client?.charAt(0) || 'Ü'}
+                            </div>
+                            <div>
+                                <div className="text-xs text-primary-600 font-bold uppercase tracking-wider">Kiválasztott Ügyfél</div>
+                                <div className="font-bold text-gray-900 text-lg">{projects.find(p => p.id === selectedProject)?.client || 'Betöltés...'}</div>
+                            </div>
+                        </div>
+                    ) : (
+                        <Select
+                            label="Szűrés Ügyfél szerint"
+                            value={selectedProject}
+                            onChange={(e) => handleProjectChange(e.target.value)}
+                            options={[{ value: '', label: 'Összes / Általános' }, ...projects.map(p => ({ value: p.id, label: p.client }))]}
+                            className="!mb-0"
+                        />
+                    )}
                 </div>
                 <div className="flex bg-white rounded-lg border border-gray-200 p-1 h-[42px] self-end">
                     <button onClick={() => setFilter('all')} className={`px-4 rounded-md text-sm font-medium transition-colors ${filter === 'all' ? 'bg-primary-100 text-primary-700' : 'text-gray-500 hover:text-gray-700'}`}>Mind</button>
@@ -178,9 +194,19 @@ export default function ShopManager() {
             </div>
 
             <Card className="mb-8 !p-4 bg-primary-50 border-primary-100 shadow-sm">
-                <h3 className="font-bold text-gray-800 mb-3 flex items-center gap-2">
-                    <Plus size={18} className="text-primary-600" /> Új tétel felvétele
-                </h3>
+                <div className="flex justify-between items-center mb-3">
+                    <h3 className="font-bold text-gray-800 flex items-center gap-2">
+                        <Plus size={18} className="text-primary-600" /> Új tétel felvétele
+                    </h3>
+                    <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setShowCalculator(true)}
+                        className="text-primary-600 font-bold flex items-center gap-1.5"
+                    >
+                        <CalcIcon size={16} /> Anyagkalkulátor
+                    </Button>
+                </div>
 
                 <div className="flex flex-col gap-3">
                     <div className="grid grid-cols-1 md:grid-cols-12 gap-3">
@@ -310,6 +336,16 @@ export default function ShopManager() {
                     </div>
                 )}
             </div>
+            {showCalculator && (
+                <Modal
+                    isOpen={showCalculator}
+                    onClose={() => setShowCalculator(false)}
+                    title="Anyagkalkulátor"
+                    maxWidth="max-w-4xl"
+                >
+                    <Calculator isModal onClose={() => setShowCalculator(false)} />
+                </Modal>
+            )}
         </div>
     );
 }

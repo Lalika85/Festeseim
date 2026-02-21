@@ -9,7 +9,7 @@ service cloud.firestore {
     match /users/{userId}/quotes/{quoteId} {
       allow read: if true;
       allow update: if true 
-                    && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'viewedAt', 'acceptedAt', 'signatureUrl']);
+                    && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'viewedAt', 'acceptedAt', 'signatureUrl', 'updatedAt']);
     }
 
     match /users/{userId}/settings/branding {

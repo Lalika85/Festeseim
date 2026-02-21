@@ -7,7 +7,11 @@ import Card from '../../components/ui/Card';
 import Button from '../../components/ui/Button';
 import Modal from '../../components/ui/Modal';
 import Input from '../../components/ui/Input';
-import { LogOut, User, Bell, Info, Briefcase, Plus, Edit2, Trash2, Upload } from 'lucide-react';
+import { LogOut, User, Bell, Info, Briefcase, Plus, Edit2, Trash2, Upload, BellRing, CheckCircle, Save } from 'lucide-react';
+import { loadUserSettings, syncSettings } from '../../services/firestore';
+import { useToast } from '../../hooks/useToast';
+import { useNotifications } from '../../contexts/NotificationContext';
+import { useProjects } from '../../hooks/useProjects';
 
 export default function Settings() {
     const { currentUser, logout } = useAuth();
@@ -28,10 +32,54 @@ export default function Settings() {
         logoUrl: ''
     });
     const [uploading, setUploading] = useState(false);
+    const { showToast } = useToast();
+    const [notifications, setNotifications] = useState({
+        upcomingWork: true,
+        quoteAccepted: true
+    });
+    const [isNotifySaving, setIsNotifySaving] = useState(false);
+    const { projects } = useProjects();
+    const { sendTestNotification } = useNotifications(projects);
+    const [logs, setLogs] = useState([]);
 
     useEffect(() => {
-        if (currentUser) fetchCompanies();
+        const interval = setInterval(() => {
+            const storedLogs = JSON.parse(localStorage.getItem('notification_logs') || '[]');
+            setLogs(storedLogs);
+        }, 2000);
+        return () => clearInterval(interval);
+    }, []);
+
+    const clearLogs = () => {
+        localStorage.removeItem('notification_logs');
+        setLogs([]);
+    };
+
+    useEffect(() => {
+        if (currentUser) {
+            fetchCompanies();
+            fetchNotificationSettings();
+        }
     }, [currentUser]);
+
+    const fetchNotificationSettings = async () => {
+        const data = await loadUserSettings(currentUser.uid, 'notifications');
+        if (data) setNotifications(prev => ({ ...prev, ...data }));
+    };
+
+    const handleSaveNotifications = async () => {
+        if (!currentUser) return;
+        setIsNotifySaving(true);
+        try {
+            await syncSettings(currentUser.uid, 'notifications', notifications);
+            showToast('Értesítési beállítások mentve!', 'success');
+        } catch (err) {
+            console.error("Error saving notifications:", err);
+            showToast('Hiba a mentéskor!', 'danger');
+        } finally {
+            setIsNotifySaving(false);
+        }
+    };
 
     const fetchCompanies = async () => {
         try {
@@ -164,6 +212,109 @@ export default function Settings() {
                 <Button variant="danger" icon={<LogOut size={20} />} onClick={logout} className="w-full">
                     Kijelentkezés
                 </Button>
+            </Card>
+
+            <Card header="Értesítések" className="mb-6">
+                <div className="space-y-4">
+                    <div className="flex items-center justify-between p-3 bg-gray-50 rounded-2xl border border-gray-100">
+                        <div className="flex items-center gap-3">
+                            <div className="p-2 bg-blue-100 text-blue-600 rounded-lg">
+                                <BellRing size={18} />
+                            </div>
+                            <div>
+                                <div className="text-sm font-bold text-gray-900">Holnapi munka</div>
+                                <div className="text-xs text-gray-500">Jelezzen, ha másnap munka kezdődik</div>
+                            </div>
+                        </div>
+                        <label className="relative inline-flex items-center cursor-pointer">
+                            <input
+                                type="checkbox"
+                                className="sr-only peer"
+                                checked={notifications.upcomingWork}
+                                onChange={(e) => setNotifications(prev => ({ ...prev, upcomingWork: e.target.checked }))}
+                            />
+                            <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary-600"></div>
+                        </label>
+                    </div>
+
+                    <div className="flex items-center justify-between p-3 bg-gray-50 rounded-2xl border border-gray-100">
+                        <div className="flex items-center gap-3">
+                            <div className="p-2 bg-green-100 text-green-600 rounded-lg">
+                                <CheckCircle size={18} />
+                            </div>
+                            <div>
+                                <div className="text-sm font-bold text-gray-900">Árajánlat elfogadás</div>
+                                <div className="text-xs text-gray-500">Jelezzen, ha aláírták az ajánlatot</div>
+                            </div>
+                        </div>
+                        <label className="relative inline-flex items-center cursor-pointer">
+                            <input
+                                type="checkbox"
+                                className="sr-only peer"
+                                checked={notifications.quoteAccepted}
+                                onChange={(e) => setNotifications(prev => ({ ...prev, quoteAccepted: e.target.checked }))}
+                            />
+                            <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary-600"></div>
+                        </label>
+                    </div>
+
+                    <Button
+                        onClick={handleSaveNotifications}
+                        loading={isNotifySaving}
+                        className="w-full mt-2 bg-primary-600 hover:bg-primary-700 h-11"
+                        icon={<Save size={18} />}
+                    >
+                        Beállítások mentése
+                    </Button>
+
+                    <div className="pt-4 mt-4 border-t border-gray-100">
+                        <p className="text-[10px] uppercase font-bold text-gray-400 tracking-widest mb-3">Diagnosztika</p>
+                        <div className="grid grid-cols-2 gap-2">
+                            <Button
+                                variant="secondary"
+                                onClick={sendTestNotification}
+                                className="w-full h-11 border-dashed border-2 hover:border-primary-300 hover:bg-primary-50 text-gray-600"
+                                icon={<Bell size={18} className="text-primary-500" />}
+                            >
+                                Teszt Értesítés
+                            </Button>
+                            <Button
+                                variant="secondary"
+                                onClick={() => {
+                                    const logs = JSON.parse(localStorage.getItem('notification_logs') || '[]');
+                                    const newLog = { timestamp: new Date().toLocaleTimeString(), message: 'Kézi napló teszt ✅', type: 'success' };
+                                    localStorage.setItem('notification_logs', JSON.stringify([newLog, ...logs].slice(0, 50)));
+                                    setLogs([newLog, ...logs]);
+                                }}
+                                className="w-full h-11 border-dashed border-2 hover:border-gray-300 hover:bg-gray-50 text-gray-400 text-[10px]"
+                            >
+                                Napló Teszt
+                            </Button>
+                        </div>
+                    </div>
+                </div>
+            </Card>
+
+            <Card header="Rendszer Napló" className="mb-6">
+                <div className="flex items-center justify-between mb-3">
+                    <p className="text-[10px] uppercase font-bold text-gray-400 tracking-widest">Utolsó események</p>
+                    <button onClick={clearLogs} className="text-[10px] text-red-500 font-bold uppercase hover:underline">Törlés</button>
+                </div>
+                <div className="bg-gray-900 rounded-xl p-3 h-48 overflow-y-auto font-mono text-[10px] space-y-1">
+                    {logs.length === 0 ? (
+                        <p className="text-gray-500 italic">Nincs rögzített esemény...</p>
+                    ) : (
+                        logs.map((log, i) => (
+                            <div key={i} className={`flex gap-2 ${log.type === 'success' ? 'text-green-400' :
+                                log.type === 'error' ? 'text-red-400' :
+                                    log.type === 'warn' ? 'text-yellow-400' : 'text-blue-300'
+                                }`}>
+                                <span className="opacity-50">[{log.timestamp}]</span>
+                                <span>{log.message}</span>
+                            </div>
+                        ))
+                    )}
+                </div>
             </Card>
 
             <Card header="Alkalmazás info">

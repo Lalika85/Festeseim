@@ -31,11 +31,38 @@ export default function Calendar() {
         end: ''
     });
 
-    const calColors = ["#1d4ed8", "#b91c1c", "#15803d", "#c2410c", "#0e7490", "#7e22ce", "#be185d", "#4338ca"];
+    const calColors = [
+        "#2563eb", // Blue
+        "#dc2626", // Red
+        "#16a34a", // Green
+        "#ca8a04", // Gold
+        "#9333ea", // Purple
+        "#0891b2", // Cyan
+        "#ea580c", // Orange
+        "#db2777", // Pink
+        "#4f46e5", // Indigo
+        "#65a30d", // Lime
+        "#0e7490", // Teal
+        "#b91c1c", // Maroon
+        "#7c2d12", // Brown
+        "#4338ca", // Dark Blue
+        "#be185d", // Deep Pink
+        "#15803d", // Dark Green
+        "#7e22ce", // Deep Purple
+        "#c2410c", // Dark Orange
+        "#0369a1", // Sky Blue
+        "#a21caf", // Magenta
+    ];
+
     const getProjectColor = (id) => {
         if (!id) return calColors[0];
         const strId = String(id);
-        return calColors[strId.charCodeAt(0) % calColors.length];
+        let hash = 0;
+        for (let i = 0; i < strId.length; i++) {
+            hash = strId.charCodeAt(i) + ((hash << 5) - hash);
+        }
+        const index = Math.abs(hash) % calColors.length;
+        return calColors[index];
     };
 
     const fetchGoogleEvents = useCallback(async () => {
@@ -283,10 +310,19 @@ export default function Calendar() {
                             >
                                 <div
                                     className="w-2.5 h-2.5 rounded-full flex-shrink-0"
-                                    style={{ background: e.type === 'project' ? getProjectColor(e.id || 'x') : '#4285F4' }}
+                                    style={{
+                                        background: e.type === 'project' ? getProjectColor(e.id || 'x') : '#4285F4',
+                                        opacity: e.status === 'done' ? 0.4 : 1
+                                    }}
                                 ></div>
-                                <div>
-                                    <div className="font-semibold text-gray-900">{e.client}</div>
+                                <div className="flex-1 min-w-0">
+                                    <div className="flex items-center gap-2">
+                                        <div className={`font-semibold text-gray-900 truncate ${e.status === 'done' ? 'line-through text-gray-400' : ''}`}>
+                                            {e.client}
+                                        </div>
+                                        {e.status === 'done' && <Badge variant="success" className="text-[9px] py-0 px-1">KÉSZ</Badge>}
+                                        {e.status === 'suspend' && <Badge variant="warning" className="text-[9px] py-0 px-1">SZÜNETEL</Badge>}
+                                    </div>
                                     <div className="text-xs text-gray-500">
                                         {e.type === 'project' ?
                                             `${e.start} - ${e.end}` :
