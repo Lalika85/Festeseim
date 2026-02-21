@@ -76,6 +76,74 @@ export default function Dashboard() {
                 </div>
             )}
 
+            {isEmployee && (
+                <div className="mb-8">
+                    <div className="flex items-center justify-between mb-4">
+                        <h2 className="text-lg font-bold text-gray-900 tracking-tight">Kiosztott munkák</h2>
+                        <span className="text-xs font-bold text-primary-600 bg-primary-50 px-3 py-1 rounded-full uppercase tracking-wider">
+                            {assignments.length} Feladat
+                        </span>
+                    </div>
+
+                    <div className="space-y-4">
+                        {assignments.length === 0 ? (
+                            <Card className="p-8 text-center border-dashed border-2 flex flex-col items-center gap-3">
+                                <div className="w-12 h-12 bg-gray-50 rounded-full flex items-center justify-center text-gray-400">
+                                    <Briefcase size={24} />
+                                </div>
+                                <p className="text-sm text-gray-500">Nincs még kiosztott munkád.</p>
+                            </Card>
+                        ) : (
+                            assignments.map((asgn) => (
+                                <Card key={asgn.id} className={`p-4 border-l-4 transition-all ${asgn.status === 'done' ? 'border-l-green-500 bg-green-50/30' : 'border-l-primary-500 bg-white'}`}>
+                                    <div className="flex justify-between items-start mb-3">
+                                        <div>
+                                            <h3 className="font-black text-gray-900 text-sm uppercase tracking-tight">{asgn.clientName}</h3>
+                                            <div className="flex items-center gap-1.5 text-xs text-gray-500 mt-0.5">
+                                                <MapPin size={12} className="shrink-0" />
+                                                <span className="truncate">{asgn.location || 'Nincs cím'}</span>
+                                            </div>
+                                        </div>
+                                        <Badge className={asgn.status === 'done' ? 'bg-green-100 text-green-700' : 'bg-primary-100 text-primary-700'}>
+                                            {asgn.status === 'done' ? 'Kész' : 'Kiosztva'}
+                                        </Badge>
+                                    </div>
+
+                                    {asgn.note && (
+                                        <div className="bg-white/50 border border-gray-100 p-3 rounded-xl text-xs text-gray-600 mb-4 shadow-sm">
+                                            <p className="font-bold text-[10px] text-gray-400 uppercase tracking-widest mb-1">Admin üzenete:</p>
+                                            "{asgn.note}"
+                                        </div>
+                                    )}
+
+                                    <div className="flex gap-2">
+                                        <Button
+                                            size="sm"
+                                            className="w-full text-xs font-bold py-2.5 rounded-xl shadow-sm"
+                                            onClick={() => navigate(`/shop?project=${asgn.projectId}`)}
+                                        >
+                                            <ShoppingBag size={14} className="mr-2" /> Bevásárlólista
+                                        </Button>
+                                        {asgn.status !== 'done' && (
+                                            <Button
+                                                size="sm"
+                                                variant="secondary"
+                                                className="text-xs shrink-0 p-2.5 rounded-xl border-gray-200"
+                                                onClick={async () => {
+                                                    await updateDoc(doc(db, 'users', currentUser.uid, 'assignments', asgn.id), { status: 'done' });
+                                                }}
+                                            >
+                                                <CheckCircle2 size={16} />
+                                            </Button>
+                                        )}
+                                    </div>
+                                </Card>
+                            ))
+                        )}
+                    </div>
+                </div>
+            )}
+
             <div className="mb-8">
                 <h3 className="text-xs font-bold text-gray-400 uppercase tracking-[0.2em] mb-4">Gyorsműveletek</h3>
                 <div className="grid grid-cols-1 gap-3">
@@ -152,74 +220,6 @@ export default function Dashboard() {
                     )}
                 </div>
             </div>
-
-            {isEmployee && (
-                <div className="mt-8">
-                    <div className="flex items-center justify-between mb-4">
-                        <h2 className="text-lg font-bold text-gray-900 tracking-tight">Kiosztott munkák</h2>
-                        <span className="text-xs font-bold text-primary-600 bg-primary-50 px-3 py-1 rounded-full uppercase tracking-wider">
-                            {assignments.length} Feladat
-                        </span>
-                    </div>
-
-                    <div className="space-y-4">
-                        {assignments.length === 0 ? (
-                            <Card className="p-8 text-center border-dashed border-2 flex flex-col items-center gap-3">
-                                <div className="w-12 h-12 bg-gray-50 rounded-full flex items-center justify-center text-gray-400">
-                                    <Briefcase size={24} />
-                                </div>
-                                <p className="text-sm text-gray-500">Nincs még kiosztott munkád.</p>
-                            </Card>
-                        ) : (
-                            assignments.map((asgn) => (
-                                <Card key={asgn.id} className={`p-4 border-l-4 transition-all ${asgn.status === 'done' ? 'border-l-green-500 bg-green-50/30' : 'border-l-primary-500 bg-white'}`}>
-                                    <div className="flex justify-between items-start mb-3">
-                                        <div>
-                                            <h3 className="font-black text-gray-900 text-sm uppercase tracking-tight">{asgn.clientName}</h3>
-                                            <div className="flex items-center gap-1.5 text-xs text-gray-500 mt-0.5">
-                                                <MapPin size={12} className="shrink-0" />
-                                                <span className="truncate">{asgn.location || 'Nincs cím'}</span>
-                                            </div>
-                                        </div>
-                                        <Badge className={asgn.status === 'done' ? 'bg-green-100 text-green-700' : 'bg-primary-100 text-primary-700'}>
-                                            {asgn.status === 'done' ? 'Kész' : 'Kiosztva'}
-                                        </Badge>
-                                    </div>
-
-                                    {asgn.note && (
-                                        <div className="bg-white/50 border border-gray-100 p-3 rounded-xl text-xs text-gray-600 mb-4 shadow-sm">
-                                            <p className="font-bold text-[10px] text-gray-400 uppercase tracking-widest mb-1">Admin üzenete:</p>
-                                            "{asgn.note}"
-                                        </div>
-                                    )}
-
-                                    <div className="flex gap-2">
-                                        <Button
-                                            size="sm"
-                                            className="w-full text-xs font-bold py-2.5 rounded-xl shadow-sm"
-                                            onClick={() => navigate(`/shop?project=${asgn.projectId}`)}
-                                        >
-                                            <ShoppingBag size={14} className="mr-2" /> Bevásárlólista
-                                        </Button>
-                                        {asgn.status !== 'done' && (
-                                            <Button
-                                                size="sm"
-                                                variant="secondary"
-                                                className="text-xs shrink-0 p-2.5 rounded-xl border-gray-200"
-                                                onClick={async () => {
-                                                    await updateDoc(doc(db, 'users', currentUser.uid, 'assignments', asgn.id), { status: 'done' });
-                                                }}
-                                            >
-                                                <CheckCircle2 size={16} />
-                                            </Button>
-                                        )}
-                                    </div>
-                                </Card>
-                            ))
-                        )}
-                    </div>
-                </div>
-            )}
 
             {isAdmin && !loading && projects.length > 0 && (
                 <div className="mt-8">

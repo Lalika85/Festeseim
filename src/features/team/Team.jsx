@@ -232,67 +232,61 @@ export default function Team() {
 
             <div className="grid gap-3">
                 {members.map((member) => (
-                    <Card key={member.id} className="flex items-center justify-between p-3 group hover:border-primary-200 transition-colors bg-white shadow-sm border border-gray-100">
-                        <div className="flex gap-3 items-center min-w-0">
-                            <div className="w-10 h-10 bg-gray-50 rounded-full flex items-center justify-center text-gray-400 group-hover:bg-primary-50 group-hover:text-primary-600 transition-colors shrink-0">
-                                <User size={20} />
-                            </div>
-                            <div className="min-w-0">
-                                <div className="flex items-center gap-2">
-                                    <h3 className="font-bold text-gray-900 text-sm truncate">{member.name || member.email}</h3>
-                                    <Badge className={`${member.role === 'admin' ? 'bg-amber-100 text-amber-700' : 'bg-blue-100 text-blue-700'} text-[10px] px-1.5 py-0`}>
-                                        {member.role === 'admin' ? 'Adm' : 'Alk'}
-                                    </Badge>
+                    <Card key={member.id} className="p-4 group hover:border-primary-200 transition-colors bg-white shadow-sm border border-gray-100 flex flex-col gap-4">
+                        <div className="flex items-center justify-between">
+                            <div className="flex gap-3 items-center min-w-0">
+                                <div className="w-12 h-12 bg-gray-50 rounded-2xl flex items-center justify-center text-gray-400 group-hover:bg-primary-50 group-hover:text-primary-600 transition-colors shrink-0">
+                                    <User size={24} />
                                 </div>
-                                <p className="text-[11px] text-gray-500 flex items-center gap-1 truncate">
-                                    <Mail size={10} className="shrink-0" /> {member.email}
-                                </p>
+                                <div className="min-w-0">
+                                    <div className="flex items-center gap-2">
+                                        <h3 className="font-bold text-gray-900 text-base truncate">{member.name || member.email}</h3>
+                                        <Badge className={`${member.role === 'admin' ? 'bg-amber-100 text-amber-700' : 'bg-blue-100 text-blue-700'} text-[10px] px-2 py-0.5 uppercase tracking-wider`}>
+                                            {member.role === 'admin' ? 'Admin' : 'Alkalmazott'}
+                                        </Badge>
+                                    </div>
+                                    <p className="text-xs text-gray-500 flex items-center gap-1.5 truncate mt-0.5">
+                                        <Mail size={12} className="shrink-0" /> {member.email}
+                                    </p>
+                                </div>
                             </div>
-                        </div>
-                        <div className="flex items-center gap-1.5 shrink-0 ml-2">
-                            {member.phone && (
-                                <a
-                                    href={`tel:${member.phone}`}
-                                    className="p-1.5 bg-green-50 text-green-600 rounded-lg hover:bg-green-100 transition-colors"
-                                    onClick={(e) => e.stopPropagation()}
-                                    title="Hívás"
-                                >
-                                    <Phone size={16} />
-                                </a>
-                            )}
-                            {isAdmin && member.role === 'employee' && (
-                                <button
-                                    className="p-1.5 bg-primary-50 text-primary-600 rounded-lg hover:bg-primary-100 transition-colors"
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        setShareData({ ...shareData, employeeUid: member.id });
-                                        setShowShareModal(true);
-                                    }}
-                                    title="Munka kiosztása"
-                                >
-                                    <Briefcase size={16} />
-                                </button>
-                            )}
-                            <a
-                                href={`mailto:${member.email}`}
-                                className="p-1.5 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors"
-                                onClick={(e) => e.stopPropagation()}
-                                title="Email"
-                            >
-                                <Mail size={16} />
-                            </a>
                             <Button
                                 variant="ghost"
                                 size="icon"
-                                className="p-1 h-8 w-8 text-gray-400"
+                                className="p-1 h-10 w-10 text-gray-300 hover:text-gray-600"
                                 onClick={() => {
                                     setEditingMember({ ...member });
                                     setShowEditModal(true);
                                 }}
                             >
-                                <MoreVertical size={18} />
+                                <MoreVertical size={20} />
                             </Button>
                         </div>
+
+                        {isAdmin && member.role === 'employee' && (
+                            <div className="flex gap-2">
+                                <Button
+                                    size="sm"
+                                    variant="secondary"
+                                    className="flex-1 text-xs font-bold bg-primary-50 text-primary-700 border-primary-100 hover:bg-primary-100"
+                                    onClick={() => {
+                                        setShareData({ ...shareData, employeeUid: member.id });
+                                        setShowShareModal(true);
+                                    }}
+                                >
+                                    <Briefcase size={14} className="mr-2" /> Munka kiosztása
+                                </Button>
+                                {member.phone && (
+                                    <a
+                                        href={`tel:${member.phone}`}
+                                        className="w-10 h-10 flex items-center justify-center bg-green-50 text-green-600 rounded-xl hover:bg-green-100 transition-colors shrink-0"
+                                        title="Hívás"
+                                    >
+                                        <Phone size={18} />
+                                    </a>
+                                )}
+                            </div>
+                        )}
                     </Card>
                 ))}
             </div>
