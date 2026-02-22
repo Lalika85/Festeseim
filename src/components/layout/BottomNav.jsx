@@ -32,12 +32,16 @@ export default function BottomNav() {
                             }`
                         }
                     >
-                        <div className={`p-1 rounded-xl transition-colors ${window.location.pathname === path ? 'bg-primary-50' : ''}`}>
-                            <Icon size={24} strokeWidth={isActive ? 2.5 : 2} />
-                        </div>
-                        <span className={`text-[10px] font-bold mt-1 uppercase tracking-tighter ${window.location.pathname === path ? 'text-primary-600' : 'text-gray-400'}`}>
-                            {label}
-                        </span>
+                        {({ isActive }) => (
+                            <>
+                                <div className={`p-1 rounded-xl transition-colors ${isActive ? 'bg-primary-50' : ''}`}>
+                                    <Icon size={24} strokeWidth={isActive ? 2.5 : 2} />
+                                </div>
+                                <span className={`text-[10px] font-bold mt-1 uppercase tracking-tighter ${isActive ? 'text-primary-600' : 'text-gray-400'}`}>
+                                    {label}
+                                </span>
+                            </>
+                        )}
                     </NavLink>
                 ))}
             </div>
