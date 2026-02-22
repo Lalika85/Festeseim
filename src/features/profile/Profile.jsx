@@ -27,10 +27,18 @@ const Profile = () => {
 
     useEffect(() => {
         const fetchProfile = async () => {
-            if (!currentUser) return;
-            const profileData = await loadUserSettings(currentUser.uid, 'profile');
-            if (profileData) setProfile(prev => ({ ...prev, ...profileData }));
-            setLoading(false);
+            if (!currentUser) {
+                setLoading(false);
+                return;
+            }
+            try {
+                const profileData = await loadUserSettings(currentUser.uid, 'profile');
+                if (profileData) setProfile(prev => ({ ...prev, ...profileData }));
+            } catch (err) {
+                console.error("Fetch profile error:", err);
+            } finally {
+                setLoading(false);
+            }
         };
         fetchProfile();
     }, [currentUser]);

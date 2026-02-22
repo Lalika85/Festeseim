@@ -34,18 +34,30 @@ const AdminRoute = ({ children }) => {
     return children;
 };
 
-function AppContent() {
-    const { currentUser, isAdmin } = useAuth();
-    const { projects } = useProjects();
+import { useLocation } from 'react-router-dom';
 
-    // Global notification listener
+function AppContent() {
+    const { currentUser, loading } = useAuth();
+    const location = useLocation();
+    const isPublicQuoteView = location.pathname.includes('/quote/view/');
+
+    // useNotifications should not be called if not authenticated or in public view ideally,
+    // but its own logic handles internal guards.
     useNotifications();
 
-    return (
-        <div className="app-container">
-            {currentUser && <Header />}
+    if (loading) {
+        return (
+            <div className="flex items-center justify-center min-h-screen">
+                <div className="animate-spin text-4xl">⏳</div>
+            </div>
+        );
+    }
 
-            <main className="main-wrapper">
+    return (
+        <div className={`min-h-screen bg-gray-50 ${!isPublicQuoteView && currentUser ? 'pb-20' : ''}`}>
+            {!isPublicQuoteView && currentUser && <Header />}
+
+            <main className={!isPublicQuoteView ? 'view-container pt-4' : ''}>
                 <Routes>
                     <Route path="/login" element={!currentUser ? <Login /> : <Navigate to="/" />} />
                     <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
@@ -59,7 +71,7 @@ function AppContent() {
                     {/* Calendar - Admin Only */}
                     <Route path="/calendar" element={<AdminRoute><Calendar /></AdminRoute>} />
 
-                    {/* Profile - Open to all */}
+                    {/* Profile - Open to all members */}
                     <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
 
                     {/* Settings - Accessible to all (content restricted inside) */}
@@ -82,7 +94,7 @@ function AppContent() {
                 </Routes>
             </main>
 
-            {currentUser && <BottomNav />}
+            {!isPublicQuoteView && currentUser && <BottomNav />}
         </div>
     );
 }

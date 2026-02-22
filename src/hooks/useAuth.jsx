@@ -7,7 +7,7 @@ const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
     const [currentUser, setCurrentUser] = useState(null);
-    const [role, setRole] = useState('admin');
+    const [role, setRole] = useState(null);
     const [ownerUid, setOwnerUid] = useState(null);
     const [loading, setLoading] = useState(true);
 
@@ -88,29 +88,37 @@ export const AuthProvider = ({ children }) => {
             if (isNative) {
                 // Native Auth Listener
                 try {
-                    const result = await import('@capacitor-firebase/authentication').then(m => m.FirebaseAuthentication.getCurrentUser());
+                    const authModule = await import('@capacitor-firebase/authentication');
+                    const result = await authModule.FirebaseAuthentication.getCurrentUser();
+
                     if (result.user) {
                         setCurrentUser(result.user);
                         await fetchRoleInfo(result.user.uid, result.user.email);
+                    } else {
+                        setRole(null);
+                        setOwnerUid(null);
                     }
 
-                    await import('@capacitor-firebase/authentication').then(m => {
-                        m.FirebaseAuthentication.addListener('authStateChange', async (change) => {
-                            setCurrentUser(change.user);
-                            if (change.user) {
-                                await fetchRoleInfo(change.user.uid, change.user.email);
-                            } else {
-                                setRole('admin');
-                                setOwnerUid(null);
-                            }
-                            setLoading(false);
-                        });
+                    await authModule.FirebaseAuthentication.addListener('authStateChange', async (change) => {
+                        setCurrentUser(change.user);
+                        if (change.user) {
+                            await fetchRoleInfo(change.user.uid, change.user.email);
+                        } else {
+                            setRole(null);
+                            setOwnerUid(null);
+                        }
+                        setLoading(false);
                     });
                 } catch (err) {
                     console.error("Native auth setup failed:", err);
                     unsubscribe = onAuthStateChanged(auth, async (user) => {
                         setCurrentUser(user);
-                        if (user) await fetchRoleInfo(user.uid, user.email);
+                        if (user) {
+                            await fetchRoleInfo(user.uid, user.email);
+                        } else {
+                            setRole(null);
+                            setOwnerUid(null);
+                        }
                         setLoading(false);
                     });
                 }
@@ -122,7 +130,7 @@ export const AuthProvider = ({ children }) => {
                     if (user) {
                         await fetchRoleInfo(user.uid, user.email);
                     } else {
-                        setRole('admin');
+                        setRole(null);
                         setOwnerUid(null);
                     }
                     setLoading(false);
@@ -134,7 +142,7 @@ export const AuthProvider = ({ children }) => {
 
         return () => {
             if (unsubscribe) unsubscribe();
-            import('@capacitor-firebase/authentication').then(m => m.FirebaseAuthentication.removeAllListeners());
+            import('@capacitor-firebase/authentication').then(m => m.FirebaseAuthentication.removeAllListeners()).catch(() => { });
         };
     }, []);
 
