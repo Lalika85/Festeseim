@@ -32,6 +32,8 @@ export default function EmployeeDashboard({ currentUser }) {
         return () => unsubscribe();
     }, [currentUser]);
 
+    if (loading) return <div className="text-center py-20 animate-spin text-4xl">⏳</div>;
+
     return (
         <div className="space-y-8">
             <header>
@@ -39,41 +41,36 @@ export default function EmployeeDashboard({ currentUser }) {
                 <p className="text-gray-500 text-sm">Munkatársi felület</p>
             </header>
 
+            {/* Assignments List */}
             <div>
-                <div className="flex items-center justify-between mb-4">
-                    <h2 className="text-lg font-bold text-gray-900 tracking-tight">Mai feladatok</h2>
-                    <span className="text-xs font-bold text-primary-600 bg-primary-50 px-3 py-1 rounded-full uppercase tracking-wider">
-                        {assignments.length} Feladat
-                    </span>
-                </div>
+                <h2 className="text-lg font-bold text-gray-900 tracking-tight mb-4 flex items-center gap-2">
+                    <Briefcase size={20} className="text-primary-600" />
+                    Mai feladatok
+                </h2>
 
                 <div className="space-y-4">
                     {assignments.length === 0 ? (
                         <Card className="p-8 text-center border-dashed border-2 flex flex-col items-center gap-3">
-                            <div className="w-12 h-12 bg-gray-50 rounded-full flex items-center justify-center text-gray-400">
-                                <Briefcase size={24} />
-                            </div>
-                            <p className="text-sm text-gray-500">Nincs még kiosztott munkád.</p>
+                            <p className="text-sm text-gray-500 font-medium">Jelenleg nincs új kiosztott munkád.</p>
                         </Card>
                     ) : (
                         assignments.map((asgn) => (
-                            <Card key={asgn.id} className={`p-4 border-l-4 transition-all ${asgn.status === 'done' ? 'border-l-green-500 bg-green-50/30' : 'border-l-primary-500 bg-white'}`}>
-                                <div className="flex justify-between items-start mb-3">
+                            <Card key={asgn.id} className={`p-5 border-l-4 transition-all shadow-sm ${asgn.status === 'done' ? 'border-l-green-500 bg-green-50/20' : 'border-l-primary-500 bg-white'}`}>
+                                <div className="flex justify-between items-start mb-4">
                                     <div className="min-w-0">
                                         <h3 className="font-black text-gray-900 text-sm uppercase tracking-tight truncate">{asgn.clientName}</h3>
-                                        <div className="flex items-center gap-1.5 text-xs text-gray-500 mt-0.5">
+                                        <p className="flex items-center gap-1.5 text-xs text-gray-500 mt-1">
                                             <MapPin size={12} className="shrink-0" />
-                                            <span className="truncate">{asgn.location || 'Nincs cím'}</span>
-                                        </div>
+                                            <span className="truncate">{asgn.location || 'Helyszíni munka'}</span>
+                                        </p>
                                     </div>
                                     <Badge className={asgn.status === 'done' ? 'bg-green-100 text-green-700' : 'bg-primary-100 text-primary-700'}>
-                                        {asgn.status === 'done' ? 'Kész' : 'Kiosztva'}
+                                        {asgn.status === 'done' ? 'Kész' : 'Aktív'}
                                     </Badge>
                                 </div>
 
                                 {asgn.note && (
-                                    <div className="bg-white/50 border border-gray-100 p-3 rounded-xl text-xs text-gray-600 mb-4 shadow-sm">
-                                        <p className="font-bold text-[10px] text-gray-400 uppercase tracking-widest mb-1">Admin üzenete:</p>
+                                    <div className="bg-gray-50 border border-gray-100 p-3 rounded-xl text-xs text-gray-600 mb-4 italic">
                                         "{asgn.note}"
                                     </div>
                                 )}
@@ -81,21 +78,23 @@ export default function EmployeeDashboard({ currentUser }) {
                                 <div className="flex gap-2">
                                     <Button
                                         size="sm"
-                                        className="w-full text-xs font-bold py-2.5 rounded-xl shadow-sm"
+                                        className="w-full text-xs font-bold py-3 rounded-xl shadow-lg bg-emerald-600 hover:bg-emerald-700"
                                         onClick={() => navigate(`/shop?project=${asgn.projectId}`)}
                                     >
-                                        <ShoppingBag size={14} className="mr-2" /> Bevásárlólista
+                                        <ShoppingBag size={14} className="mr-2" /> Bolt / Anyaglista
                                     </Button>
                                     {asgn.status !== 'done' && (
                                         <Button
                                             size="sm"
                                             variant="secondary"
-                                            className="text-xs shrink-0 p-2.5 rounded-xl border-gray-200"
+                                            className="text-xs shrink-0 p-3 rounded-xl border-gray-200"
                                             onClick={async () => {
-                                                await updateDoc(doc(db, 'users', currentUser.uid, 'assignments', asgn.id), { status: 'done' });
+                                                if (window.confirm('Késznek jelölöd ezt a feladatot?')) {
+                                                    await updateDoc(doc(db, 'users', currentUser.uid, 'assignments', asgn.id), { status: 'done' });
+                                                }
                                             }}
                                         >
-                                            <CheckCircle2 size={16} />
+                                            <CheckCircle2 size={18} className="text-green-600" />
                                         </Button>
                                     )}
                                 </div>
@@ -105,34 +104,27 @@ export default function EmployeeDashboard({ currentUser }) {
                 </div>
             </div>
 
-            <div>
-                <h3 className="text-xs font-bold text-gray-400 uppercase tracking-[0.2em] mb-4">Eszközök</h3>
-                <div className="grid grid-cols-1 gap-3">
+            {/* Tools Area - STRICTLY ONLY SHOP AND CALCULATOR */}
+            <div className="pt-4 border-t border-gray-100">
+                <h3 className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-4">Gyorselérés</h3>
+                <div className="grid grid-cols-2 gap-3">
                     <button
                         onClick={() => navigate('/shop')}
-                        className="flex items-center p-4 bg-white border border-gray-100 rounded-2xl shadow-sm hover:shadow-md transition-all gap-4 text-left group"
+                        className="flex flex-col items-center justify-center p-6 bg-white border border-gray-100 rounded-[2rem] shadow-sm active:scale-95 transition-all gap-3"
                     >
-                        <div className="w-12 h-12 bg-emerald-50 rounded-2xl flex items-center justify-center group-hover:bg-emerald-100 transition-colors shrink-0">
-                            <ShoppingBag className="text-emerald-600" size={24} />
+                        <div className="w-14 h-14 bg-emerald-50 rounded-2xl flex items-center justify-center text-emerald-600">
+                            <ShoppingBag size={28} />
                         </div>
-                        <div>
-                            <span className="block text-sm font-bold text-gray-900">Bolt</span>
-                            <span className="text-xs text-gray-500">Anyagok beszerzése</span>
-                        </div>
-                        <ChevronRight className="ml-auto text-gray-300" size={20} />
+                        <span className="text-xs font-black uppercase tracking-tighter text-gray-900">Bolt</span>
                     </button>
                     <button
                         onClick={() => navigate('/calculator')}
-                        className="flex items-center p-4 bg-white border border-gray-100 rounded-2xl shadow-sm hover:shadow-md transition-all gap-4 text-left group"
+                        className="flex flex-col items-center justify-center p-6 bg-white border border-gray-100 rounded-[2rem] shadow-sm active:scale-95 transition-all gap-3"
                     >
-                        <div className="w-12 h-12 bg-amber-50 rounded-2xl flex items-center justify-center group-hover:bg-amber-100 transition-colors shrink-0">
-                            <CalcIcon className="text-amber-600" size={24} />
+                        <div className="w-14 h-14 bg-amber-50 rounded-2xl flex items-center justify-center text-amber-600">
+                            <CalcIcon size={28} />
                         </div>
-                        <div>
-                            <span className="block text-sm font-bold text-gray-900">Kalkulátor</span>
-                            <span className="text-xs text-gray-500">Szükséglet számítása</span>
-                        </div>
-                        <ChevronRight className="ml-auto text-gray-300" size={20} />
+                        <span className="text-xs font-black uppercase tracking-tighter text-gray-900">Kalkulátor</span>
                     </button>
                 </div>
             </div>

@@ -6,15 +6,15 @@ import { useAuth } from '../../hooks/useAuth';
 export default function BottomNav() {
     const { isAdmin, isEmployee } = useAuth();
 
-    const navItems = [
+    const navItems = isAdmin ? [
         { path: '/', icon: Home, label: 'Főoldal' },
-        ...(isAdmin ? [
-            { path: '/projects', icon: Users, label: 'Ügyfelek' },
-            { path: '/calendar', icon: Calendar, label: 'Naptár' },
-        ] : [
-            { path: '/shop', icon: ShoppingBag, label: 'Bolt' },
-            { path: '/calculator', icon: Calculator, label: 'Kalkulátor' },
-        ]),
+        { path: '/projects', icon: Users, label: 'Ügyfelek' },
+        { path: '/calendar', icon: Calendar, label: 'Naptár' },
+        { path: '/profile', icon: User, label: 'Profil' }
+    ] : [
+        { path: '/', icon: Briefcase, label: 'Feladatok' },
+        { path: '/shop', icon: ShoppingBag, label: 'Bolt' },
+        { path: '/calculator', icon: Calculator, label: 'Kalkulátor' },
         { path: '/profile', icon: User, label: 'Profil' }
     ];
 

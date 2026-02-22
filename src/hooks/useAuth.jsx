@@ -69,18 +69,18 @@ export const AuthProvider = ({ children }) => {
                         setRole(newProfile.role);
                         setOwnerUid(newProfile.ownerUid);
                     } else {
-                        // Default to admin if no invite found
-                        setRole('admin');
-                        setOwnerUid(uid);
+                        // NO DEFAULT ADMIN - Must have a profile or invite
+                        setRole(null);
+                        setOwnerUid(null);
                     }
                 } else {
-                    setRole('admin');
-                    setOwnerUid(uid);
+                    setRole(null);
+                    setOwnerUid(null);
                 }
             } catch (err) {
                 console.error("Error fetching role info:", err);
-                setRole('admin');
-                setOwnerUid(uid);
+                setRole(null);
+                setOwnerUid(null);
             }
         };
 
