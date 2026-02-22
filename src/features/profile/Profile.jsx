@@ -7,7 +7,7 @@ import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import Card from '../../components/ui/Card';
 import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input';
-import { User, Building2, Wallet, Phone, Mail, Upload, Download, LogOut, Camera, CheckCircle } from 'lucide-react';
+import { User, Building2, Wallet, Phone, Mail, Upload, Download, LogOut, Camera, CheckCircle, Shield } from 'lucide-react';
 
 const Profile = () => {
     const { currentUser, logout, isAdmin } = useAuth();
