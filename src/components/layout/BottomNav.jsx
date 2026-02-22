@@ -15,26 +15,29 @@ export default function BottomNav() {
             { path: '/shop', icon: ShoppingBag, label: 'Bolt' },
             { path: '/calculator', icon: Calculator, label: 'Kalkulátor' },
         ]),
-        { path: '/profile', icon: User, label: 'Profil' },
-        { path: '/settings', icon: Settings, label: 'Beállítások' }
+        { path: '/profile', icon: User, label: 'Profil' }
     ];
 
     return (
-        <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 safe-area-inset-bottom z-50">
+        <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 safe-area-inset-bottom z-50 shadow-[0_-4px_12px_-4px_rgba(0,0,0,0.05)]">
             <div className="flex justify-around items-center h-16">
                 {navItems.map(({ path, icon: Icon, label }) => (
                     <NavLink
                         key={path}
                         to={path}
                         className={({ isActive }) =>
-                            `flex flex-col items-center justify-center flex-1 h-full transition-colors ${isActive
+                            `flex flex-col items-center justify-center flex-1 h-full transition-all duration-200 ${isActive
                                 ? 'text-primary-600'
-                                : 'text-gray-600 hover:text-gray-900'
+                                : 'text-gray-400 hover:text-gray-600'
                             }`
                         }
                     >
-                        <Icon size={24} />
-                        <span className="text-xs mt-1">{label}</span>
+                        <div className={`p-1 rounded-xl transition-colors ${window.location.pathname === path ? 'bg-primary-50' : ''}`}>
+                            <Icon size={24} strokeWidth={isActive ? 2.5 : 2} />
+                        </div>
+                        <span className={`text-[10px] font-bold mt-1 uppercase tracking-tighter ${window.location.pathname === path ? 'text-primary-600' : 'text-gray-400'}`}>
+                            {label}
+                        </span>
                     </NavLink>
                 ))}
             </div>
