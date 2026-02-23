@@ -85,7 +85,7 @@ export default function Team() {
             to_name: inviteName,
             from_name: currentUser.displayName || 'Vállalkozó',
             role: inviteRole === 'admin' ? 'Admin' : 'Alkalmazott',
-            app_url: APP_URL
+            app_url: `${APP_URL}/login?email=${encodeURIComponent(inviteEmail)}&mode=register`
         };
 
         try {

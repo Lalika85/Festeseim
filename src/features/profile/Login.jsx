@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { PaintRoller, Mail, Lock, ArrowRight, UserPlus, LogIn } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import Button from '../../components/ui/Button';
@@ -6,12 +7,26 @@ import Input from '../../components/ui/Input';
 import Card from '../../components/ui/Card';
 
 const Login = () => {
+    const [searchParams] = useSearchParams();
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
     const [isLogin, setIsLogin] = useState(true);
     const { login, register } = useAuth();
+
+    useEffect(() => {
+        const emailParam = searchParams.get('email');
+        const modeParam = searchParams.get('mode');
+
+        if (emailParam) {
+            setEmail(emailParam);
+        }
+
+        if (modeParam === 'register') {
+            setIsLogin(false);
+        }
+    }, [searchParams]);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -59,7 +74,9 @@ const Login = () => {
                             placeholder="pelda@email.com"
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
-                            className="text-lg"
+                            readOnly={!!searchParams.get('email')}
+                            className="text-lg bg-gray-50 focus:ring-0"
+                            autoFocus={!searchParams.get('email')}
                         />
                         <Input
                             label="Jelszó"
