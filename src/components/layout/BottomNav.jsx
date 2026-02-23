@@ -1,6 +1,6 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { Home, Users, Calendar, Settings, User, ShoppingBag, Calculator } from 'lucide-react';
+import { Home, Users, Calendar, Settings, User, ShoppingBag, Calculator, Briefcase } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 
 export default function BottomNav() {

@@ -13,8 +13,9 @@ import {
     getDoc
 } from 'firebase/firestore';
 import { useAuth } from './useAuth';
+import { APP_URL } from '../constants/urls';
 
-export const PUBLIC_BASE_URL = 'https://festonaplo-2026.web.app';
+export const PUBLIC_BASE_URL = APP_URL;
 
 export const useQuotes = () => {
     const { currentUser, ownerUid, isEmployee } = useAuth();

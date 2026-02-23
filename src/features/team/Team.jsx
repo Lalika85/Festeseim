@@ -9,6 +9,7 @@ import { db } from '../../services/firebase';
 import { doc, onSnapshot, updateDoc, setDoc, collection, query, where, getDocs, addDoc } from 'firebase/firestore';
 import { useAuth } from '../../hooks/useAuth';
 import { useProjects } from '../../hooks/useProjects';
+import { APP_URL } from '../../constants/urls';
 
 export default function Team() {
     const { currentUser, isAdmin } = useAuth();
@@ -84,7 +85,7 @@ export default function Team() {
             to_name: inviteName,
             from_name: currentUser.displayName || 'Vállalkozó',
             role: inviteRole === 'admin' ? 'Admin' : 'Alkalmazott',
-            app_url: import.meta.env.VITE_APP_URL || window.location.origin
+            app_url: APP_URL
         };
 
         try {

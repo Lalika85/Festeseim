@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
+import { APP_URL } from '../../constants/urls';
 import { db } from '../../services/firebase';
 import { doc, getDoc, updateDoc, deleteDoc, collection, query, where, onSnapshot } from 'firebase/firestore';
 import { generateWorksheetPDF } from '../../services/pdfGenerator';
@@ -204,7 +205,7 @@ export default function ProjectDetail() {
                             await Share.share({
                                 title: project.client,
                                 text: `Ügyfél adatok: ${project.client}\n${project.address}\n${project.phone}`,
-                                url: window.location.href,
+                                url: `${APP_URL}/projects/${id}`,
                                 dialogTitle: 'Adatlap megosztása'
                             });
                         } catch (err) {
