@@ -1,10 +1,9 @@
 import React from 'react';
 import { useAuth } from '../../hooks/useAuth';
 import AdminDashboard from './AdminDashboard';
-import EmployeeDashboard from './EmployeeDashboard';
 
 export default function Dashboard() {
-    const { currentUser, isAdmin, isEmployee, loading } = useAuth();
+    const { currentUser, loading } = useAuth();
 
     if (loading) {
         return (
@@ -16,11 +15,7 @@ export default function Dashboard() {
 
     return (
         <div className="view-container">
-            {isAdmin ? (
-                <AdminDashboard currentUser={currentUser} />
-            ) : (
-                <EmployeeDashboard currentUser={currentUser} />
-            )}
+            <AdminDashboard currentUser={currentUser} />
         </div>
     );
 }

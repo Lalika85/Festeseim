@@ -22,8 +22,9 @@ export default function Team() {
     const [inviteRole, setInviteRole] = useState('employee');
     const [showShareModal, setShowShareModal] = useState(false);
     const [shareData, setShareData] = useState({
+        shareType: 'daily',
         projectId: '',
-        employeeUid: '',
+        employeeName: '',
         note: ''
     });
     const { projects } = useProjects();
@@ -127,54 +128,64 @@ export default function Team() {
     };
 
     const handleShare = async () => {
-        if (!shareData.projectId || !shareData.employeeUid) {
-            alert('Kérlek válassz ügyfelet és alkalmazottat is!');
-            return;
-        }
-
         try {
             setLoading(true);
-            const selectedProject = projects.find(p => p.id === shareData.projectId);
+            let shareText = '';
 
-            // 1. Fetch shopping items for this project
-            const shopQuery = query(
-                collection(db, 'users', currentUser.uid, 'shopping_items'),
-                where('projectId', '==', shareData.projectId)
-            );
-            const shopSnap = await getDocs(shopQuery);
-            const shopItems = shopSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            if (shareData.shareType === 'client' || shareData.shareType === 'shopping') {
+                if (!shareData.projectId) {
+                    alert('Kérlek válassz ügyfelet!');
+                    setLoading(false);
+                    return;
+                }
+                const selectedProject = projects.find(p => p.id === shareData.projectId);
 
-            // 2. Create Assignment
-            const assignment = {
-                projectId: shareData.projectId,
-                clientName: selectedProject?.client || 'Ismeretlen Ügyfél',
-                location: selectedProject?.location || '',
-                note: shareData.note,
-                items: shopItems,
-                assignedAt: new Date().toISOString(),
-                status: 'pending',
-                ownerUid: currentUser.uid,
-                ownerName: currentUser.displayName || 'Vállalkozó'
-            };
+                if (shareData.shareType === 'client') {
+                    shareText = `Ügyfél adatok:\nNév: ${selectedProject?.client || 'Ismeretlen'}\nCím: ${selectedProject?.location || 'Nincs cím megadva'}\n${selectedProject?.description ? `Leírás: ${selectedProject.description}` : ''}`;
+                } else if (shareData.shareType === 'shopping') {
+                    const shopQuery = query(
+                        collection(db, 'users', currentUser.uid, 'shopping_items'),
+                        where('projectId', '==', shareData.projectId)
+                    );
+                    const shopSnap = await getDocs(shopQuery);
+                    const shopItems = shopSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 
-            await addDoc(collection(db, 'users', shareData.employeeUid, 'assignments'), assignment);
+                    shareText = `Bevásárló lista (${selectedProject?.client || 'Ismeretlen'}):\n`;
+                    if (shopItems.length === 0) {
+                        shareText += 'A lista üres.\n';
+                    } else {
+                        shopItems.forEach(item => {
+                            shareText += `- ${item.name} (${item.quantity} ${item.unit})\n`;
+                        });
+                    }
+                }
+            } else if (shareData.shareType === 'daily') {
+                if (!shareData.note) {
+                    alert('Kérlek írd be a napi teendőt!');
+                    setLoading(false);
+                    return;
+                }
+                shareText = `Napi teendők:\n${shareData.note}`;
+            }
 
-            // 3. Notify Employee
-            await addDoc(collection(db, 'users', shareData.employeeUid, 'notifications'), {
-                type: 'new_work',
-                title: 'Új munka érkezett!',
-                body: `${selectedProject?.client || 'Ügyfél'} munkáját kiosztotta neked az admin.`,
-                createdAt: new Date().toISOString(),
-                read: false
-            });
+            if (navigator.share) {
+                await navigator.share({
+                    title: `Megosztás - ${shareData.employeeName}`,
+                    text: shareText
+                });
+            } else {
+                await navigator.clipboard.writeText(shareText);
+                alert('Szöveg a vágólapra másolva, beillesztheted az üzenetküldőbe!');
+            }
 
-            setShareData({ projectId: '', employeeUid: '', note: '' });
+            setShareData({ shareType: 'daily', projectId: '', employeeName: '', note: '' });
             setShowShareModal(false);
             setLoading(false);
-            alert('Munka sikeresen kiosztva!');
         } catch (err) {
-            console.error('Sharing error:', err);
-            alert('Hiba történt a megosztás során.');
+            if (err.name !== 'AbortError') {
+                console.error('Sharing error:', err);
+                alert('Hiba történt a megosztás során.');
+            }
             setLoading(false);
         }
     };
@@ -212,14 +223,6 @@ export default function Team() {
                 </div>
                 {isAdmin && (
                     <div className="flex gap-2 shrink-0">
-                        <Button
-                            variant="secondary"
-                            onClick={() => setShowShareModal(true)}
-                            className="whitespace-nowrap shadow-sm"
-                            size="sm"
-                        >
-                            <Briefcase size={18} className="mr-2" /> Munka megosztása
-                        </Button>
                         <Button
                             onClick={() => setShowAddModal(true)}
                             className="whitespace-nowrap shadow-md shadow-primary-100"
@@ -271,11 +274,11 @@ export default function Team() {
                                     variant="secondary"
                                     className="flex-1 text-xs font-bold bg-primary-50 text-primary-700 border-primary-100 hover:bg-primary-100"
                                     onClick={() => {
-                                        setShareData({ ...shareData, employeeUid: member.id });
+                                        setShareData({ shareType: 'daily', projectId: '', employeeName: member.name || member.email, note: '' });
                                         setShowShareModal(true);
                                     }}
                                 >
-                                    <Briefcase size={14} className="mr-2" /> Munka kiosztása
+                                    <Share2 size={14} className="mr-2" /> Megosztás
                                 </Button>
                                 {member.phone && (
                                     <a
@@ -296,49 +299,57 @@ export default function Team() {
             {showShareModal && (
                 <div className="fixed inset-0 z-50 bg-gray-900/40 backdrop-blur-sm flex items-center justify-center p-4">
                     <div className="bg-white w-full max-w-md rounded-3xl shadow-2xl p-6 animate-in slide-in-from-bottom-4 duration-300">
-                        <h2 className="text-xl font-bold text-gray-900 mb-4 tracking-tight">Munka kiosztása</h2>
+                        <h2 className="text-xl font-bold text-gray-900 mb-4 tracking-tight">Megosztás vele: {shareData.employeeName}</h2>
                         <div className="space-y-4">
                             <div>
-                                <label className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2 block">Ügyfél kiválasztása</label>
+                                <label className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2 block">Mit szeretnél megosztani?</label>
                                 <select
                                     className="w-full h-11 px-4 bg-gray-50 border border-gray-100 rounded-xl text-sm focus:ring-2 focus:ring-primary-500 outline-none"
-                                    value={shareData.projectId}
-                                    onChange={(e) => setShareData({ ...shareData, projectId: e.target.value })}
+                                    value={shareData.shareType}
+                                    onChange={(e) => setShareData({ ...shareData, shareType: e.target.value })}
                                 >
-                                    <option value="">Válassz ügyfelet...</option>
-                                    {projects.map(p => (
-                                        <option key={p.id} value={p.id}>{p.client}</option>
-                                    ))}
+                                    <option value="daily">Napi teendők</option>
+                                    <option value="client">Ügyfél adatok</option>
+                                    <option value="shopping">Bevásárló lista</option>
                                 </select>
                             </div>
 
-                            <div>
-                                <label className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2 block">Alkalmazott kiválasztása</label>
-                                <select
-                                    className="w-full h-11 px-4 bg-gray-50 border border-gray-100 rounded-xl text-sm focus:ring-2 focus:ring-primary-500 outline-none"
-                                    value={shareData.employeeUid}
-                                    onChange={(e) => setShareData({ ...shareData, employeeUid: e.target.value })}
-                                >
-                                    <option value="">Válassz alkalmazottat...</option>
-                                    {members.filter(m => m.role === 'employee' && m.status === 'active').map(m => (
-                                        <option key={m.id} value={m.id}>{m.name || m.email}</option>
-                                    ))}
-                                </select>
-                            </div>
+                            {(shareData.shareType === 'client' || shareData.shareType === 'shopping') && (
+                                <div>
+                                    <label className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2 block">Ügyfél kiválasztása</label>
+                                    <select
+                                        className="w-full h-11 px-4 bg-gray-50 border border-gray-100 rounded-xl text-sm focus:ring-2 focus:ring-primary-500 outline-none"
+                                        value={shareData.projectId}
+                                        onChange={(e) => setShareData({ ...shareData, projectId: e.target.value })}
+                                    >
+                                        <option value="">Válassz ügyfelet...</option>
+                                        {projects.map(p => (
+                                            <option key={p.id} value={p.id}>{p.client}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                            )}
 
-                            <div>
-                                <label className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2 block">Megjegyzés / Instrukciók</label>
-                                <textarea
-                                    className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl text-sm focus:ring-2 focus:ring-primary-500 outline-none min-h-[100px]"
-                                    placeholder="Írj ide kiegészítő instrukciókat..."
-                                    value={shareData.note}
-                                    onChange={(e) => setShareData({ ...shareData, note: e.target.value })}
-                                />
-                            </div>
+                            {shareData.shareType === 'daily' && (
+                                <div>
+                                    <label className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2 block">Teendő leírása</label>
+                                    <textarea
+                                        className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl text-sm focus:ring-2 focus:ring-primary-500 outline-none min-h-[120px]"
+                                        placeholder="Írd ide a feladatot..."
+                                        value={shareData.note}
+                                        onChange={(e) => setShareData({ ...shareData, note: e.target.value })}
+                                    />
+                                </div>
+                            )}
                         </div>
                         <div className="grid grid-cols-2 gap-3 mt-8">
                             <Button variant="secondary" onClick={() => setShowShareModal(false)}>Mégse</Button>
-                            <Button onClick={handleShare} disabled={!shareData.projectId || !shareData.employeeUid}>Kiosztás</Button>
+                            <Button
+                                onClick={handleShare}
+                                disabled={(shareData.shareType === 'daily' && !shareData.note) || ((shareData.shareType === 'client' || shareData.shareType === 'shopping') && !shareData.projectId)}
+                            >
+                                <Share2 size={18} className="mr-2" /> Küldés
+                            </Button>
                         </div>
                     </div>
                 </div>
