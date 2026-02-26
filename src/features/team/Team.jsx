@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import emailjs from '@emailjs/browser';
-import { Users, UserPlus, Mail, Shield, User, MoreVertical, Briefcase, Star, Phone } from 'lucide-react';
+import { Users, UserPlus, Mail, Shield, User, MoreVertical, Briefcase, Star, Phone, Share2 } from 'lucide-react';
 import Card from '../../components/ui/Card';
 import Button from '../../components/ui/Button';
 import Badge from '../../components/ui/Badge';
@@ -267,7 +267,7 @@ export default function Team() {
                             </Button>
                         </div>
 
-                        {isAdmin && member.role === 'employee' && (
+                        {member.id !== currentUser.uid && (
                             <div className="flex gap-2">
                                 <Button
                                     size="sm"
