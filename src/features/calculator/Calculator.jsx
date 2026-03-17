@@ -9,7 +9,14 @@ import Badge from '../../components/ui/Badge';
 const CATEGORIES = {
     PAINTING: 'painting',
     PLASTERING: 'plastering',
-    TILING: 'tiling'
+    TILING: 'tiling',
+    MASONRY: 'masonry'
+};
+
+const MASONRY_TYPES = {
+    DRY_CONCRETE: 'dry_concrete',
+    VIABLOKK: 'viablokk',
+    MANUAL_PLASTER: 'manual_plaster'
 };
 
 const CONSTANTS = {
@@ -18,7 +25,10 @@ const CONSTANTS = {
     PAINT_PRIMER: 12, // m2/L
     PLASTER_USAGE: 1.5, // kg/m2/mm
     ADHESIVE_USAGE: 4.5, // kg/m2
-    GROUT_DENSITY: 1.6 // kg/dm3
+    GROUT_DENSITY: 1.6, // kg/dm3
+    DRY_CONCRETE_USAGE: 20, // kg/m2/cm
+    VIABLOKK_USAGE: 8.33, // db/m2
+    MANUAL_PLASTER_USAGE: 14 // kg/m2/cm
 };
 
 export default function Calculator({ isModal, onClose }) {
@@ -56,6 +66,10 @@ export default function Calculator({ isModal, onClose }) {
     const [jointW, setJointW] = useState(3); // mm
     const [tileTarget, setTileTarget] = useState('floor'); // floor or walls
 
+    // Masonry specific
+    const [masonryType, setMasonryType] = useState(MASONRY_TYPES.DRY_CONCRETE);
+    const [masonryThickness, setMasonryThickness] = useState(5); // cm for concrete/plaster
+
     // Calculated state
     const [netArea, setNetArea] = useState({ walls: 0, ceiling: 0, floor: 0, total: 0 });
     const [materials, setMaterials] = useState([]);
@@ -82,7 +96,7 @@ export default function Calculator({ isModal, onClose }) {
 
     useEffect(() => {
         calculateMaterials();
-    }, [netArea, activeTab, coats, usePrimer, plasterThickness, plasterUsage, paintCoverage, tileL, tileW, tileT, jointW, tileTarget]);
+    }, [netArea, activeTab, coats, usePrimer, plasterThickness, plasterUsage, paintCoverage, tileL, tileW, tileT, jointW, tileTarget, masonryType, masonryThickness]);
 
     const calculateMaterials = () => {
         let list = [];
@@ -117,6 +131,23 @@ export default function Calculator({ isModal, onClose }) {
             list.push({ name: 'Csemperagasztó', amount: adhesiveKg.toFixed(0), unit: 'kg', sub: 'Standard ágyazat' });
             list.push({ name: 'Fúgázó anyag', amount: groutKg.toFixed(1), unit: 'kg', sub: `${jointW}mm fúgával` });
             list.push({ name: 'Burkolandó felület', amount: area.toFixed(1), unit: 'm²', sub: tileTarget === 'floor' ? 'Padló' : 'Oldalfal' });
+        } else if (activeTab === CATEGORIES.MASONRY) {
+            if (masonryType === MASONRY_TYPES.DRY_CONCRETE) {
+                const kgNeeded = netArea.floor * CONSTANTS.DRY_CONCRETE_USAGE * masonryThickness;
+                list.push({ name: 'Szárazbeton (zsákos)', amount: kgNeeded.toFixed(0), unit: 'kg', sub: `${masonryThickness} cm vastagságban (${CONSTANTS.DRY_CONCRETE_USAGE} kg/m²/cm)` });
+                list.push({ name: 'Várható zsák (25kg)', amount: Math.ceil(kgNeeded / 25), unit: 'db', sub: '' });
+                list.push({ name: 'Terület', amount: netArea.floor.toFixed(1), unit: 'm²', sub: 'Padló szint' });
+            } else if (masonryType === MASONRY_TYPES.VIABLOKK) {
+                const area = netArea.walls;
+                const dbNeeded = area * CONSTANTS.VIABLOKK_USAGE;
+                list.push({ name: 'Viablokk elem', amount: Math.ceil(dbNeeded), unit: 'db', sub: `Normál falazat (${CONSTANTS.VIABLOKK_USAGE} db/m²)` });
+                list.push({ name: 'Falazandó felület', amount: area.toFixed(1), unit: 'm²', sub: 'Oldalfalak' });
+            } else if (masonryType === MASONRY_TYPES.MANUAL_PLASTER) {
+                const area = netArea.walls;
+                const kgNeeded = area * CONSTANTS.MANUAL_PLASTER_USAGE * masonryThickness;
+                list.push({ name: 'Kézi vakolat (zsákos)', amount: kgNeeded.toFixed(0), unit: 'kg', sub: `${masonryThickness} cm vastagságban (${CONSTANTS.MANUAL_PLASTER_USAGE} kg/m²/cm)` });
+                list.push({ name: 'Várható zsák (25kg)', amount: Math.ceil(kgNeeded / 25), unit: 'db', sub: '' });
+            }
         }
         setMaterials(list);
     };
@@ -141,7 +172,8 @@ export default function Calculator({ isModal, onClose }) {
                 {[
                     { id: CATEGORIES.PAINTING, label: 'Festés', icon: <Paintbrush size={18} /> },
                     { id: CATEGORIES.PLASTERING, label: 'Glettelés', icon: <Eraser size={18} /> },
-                    { id: CATEGORIES.TILING, label: 'Burkolás', icon: <Grid3x3 size={18} /> }
+                    { id: CATEGORIES.TILING, label: 'Burkolás', icon: <Grid3x3 size={18} /> },
+                    { id: CATEGORIES.MASONRY, label: 'Kőműves', icon: <Plus size={18} /> }
                 ].map(tab => (
                     <button
                         key={tab.id}
@@ -240,6 +272,35 @@ export default function Calculator({ isModal, onClose }) {
                                     <Input label="Vastagság (mm)" type="number" value={tileT} onChange={(e) => setTileT(e.target.value)} className="!mb-0" />
                                     <Input label="Fúga (mm)" type="number" value={jointW} onChange={(e) => setJointW(e.target.value)} className="!mb-0" />
                                 </div>
+                            </div>
+                        )}
+
+                        {activeTab === CATEGORIES.MASONRY && (
+                            <div className="space-y-4">
+                                <div className="flex flex-wrap gap-2 p-1 bg-gray-100 rounded-xl mb-4">
+                                    <button onClick={() => setMasonryType(MASONRY_TYPES.DRY_CONCRETE)} className={`flex-1 py-2 px-1 rounded-lg text-[10px] font-bold ${masonryType === MASONRY_TYPES.DRY_CONCRETE ? 'bg-white shadow-sm text-primary-600' : 'text-gray-500'}`}>Szárazbeton</button>
+                                    <button onClick={() => setMasonryType(MASONRY_TYPES.VIABLOKK)} className={`flex-1 py-2 px-1 rounded-lg text-[10px] font-bold ${masonryType === MASONRY_TYPES.VIABLOKK ? 'bg-white shadow-sm text-primary-600' : 'text-gray-500'}`}>Viablokk</button>
+                                    <button onClick={() => setMasonryType(MASONRY_TYPES.MANUAL_PLASTER)} className={`flex-1 py-2 px-1 rounded-lg text-[10px] font-bold ${masonryType === MASONRY_TYPES.MANUAL_PLASTER ? 'bg-white shadow-sm text-primary-600' : 'text-gray-500'}`}>Kézi vakolat</button>
+                                </div>
+                                
+                                {masonryType !== MASONRY_TYPES.VIABLOKK && (
+                                    <div className="grid grid-cols-1 gap-3">
+                                        <Input 
+                                            label="Vastagság (cm)" 
+                                            type="number" 
+                                            value={masonryThickness} 
+                                            onChange={(e) => setMasonryThickness(e.target.value)} 
+                                            className="!mb-0" 
+                                        />
+                                        <p className="text-xs text-gray-400 italic">
+                                            {masonryType === MASONRY_TYPES.DRY_CONCRETE ? 'Aljzatbetonhoz min. 4-6 cm javasolt.' : 'Vakoláshoz általában 1-2 cm javasolt.'}
+                                        </p>
+                                    </div>
+                                )}
+                                
+                                {masonryType === MASONRY_TYPES.VIABLOKK && (
+                                    <p className="text-xs text-gray-400 italic">A számítás standard 8,33 db/m² anyagszükséglettel történik.</p>
+                                )}
                             </div>
                         )}
                     </Card>

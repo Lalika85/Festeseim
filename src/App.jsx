@@ -54,22 +54,22 @@ function AppContent() {
     }
 
     return (
-        <div className={`min-h-screen bg-gray-50 ${!isPublicQuoteView && currentUser ? 'pb-20' : ''}`}>
+        <div className="min-h-screen bg-mesh overflow-x-hidden">
             {!isPublicQuoteView && currentUser && <Header />}
 
-            <main className={!isPublicQuoteView ? 'view-container pt-4' : ''}>
+            <main className={!isPublicQuoteView ? 'view-container' : ''}>
                 <Routes>
                     <Route path="/login" element={!currentUser ? <Login /> : <Navigate to="/" />} />
                     <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
 
-                    {/* Projects - Admin Only */}
-                    <Route path="/projects" element={<AdminRoute><Projects /></AdminRoute>} />
-                    <Route path="/projects/new" element={<AdminRoute><ProjectForm /></AdminRoute>} />
-                    <Route path="/projects/:id" element={<AdminRoute><ProjectDetail /></AdminRoute>} />
-                    <Route path="/projects/edit/:id" element={<AdminRoute><ProjectForm isEdit /></AdminRoute>} />
+                    {/* Projects - Open to all members */}
+                    <Route path="/projects" element={<ProtectedRoute><Projects /></ProtectedRoute>} />
+                    <Route path="/projects/new" element={<ProtectedRoute><ProjectForm /></ProtectedRoute>} />
+                    <Route path="/projects/:id" element={<ProtectedRoute><ProjectDetail /></ProtectedRoute>} />
+                    <Route path="/projects/edit/:id" element={<ProtectedRoute><ProjectForm isEdit /></ProtectedRoute>} />
 
-                    {/* Calendar - Admin Only */}
-                    <Route path="/calendar" element={<AdminRoute><Calendar /></AdminRoute>} />
+                    {/* Calendar - Open to all members */}
+                    <Route path="/calendar" element={<ProtectedRoute><Calendar /></ProtectedRoute>} />
 
                     {/* Profile - Open to all members */}
                     <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
@@ -78,13 +78,13 @@ function AppContent() {
                     <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
 
                     {/* Tools */}
-                    <Route path="/quote" element={<AdminRoute><QuoteList /></AdminRoute>} />
-                    <Route path="/quote/new" element={<AdminRoute><QuoteEditor /></AdminRoute>} />
-                    <Route path="/quote/edit/:id" element={<AdminRoute><QuoteEditor /></AdminRoute>} />
+                    <Route path="/quote" element={<ProtectedRoute><QuoteList /></ProtectedRoute>} />
+                    <Route path="/quote/new" element={<ProtectedRoute><QuoteEditor /></ProtectedRoute>} />
+                    <Route path="/quote/edit/:id" element={<ProtectedRoute><QuoteEditor /></ProtectedRoute>} />
 
                     <Route path="/shop" element={<ProtectedRoute><ShopManager /></ProtectedRoute>} />
                     <Route path="/calculator" element={<ProtectedRoute><Calculator /></ProtectedRoute>} />
-                    <Route path="/team" element={<AdminRoute><Team /></AdminRoute>} />
+                    <Route path="/team" element={<ProtectedRoute><Team /></ProtectedRoute>} />
 
                     {/* Public Client View */}
                     <Route path="/quote/view/:userId/:quoteId" element={<ClientQuoteView />} />

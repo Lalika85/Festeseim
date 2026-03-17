@@ -13,9 +13,5 @@ export default function Dashboard() {
         );
     }
 
-    return (
-        <div className="view-container">
-            <AdminDashboard currentUser={currentUser} />
-        </div>
-    );
+    return <AdminDashboard currentUser={currentUser} />;
 }

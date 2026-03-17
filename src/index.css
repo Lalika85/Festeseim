@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -6,130 +6,121 @@
 
 @layer base {
   body {
-    @apply bg-gray-50 text-gray-900 font-sans overflow-x-hidden;
+    @apply bg-[#FBFBFE] text-gray-900 font-sans overflow-x-hidden;
+    -webkit-tap-highlight-color: transparent;
   }
 
   h1,
   h2,
   h3,
   h4 {
-    @apply font-semibold text-gray-900;
+    @apply font-bold text-gray-900 tracking-tight;
+    font-family: 'Outfit', sans-serif;
   }
 }
 
 @layer components {
 
-  /* App Container */
-  .app-container {
-    @apply min-h-screen flex flex-col;
+  /* Improved View Container - Fixes Horizontal Scroll */
+  .view-container {
+    @apply w-full max-w-2xl mx-auto px-5 py-6 pb-28 mb-4 overflow-x-hidden box-border;
   }
 
-  .main-wrapper {
-    @apply flex-1 overflow-y-auto px-4 py-5 pb-24 max-w-3xl mx-auto w-full;
-  }
-
-  /* Card Styles */
+  /* Premium Card */
   .card {
-    @apply bg-white rounded-xl shadow-sm p-5 mb-4 border border-gray-100;
+    @apply bg-white rounded-[2rem] shadow-premium p-6 mb-5 border border-white/40 backdrop-blur-sm transition-all duration-300;
   }
 
-  .card-header {
-    @apply font-semibold text-lg mb-4 pb-3 border-b border-gray-200 text-gray-800;
+  .card-premium {
+    @apply bg-white border border-gray-100 shadow-premium-lg rounded-[2.5rem] overflow-hidden;
   }
 
-  /* Button Styles */
+  /* Glassmorphism Header Effects */
+  .glass-header {
+    @apply bg-white/70 backdrop-blur-xl border-b border-white/20 sticky top-0 z-[60];
+  }
+
+  /* Modern Buttons */
   .btn {
-    @apply px-4 py-2.5 rounded-lg font-medium transition-all duration-200 flex items-center justify-center gap-2 active:scale-95;
+    @apply px-5 py-3.5 rounded-2xl font-bold transition-all duration-300 flex items-center justify-center gap-2 active:scale-95 disabled:opacity-50 disabled:pointer-events-none;
+    font-family: 'Outfit', sans-serif;
   }
 
   .btn-primary {
-    @apply bg-primary-600 text-white hover:bg-primary-700 shadow-sm shadow-primary-200;
+    @apply bg-primary-600 text-white shadow-button hover:shadow-button-hover hover:-translate-y-0.5;
   }
 
   .btn-secondary {
-    @apply bg-white text-gray-800 border border-gray-300 hover:bg-gray-50;
+    @apply bg-white text-gray-900 border border-gray-100 shadow-sm hover:bg-gray-50 hover:border-gray-200;
   }
 
-  .btn-danger {
-    @apply bg-red-600 text-white hover:bg-red-700;
+  /* Dashboard Action Cards */
+  .action-card {
+    @apply flex flex-col p-5 bg-white border border-gray-100 rounded-[2rem] shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 text-left relative overflow-hidden;
   }
 
-  .btn-ghost {
-    @apply bg-transparent text-primary-600 hover:bg-primary-50;
+  .action-card-icon {
+    @apply w-12 h-12 rounded-2xl mb-4 flex items-center justify-center transition-transform duration-300 group-hover:scale-110;
   }
 
-  .btn-icon {
-    @apply p-2 rounded-lg hover:bg-gray-100 transition-colors;
-  }
-
-  /* Input Styles */
+  /* Form Elements */
   .input {
-    @apply w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all;
+    @apply w-full px-5 py-4 bg-gray-50 border-none rounded-2xl focus:ring-2 focus:ring-primary-500/20 focus:bg-white transition-all duration-200 placeholder:text-gray-400 font-medium;
   }
 
   .input-label {
-    @apply block text-sm font-medium text-gray-700 mb-1.5;
+    @apply block text-sm font-bold text-gray-500 mb-2 ml-1 uppercase tracking-wider;
+    font-size: 0.65rem;
   }
 
-  .input-error {
-    @apply text-sm text-red-600 mt-1;
-  }
-
-  /* Badge Styles */
+  /* Badges */
   .badge {
-    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
+    @apply inline-flex items-center px-3 py-1 rounded-xl text-[10px] font-black uppercase tracking-wider;
   }
 
   .badge-success {
-    @apply bg-green-100 text-green-800;
+    @apply bg-green-50 text-green-600 border border-green-100;
   }
 
   .badge-warning {
-    @apply bg-yellow-100 text-yellow-800;
+    @apply bg-amber-50 text-amber-600 border border-amber-100;
   }
 
   .badge-danger {
-    @apply bg-red-100 text-red-800;
+    @apply bg-red-50 text-red-600 border border-red-100;
   }
 
   .badge-info {
-    @apply bg-blue-100 text-blue-800;
+    @apply bg-primary-50 text-primary-600 border border-primary-100;
   }
 
-  /* List Items */
-  .list-item {
-    @apply bg-white border border-gray-200 rounded-lg p-3 mb-2 flex justify-between items-center shadow-sm;
+  /* Tab Navigation Fix */
+  .bottom-nav-item {
+    @apply flex flex-col items-center justify-center flex-1 h-full transition-all duration-300 relative;
   }
 
-  /* Action Buttons Row */
-  .action-buttons {
-    @apply flex gap-2 mt-3;
+  .bottom-nav-active-bg {
+    @apply absolute inset-x-2 inset-y-2 bg-primary-600/10 rounded-2xl -z-10 scale-90 opacity-0 transition-all duration-300;
   }
 
-  /* Toast Notifications */
-  .toast-container {
-    @apply fixed top-5 left-1/2 -translate-x-1/2 z-50 flex flex-col gap-2 pointer-events-none;
-  }
-
-  .toast {
-    @apply bg-gray-900/90 text-white px-6 py-3 rounded-full text-sm font-medium shadow-lg backdrop-blur-sm pointer-events-auto;
-  }
-
-  .toast-success {
-    @apply bg-green-600/90;
-  }
-
-  .toast-danger {
-    @apply bg-red-600/90;
-  }
-
-  .toast-warning {
-    @apply bg-yellow-600/90;
+  .nav-active .bottom-nav-active-bg {
+    @apply scale-100 opacity-100;
   }
 }
 
 @layer utilities {
   .safe-area-inset-bottom {
     padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  .text-gradient {
+    @apply bg-clip-text text-transparent bg-gradient-to-br from-primary-600 to-indigo-700;
+  }
+
+  .bg-mesh {
+    background-color: #FBFBFE;
+    background-image:
+      radial-gradient(at 0% 0%, rgba(37, 99, 235, 0.05) 0px, transparent 50%),
+      radial-gradient(at 100% 100%, rgba(79, 70, 229, 0.05) 0px, transparent 50%);
   }
 }
