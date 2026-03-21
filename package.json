@@ -19,7 +19,7 @@
         "@capacitor/share": "^8.0.1",
         "@emailjs/browser": "^4.4.1",
         "firebase": "^12.6.0",
-        "jspdf": "^4.2.0",
+        "jspdf": "^4.2.1",
         "lucide-react": "^0.331.0",
         "react": "^18.2.0",
         "react-dom": "^18.2.0",
