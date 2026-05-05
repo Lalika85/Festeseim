@@ -1,18 +1,23 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
-import { db } from '../../services/firebase';
-import { doc, getDoc, setDoc, updateDoc, onSnapshot } from 'firebase/firestore';
+import { useProjects } from '../../hooks/useProjects';
 import { User, Phone, Mail, MapPin, Calendar, FileText, ArrowLeft, Save } from 'lucide-react';
 import Card from '../../components/ui/Card';
 import Input from '../../components/ui/Input';
 import Select from '../../components/ui/Select';
 import Button from '../../components/ui/Button';
+import { useSubscription } from '../../contexts/SubscriptionContext';
+import PremiumModal from '../../components/ui/PremiumModal';
 
 const ProjectForm = ({ isEdit = false }) => {
     const { id } = useParams();
     const navigate = useNavigate();
     const { currentUser } = useAuth();
+    const { projects, addProject, updateProject } = useProjects();
+    const { hasReachedLimit } = useSubscription();
+
+    const [isPremiumModalOpen, setIsPremiumModalOpen] = useState(false);
 
     const [formData, setFormData] = useState({
         client: '',
@@ -22,69 +27,53 @@ const ProjectForm = ({ isEdit = false }) => {
         note: '',
         status: 'active',
         start: '',
-        end: '',
-        assignedTo: ''
+        end: ''
     });
-    const [teamMembers, setTeamMembers] = useState([]);
     const [loading, setLoading] = useState(isEdit);
 
     useEffect(() => {
         if (!currentUser) return;
 
-        // Fetch team members for assignment
-        const teamRef = doc(db, 'users', currentUser.uid, 'settings', 'team');
-        const unsubTeam = onSnapshot(teamRef, (docSnap) => {
-            if (docSnap.exists()) {
-                const data = docSnap.data();
-                const activeMembers = (data.members || []).filter(m => m.status === 'active');
-                setTeamMembers(activeMembers.map(m => ({ value: m.id, label: m.name || m.email })));
-            }
-        });
-
         if (isEdit && id) {
-            const fetchProject = async () => {
-                try {
-                    const docRef = doc(db, 'users', currentUser.uid, 'projects', id);
-                    const docSnap = await getDoc(docRef);
-                    if (docSnap.exists()) {
-                        setFormData(prev => ({ ...prev, ...docSnap.data() }));
-                    }
-                } catch (err) {
-                    console.error("Error fetching project for edit:", err);
-                } finally {
-                    setLoading(false);
-                }
-            };
-            fetchProject();
+            const project = projects.find(p => p.id === id);
+            if (project) {
+                setFormData(prev => ({ ...prev, ...project }));
+            }
+            setLoading(false);
         }
 
-        return () => unsubTeam();
-    }, [isEdit, id, currentUser]);
+        return () => { };
+    }, [isEdit, id, currentUser, projects]);
 
     const handleChange = (e) => {
         const { name, value } = e.target;
         setFormData(prev => ({ ...prev, [name]: value }));
     };
 
+    const [saveError, setSaveError] = useState('');
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         if (!formData.client) return alert('Név kötelező!');
+        setSaveError('');
 
         try {
             if (isEdit) {
-                const docRef = doc(db, 'users', currentUser.uid, 'projects', id);
-                await updateDoc(docRef, formData);
+                await updateProject(id, formData);
                 navigate(`/projects/${id}`);
             } else {
-                const newId = String(Date.now());
-                const docRef = doc(db, 'users', currentUser.uid, 'projects', newId);
-                const newProject = { ...formData, id: newId, rooms: [], docs: [] };
-                await setDoc(docRef, newProject);
+                await addProject(formData);
                 navigate('/projects');
             }
         } catch (err) {
             console.error("Error saving project:", err);
-            alert('Hiba a mentéskor!');
+            const errMsg = err.code || err.message || 'Ismeretlen hiba';
+            setSaveError(`Hiba: ${errMsg}`);
+            
+            if (err.code === 'permission-denied' || err.message?.includes('permission-denied')) {
+                // setIsPremiumModalOpen(true);
+                console.log("Permission denied caught but modal suppressed");
+            }
         }
     };
 
@@ -171,15 +160,6 @@ const ProjectForm = ({ isEdit = false }) => {
                                 onChange={handleChange}
                                 options={statusOptions}
                             />
-                            {teamMembers.length > 0 && (
-                                <Select
-                                    label="Felelős (Csapat)"
-                                    name="assignedTo"
-                                    value={formData.assignedTo}
-                                    onChange={handleChange}
-                                    options={[{ value: '', label: 'Saját magam' }, ...teamMembers]}
-                                />
-                            )}
                         </div>
 
                         <div className="grid grid-cols-2 gap-4">
@@ -218,12 +198,23 @@ const ProjectForm = ({ isEdit = false }) => {
                             </div>
                         </div>
 
+                        {saveError && (
+                            <div className="bg-red-50 text-red-600 p-3 rounded-xl text-xs font-bold border border-red-100 animate-shake mb-4 text-center">
+                                ⚠️ {saveError}
+                            </div>
+                        )}
+
                         <Button type="submit" variant="primary" className="w-full !py-3 !text-lg mt-4 shadow-md" icon={<Save size={20} />}>
                             Mentés
                         </Button>
                     </div>
                 </Card>
             </form>
+
+            <PremiumModal 
+                isOpen={isPremiumModalOpen} 
+                onClose={() => setIsPremiumModalOpen(false)} 
+            />
         </div>
     );
 };

@@ -1,15 +1,14 @@
+import { localDB } from '../../services/localDB';
+import { useAuth } from '../../hooks/useAuth';
+import { useProjects } from '../../hooks/useProjects';
+import { APP_URL } from '../../constants/urls';
+
 import React, { useState, useEffect } from 'react';
-import emailjs from '@emailjs/browser';
-import { Users, UserPlus, Mail, Shield, User, MoreVertical, Briefcase, Star, Phone, Share2 } from 'lucide-react';
+import { Users, UserPlus, Mail, User, MoreVertical, Phone, Share2 } from 'lucide-react';
 import Card from '../../components/ui/Card';
 import Button from '../../components/ui/Button';
 import Badge from '../../components/ui/Badge';
 import Input from '../../components/ui/Input';
-import { db } from '../../services/firebase';
-import { doc, onSnapshot, updateDoc, setDoc, collection, query, where, getDocs, addDoc } from 'firebase/firestore';
-import { useAuth } from '../../hooks/useAuth';
-import { useProjects } from '../../hooks/useProjects';
-import { APP_URL } from '../../constants/urls';
 
 export default function Team() {
     const { currentUser, isAdmin } = useAuth();
@@ -33,12 +32,12 @@ export default function Team() {
     useEffect(() => {
         if (!currentUser) return;
 
-        const teamRef = doc(db, 'users', currentUser.uid, 'settings', 'team');
-        const unsub = onSnapshot(teamRef, (docSnap) => {
-            if (docSnap.exists()) {
-                const data = docSnap.data();
-                setMembers(data.members || []);
+        const unsubscribe = localDB.subscribe(currentUser.uid, 'settings', (data) => {
+            const teamData = data.team;
+            if (teamData && teamData.members) {
+                setMembers(teamData.members);
             } else {
+                // Initialize default team with just the owner
                 const initialTeam = {
                     members: [{
                         id: currentUser.uid,
@@ -49,25 +48,24 @@ export default function Team() {
                         joinedAt: new Date().toISOString()
                     }]
                 };
-                setDoc(teamRef, initialTeam);
+                localDB.set(currentUser.uid, 'settings', 'team', initialTeam);
                 setMembers(initialTeam.members);
             }
             setLoading(false);
         });
 
-        return () => unsub();
+        return () => unsubscribe();
     }, [currentUser]);
 
     const handleInvite = async () => {
-        if (!inviteEmail || !inviteName) {
+        if (!inviteEmail || !inviteName || !currentUser) {
             alert('Kérlek add meg a nevet és az email címet is!');
             return;
         }
 
-        // Check for duplicate email
         const isDuplicate = members.some(m => m.email.toLowerCase() === inviteEmail.toLowerCase());
         if (isDuplicate) {
-            alert('Ez az email cím már szerepel a csapatban!');
+            alert('Ez az email cím már szerepel!') ;
             return;
         }
 
@@ -76,53 +74,20 @@ export default function Team() {
             email: inviteEmail,
             role: inviteRole,
             name: inviteName,
-            status: 'invited',
-            invitedAt: new Date().toISOString()
-        };
-
-        // Email küldése EmailJS-szel
-        const templateParams = {
-            email: inviteEmail,
-            to_name: inviteName,
-            from_name: currentUser.displayName || 'Vállalkozó',
-            role: inviteRole === 'admin' ? 'Admin' : 'Alkalmazott',
-            app_url: `${APP_URL}/login?email=${encodeURIComponent(inviteEmail)}&mode=register`
+            status: 'active', // Direct active status in offline mode
+            joinedAt: new Date().toISOString()
         };
 
         try {
-            const serviceId = import.meta.env.VITE_EMAILJS_SERVICE_ID;
-            const templateId = import.meta.env.VITE_EMAILJS_TEMPLATE_ID;
-            const publicKey = import.meta.env.VITE_EMAILJS_PUBLIC_KEY;
-
-            if (serviceId && templateId && publicKey) {
-                emailjs.init(publicKey);
-                await emailjs.send(serviceId, templateId, templateParams);
-            } else {
-                console.error('EmailJS adatok hiányoznak!');
-                throw new Error('Konfigurációs hiba: Hiányzó EmailJS kulcsok.');
-            }
-
-            const teamRef = doc(db, 'users', currentUser.uid, 'settings', 'team');
-            await updateDoc(teamRef, {
-                members: [...members, newMember]
-            });
-
-            // Add to global invites for discovery by the employee upon login
-            const inviteRef = doc(db, 'invites', inviteEmail.toLowerCase());
-            await setDoc(inviteRef, {
-                ownerUid: currentUser.uid,
-                role: inviteRole,
-                name: inviteName,
-                ownerName: currentUser.displayName || 'Vállalkozó',
-                invitedAt: new Date().toISOString()
-            });
+            const updatedMembers = [...members, newMember];
+            localDB.set(currentUser.uid, 'settings', 'team', { members: updatedMembers });
 
             setInviteEmail('');
             setInviteName('');
             setShowAddModal(false);
-            alert('Meghívó elküldve!');
+            alert('Tag hozzáadva a helyi listához!');
         } catch (err) {
-            console.error('Email hiba:', err);
+            console.error('Save error:', err);
             alert(`Hiba történt: ${err.message}`);
         }
     };
@@ -142,22 +107,17 @@ export default function Team() {
 
                 if (shareData.shareType === 'client') {
                     shareText = `Ügyfél adatok:\nNév: ${selectedProject?.client || 'Ismeretlen'}\nCím: ${selectedProject?.location || 'Nincs cím megadva'}\n${selectedProject?.description ? `Leírás: ${selectedProject.description}` : ''}`;
-                } else if (shareData.shareType === 'shopping') {
-                    const shopQuery = query(
-                        collection(db, 'users', currentUser.uid, 'shopping_items'),
-                        where('projectId', '==', shareData.projectId)
-                    );
-                    const shopSnap = await getDocs(shopQuery);
-                    const shopItems = shopSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                const shopItems = localDB.getAll(currentUser.uid, 'shopping_items')
+                    .filter(item => item.projectId === shareData.projectId);
 
-                    shareText = `Bevásárló lista (${selectedProject?.client || 'Ismeretlen'}):\n`;
-                    if (shopItems.length === 0) {
-                        shareText += 'A lista üres.\n';
-                    } else {
-                        shopItems.forEach(item => {
-                            shareText += `- ${item.name} (${item.quantity} ${item.unit})\n`;
-                        });
-                    }
+                shareText = `Bevásárló lista (${selectedProject?.client || 'Ismeretlen'}):\n`;
+                if (shopItems.length === 0) {
+                    shareText += 'A lista üres.\n';
+                } else {
+                    shopItems.forEach(item => {
+                        shareText += `- ${item.product || item.name} (${item.qty || item.quantity} ${item.unit})\n`;
+                    });
+                }
                 }
             } else if (shareData.shareType === 'daily') {
                 if (!shareData.note) {
@@ -191,21 +151,19 @@ export default function Team() {
     };
 
     const handleUpdateMember = async () => {
-        if (!editingMember) return;
-        const teamRef = doc(db, 'users', currentUser.uid, 'settings', 'team');
+        if (!editingMember || !currentUser) return;
         const updatedMembers = members.map(m =>
             m.id === editingMember.id ? editingMember : m
         );
-        await updateDoc(teamRef, { members: updatedMembers });
+        localDB.set(currentUser.uid, 'settings', 'team', { members: updatedMembers });
         setShowEditModal(false);
         setEditingMember(null);
     };
 
     const handleDeleteMember = async (id) => {
-        if (!window.confirm('Biztosan törölni akarod ezt a csapattagot?')) return;
-        const teamRef = doc(db, 'users', currentUser.uid, 'settings', 'team');
+        if (!window.confirm('Biztosan törölni akarod ezt a csapattagot?') || !currentUser) return;
         const updatedMembers = members.filter(m => m.id !== id);
-        await updateDoc(teamRef, { members: updatedMembers });
+        localDB.set(currentUser.uid, 'settings', 'team', { members: updatedMembers });
         setShowEditModal(false);
         setEditingMember(null);
     };

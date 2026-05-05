@@ -1,9 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
-import app, { db, storage } from '../../services/firebase';
-import { collection, query, where, getDocs, addDoc, updateDoc, deleteDoc, doc, orderBy, onSnapshot } from 'firebase/firestore';
-import { ref, uploadBytes, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
+import { localDB } from '../../services/localDB';
 import { ArrowLeft, Plus, Trash2, ShoppingBag, Upload, Image as ImageIcon, CheckCircle, Circle, Camera, Calculator as CalcIcon } from 'lucide-react';
 import Card from '../../components/ui/Card';
 import Button from '../../components/ui/Button';
@@ -37,6 +35,7 @@ export default function ShopManager() {
     });
     const [isUploading, setIsUploading] = useState(false);
     const [showCalculator, setShowCalculator] = useState(false);
+    const [previewImage, setPreviewImage] = useState(null);
 
     // Filter
     const [filter, setFilter] = useState('all'); // all, active, done
@@ -61,12 +60,11 @@ export default function ShopManager() {
 
     useEffect(() => {
         if (currentUser?.uid) {
-            const q = query(
-                collection(db, 'users', currentUser.uid, 'shopping_items'),
-                orderBy('createdAt', 'desc')
-            );
-            const unsubscribe = onSnapshot(q, (snapshot) => {
-                const list = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            // Subscribe to local shopping items
+            const unsubscribe = localDB.subscribe(currentUser.uid, 'shopping_items', (data) => {
+                const list = Object.values(data).sort((a, b) => 
+                    new Date(b.createdAt || 0) - new Date(a.createdAt || 0)
+                );
                 setItems(list);
             });
             return () => unsubscribe();
@@ -74,13 +72,15 @@ export default function ShopManager() {
     }, [currentUser?.uid]);
 
     const handleAddItem = async () => {
-        if (!newItem.product) return;
+        if (!newItem.product || !currentUser) return;
 
         const pId = selectedProject ? String(selectedProject) : 'general';
         const pName = selectedProject ? projects.find(p => p.id === selectedProject)?.client : 'Általános';
+        const itemId = Math.random().toString(36).substr(2, 9);
 
-        const { id, ...itemPayload } = {
+        const itemPayload = {
             ...newItem,
+            id: itemId,
             projectId: pId,
             projectName: pName,
             done: false,
@@ -88,62 +88,78 @@ export default function ShopManager() {
         };
 
         try {
-            await addDoc(collection(db, 'users', currentUser.uid, 'shopping_items'), itemPayload);
+            localDB.set(currentUser.uid, 'shopping_items', itemId, itemPayload);
             setNewItem({ product: '', qty: 1, unit: 'db', price: '', note: '', photoUrl: '', room: '' });
         } catch (e) {
-            console.error("Error adding document: ", e);
+            console.error("Error adding locally: ", e);
             alert(`HIBA TÖRTÉNT! ${e.message}`);
         }
     };
 
     const handleDelete = (id) => {
-        if (!window.confirm('Biztosan törlöd?')) return;
-        deleteDoc(doc(db, 'users', currentUser.uid, 'shopping_items', id))
-            .catch(err => console.error('Törlési hiba:', err));
+        if (!window.confirm('Biztosan törlöd?') || !currentUser) return;
+        try {
+            localDB.remove(currentUser.uid, 'shopping_items', id);
+        } catch (err) {
+            console.error('Törlési hiba:', err);
+        }
     };
 
     const toggleDone = (item) => {
-        updateDoc(doc(db, 'users', currentUser.uid, 'shopping_items', item.id), {
+        if (!currentUser) return;
+        localDB.set(currentUser.uid, 'shopping_items', item.id, {
             done: !item.done
-        }).catch(err => console.error('Toggle hiba:', err));
+        });
     };
 
     const handleFileUpload = (e) => {
         const file = e.target.files[0];
         if (!file) return;
+
         setIsUploading(true);
-
-        try {
-            const storagePath = `shop_photos/${currentUser.uid}/${Date.now()}_${file.name}`;
-            const storageRef = ref(storage, storagePath);
-
-            const uploadTask = uploadBytesResumable(storageRef, file);
-
-            uploadTask.on('state_changed',
-                (snapshot) => {
-                    const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-                    console.log('Upload is ' + progress + '% done');
-                },
-                (error) => {
-                    console.error("Upload Task Error:", error);
-                    alert(`HIBA a feltöltés közben: ${error.message}`);
-                    setIsUploading(false);
-                },
-                async () => {
-                    try {
-                        const url = await getDownloadURL(uploadTask.snapshot.ref);
-                        setNewItem(prev => ({ ...prev, photoUrl: url }));
-                        setIsUploading(false);
-                    } catch (e) {
-                        alert(`HIBA a kép URL lekérésekor: ${e.message}`);
-                        setIsUploading(false);
+        const reader = new FileReader();
+        reader.onloadend = () => {
+            const img = new Image();
+            img.onload = () => {
+                // Resize logic using Canvas
+                const canvas = document.createElement('canvas');
+                let width = img.width;
+                let height = img.height;
+                const MAX_SIZE = 1000; // Max dimensions
+                
+                if (width > height) {
+                    if (width > MAX_SIZE) {
+                        height *= MAX_SIZE / width;
+                        width = MAX_SIZE;
+                    }
+                } else {
+                    if (height > MAX_SIZE) {
+                        width *= MAX_SIZE / height;
+                        height = MAX_SIZE;
                     }
                 }
-            );
-        } catch (err) {
-            alert(`HIBA a feltöltés indításakor: ${err.message}`);
+                
+                canvas.width = width;
+                canvas.height = height;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, width, height);
+                
+                // Compress to JPEG with 0.7 quality
+                const compressedBase64 = canvas.toDataURL('image/jpeg', 0.7);
+                setNewItem(prev => ({ ...prev, photoUrl: compressedBase64 }));
+                setIsUploading(false);
+            };
+            img.onerror = () => {
+                alert('Hiba a kép feldolgozásakor!');
+                setIsUploading(false);
+            };
+            img.src = reader.result;
+        };
+        reader.onerror = () => {
+            alert('Hiba a fájl beolvasásakor!');
             setIsUploading(false);
-        }
+        };
+        reader.readAsDataURL(file);
     };
 
     const filteredItems = items.filter(item => {
@@ -275,7 +291,7 @@ export default function ShopManager() {
                         <div className="md:col-span-1 flex justify-center">
                             <label className="cursor-pointer flex items-center justify-center w-10 h-10 rounded-lg hover:bg-white transition-colors text-gray-500 hover:text-primary-600 relative border border-gray-200">
                                 {newItem.photoUrl ? <CheckCircle size={20} className="text-green-500" /> : <Camera size={20} />}
-                                <input type="file" className="hidden" accept="image/*" onChange={handleFileUpload} />
+                                <input type="file" className="hidden" accept="image/*" capture="environment" onChange={handleFileUpload} />
                                 {isUploading && <div className="absolute inset-0 bg-white/80 flex items-center justify-center rounded-lg"><span className="animate-spin text-xs">⏳</span></div>}
                             </label>
                         </div>
@@ -302,9 +318,12 @@ export default function ShopManager() {
                         </button>
 
                         {item.photoUrl && (
-                            <a href={item.photoUrl} target="_blank" rel="noopener noreferrer" className="flex-shrink-0 w-12 h-12 bg-gray-100 rounded-lg overflow-hidden border border-gray-200">
+                            <div 
+                                onClick={() => setPreviewImage(item.photoUrl)} 
+                                className="flex-shrink-0 w-12 h-12 bg-gray-100 rounded-lg overflow-hidden border border-gray-200 cursor-pointer active:scale-95 transition-transform"
+                            >
                                 <img src={item.photoUrl} alt="Item" className="w-full h-full object-cover" />
-                            </a>
+                            </div>
                         )}
 
                         <div className="flex-1 min-w-0">
@@ -344,6 +363,30 @@ export default function ShopManager() {
                     maxWidth="max-w-4xl"
                 >
                     <Calculator isModal onClose={() => setShowCalculator(false)} />
+                </Modal>
+            )}
+
+            {previewImage && (
+                <Modal
+                    isOpen={!!previewImage}
+                    onClose={() => setPreviewImage(null)}
+                    title="Fotó megtekintése"
+                    maxWidth="max-w-2xl"
+                >
+                    <div className="flex flex-col items-center">
+                        <img 
+                            src={previewImage} 
+                            alt="Nagyított kép" 
+                            className="w-full h-auto rounded-lg shadow-lg"
+                        />
+                        <Button 
+                            variant="secondary" 
+                            onClick={() => setPreviewImage(null)} 
+                            className="mt-4 w-full"
+                        >
+                            Bezárás
+                        </Button>
+                    </div>
                 </Modal>
             )}
         </div>

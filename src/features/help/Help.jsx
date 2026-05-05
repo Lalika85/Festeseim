@@ -20,7 +20,7 @@ export default function Help() {
         {
             title: "Munkák (Projektek)",
             icon: <Briefcase size={24} className="text-primary-600" />,
-            content: "Itt kezelheted az összes festési projektet. Egy munka adatlapján rögzítheted az ügyfél adatait, a helyiségek listáját és a szükséges anyagokat. Az adatlapot könnyen megoszthatod kollégáiddal WhatsApp-on vagy Viberen is."
+            content: "Itt kezelheted az összes vállalkozási projektet. Egy munka adatlapján rögzítheted az ügyfél adatait, a tételek listáját és a szükséges anyagokat. Az adatlapot könnyen megoszthatod kollégáiddal WhatsApp-on vagy Viberen is."
         },
         {
             title: "Árajánlatok",
@@ -63,7 +63,7 @@ export default function Help() {
                     <HelpCircle size={140} />
                 </div>
                 <div className="relative z-10">
-                    <h2 className="text-xl font-bold mb-2">Üdvözlünk a FestőNaplóban!</h2>
+                    <h2 className="text-xl font-bold mb-2">Üdvözlünk a Kisvállalkozói Naplóban!</h2>
                     <p className="text-primary-50 text-sm leading-relaxed max-w-lg">
                         Ez az alkalmazás azért készült, hogy megkönnyítse a mindennapi munkádat: az adminisztrációtól a profi árajánlatokig minden egy helyen van.
                     </p>
@@ -93,7 +93,7 @@ export default function Help() {
                     <Info size={14} /> Verzió: 6.0.0
                 </div>
                 <p className="text-gray-400 text-[10px] mt-4 uppercase tracking-[0.2em] font-black">
-                    FestőNapló &copy; 2026 - Minden jog fenntartva
+                    Kisvállalkozói Napló &copy; 2026 - Minden jog fenntartva
                 </p>
             </div>
         </div>

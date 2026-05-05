@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
+import { useProjects } from '../../hooks/useProjects';
+import { localDB } from '../../services/localDB';
 import { APP_URL } from '../../constants/urls';
-import { db } from '../../services/firebase';
-import { doc, getDoc, updateDoc, deleteDoc, collection, query, where, onSnapshot } from 'firebase/firestore';
 import { generateWorksheetPDF } from '../../services/pdfGenerator';
 import {
     ArrowLeft, Edit, Trash2, Phone, Mail, MapPin,
@@ -20,6 +20,7 @@ export default function ProjectDetail() {
     const { id } = useParams();
     const navigate = useNavigate();
     const { currentUser } = useAuth();
+    const { projects, updateProject, deleteProject } = useProjects();
     const [project, setProject] = useState(null);
     const [loading, setLoading] = useState(true);
     const [newRoom, setNewRoom] = useState('');
@@ -28,73 +29,42 @@ export default function ProjectDetail() {
     const [linkedQuotes, setLinkedQuotes] = useState([]);
 
     useEffect(() => {
-        const fetchProject = async () => {
-            if (!currentUser || !id) return;
-            try {
-                const docRef = doc(db, 'users', currentUser.uid, 'projects', id);
-                const docSnap = await getDoc(docRef);
-                if (docSnap.exists()) {
-                    setProject({ ...docSnap.data(), id: docSnap.id });
-                } else {
-                    console.error("No such project!");
-                    navigate('/projects');
-                }
-            } catch (err) {
-                console.error("Error fetching project:", err);
-            } finally {
-                setLoading(false);
-            }
-        };
+        if (!currentUser || !id) return;
+        
+        const proj = projects.find(p => p.id === id);
+        if (proj) {
+            setProject(proj);
+        } else {
+            console.error("No such project!");
+            navigate('/projects');
+        }
+        setLoading(false);
 
         // Listen for materials associated with this project
-        let unsubscribeMaterials = () => { };
-        if (currentUser && id) {
-            const mQuery = query(collection(db, 'users', currentUser.uid, 'shopping_items'), where('projectId', '==', id));
-            unsubscribeMaterials = onSnapshot(mQuery, (snapshot) => {
-                const list = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                setMaterials(list);
-            });
-        }
+        const unsubscribeMaterials = localDB.subscribe(currentUser.uid, 'shopping_items', (data) => {
+            const list = Object.values(data).filter(item => item.projectId === id);
+            setMaterials(list);
+        });
 
         // Listen for quotes associated with this project
-        let unsubscribeQuotes = () => { };
-        if (currentUser && id) {
-            const qry = query(collection(db, 'users', currentUser.uid, 'quotes'), where('projectId', '==', id));
-            unsubscribeQuotes = onSnapshot(qry, (snapshot) => {
-                const list = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                setLinkedQuotes(list);
-            });
-        }
+        const unsubscribeQuotes = localDB.subscribe(currentUser.uid, 'quotes', (data) => {
+            const list = Object.values(data).filter(item => item.projectId === id);
+            setLinkedQuotes(list);
+        });
 
-        fetchProject();
         return () => {
             unsubscribeMaterials();
             unsubscribeQuotes();
         };
-    }, [id, currentUser, navigate]);
+    }, [id, currentUser, navigate, projects]);
 
-    const handleAddRoom = async () => {
-        if (!newRoom || !project) return;
-        const roomStr = newRoomSize ? `${newRoom} (${newRoomSize}m²)` : newRoom;
-        const updatedRooms = [...(project.rooms || []), roomStr];
-        try {
-            const docRef = doc(db, 'users', currentUser.uid, 'projects', project.id);
-            await updateDoc(docRef, { rooms: updatedRooms });
-            setProject({ ...project, rooms: updatedRooms });
-            setNewRoom('');
-            setNewRoomSize('');
-        } catch (err) {
-            console.error("Error adding room:", err);
-        }
-    };
+
 
     const handleDeleteRoom = async (roomToDelete) => {
         if (!window.confirm('Törlöd ezt a helyiséget?')) return;
         const updatedRooms = project.rooms.filter(r => r !== roomToDelete);
         try {
-            const docRef = doc(db, 'users', currentUser.uid, 'projects', project.id);
-            await updateDoc(docRef, { rooms: updatedRooms });
-            setProject({ ...project, rooms: updatedRooms });
+            await updateProject(project.id, { rooms: updatedRooms });
         } catch (err) {
             console.error("Error deleting room:", err);
         }
@@ -103,8 +73,7 @@ export default function ProjectDetail() {
     const handleDeleteProject = async () => {
         if (!window.confirm('VÉGLEG törlöd az ügyfél összes adatát?')) return;
         try {
-            const docRef = doc(db, 'users', currentUser.uid, 'projects', id);
-            await deleteDoc(docRef);
+            await deleteProject(id);
             navigate('/projects');
         } catch (err) {
             console.error("Error deleting project:", err);
@@ -273,8 +242,7 @@ export default function ProjectDetail() {
                                         onBlur={async () => {
                                             if (!currentUser) return;
                                             try {
-                                                const docRef = doc(db, 'users', currentUser.uid, 'projects', project.id);
-                                                await updateDoc(docRef, { rooms: project.rooms });
+                                                await updateProject(project.id, { rooms: project.rooms });
                                             } catch (err) { console.error("Auto-save room error", err); }
                                         }}
                                         className="!mb-0 !text-sm"
@@ -323,8 +291,9 @@ export default function ProjectDetail() {
                                         const newRoomObj = { name: newRoom, size: newRoomSize, comment: '' };
                                         const updatedRooms = [...(project.rooms || []), newRoomObj];
                                         try {
-                                            const docRef = doc(db, 'users', currentUser.uid, 'projects', project.id);
-                                            await updateDoc(docRef, { rooms: updatedRooms });
+                                            await updateProject(project.id, { rooms: updatedRooms });
+                                            // Local state will be updated via the projects listener in the hook, 
+                                            // but we update it here too for immediate UI feedback.
                                             setProject({ ...project, rooms: updatedRooms });
                                             setNewRoom('');
                                             setNewRoomSize('');
@@ -354,8 +323,7 @@ export default function ProjectDetail() {
                         onBlur={async () => {
                             if (!currentUser) return;
                             try {
-                                const docRef = doc(db, 'users', currentUser.uid, 'projects', project.id);
-                                await updateDoc(docRef, { note: project.note });
+                                await updateProject(project.id, { note: project.note });
                             } catch (err) { console.error("Auto-save note error", err); }
                         }}
                     ></textarea>

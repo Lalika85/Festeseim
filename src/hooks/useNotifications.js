@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { LocalNotifications } from '@capacitor/local-notifications';
-import { db } from '../services/firebase';
-import { doc, onSnapshot, collection, query, where, getDoc } from 'firebase/firestore';
+import { localDB } from '../services/localDB';
 import { useAuth } from './useAuth';
 import { useToast } from './useToast';
 
@@ -88,31 +87,32 @@ export const useNotifications = (projects = []) => {
     // 1. Listen for notification settings
     useEffect(() => {
         if (!currentUser) return;
-        const unsub = onSnapshot(doc(db, 'users', currentUser.uid, 'settings', 'notifications'), (snap) => {
-            if (snap.exists()) {
-                settings.current = snap.data();
+        const unsub = localDB.subscribe(currentUser.uid, 'settings', (data) => {
+            if (data && data.notifications) {
+                settings.current = { ...settings.current, ...data.notifications };
             }
         });
         return () => unsub();
     }, [currentUser]);
 
-    // 2. Monitor for newly accepted quotes
+    // 2. Monitor for newly accepted quotes locally
     useEffect(() => {
         logToStorage(`Hook debug: Mounted (uid: ${currentUser?.uid?.slice(0, 5) || 'none'})`, 'info');
         if (!currentUser) return;
 
         logToStorage('Observer: Connecting...', 'info');
-        const q = collection(db, 'users', currentUser.uid, 'quotes');
 
-        const unsubscribe = onSnapshot(q, (snapshot) => {
-            const persistentIds = new Set(JSON.parse(localStorage.getItem('notified_quote_ids') || '[]'));
-            logToStorage(`Snapshot: Received (${snapshot.size} docs)`, 'info');
+        const persistentIds = new Set(JSON.parse(localStorage.getItem('notified_quote_ids') || '[]'));
+
+        const unsubscribe = localDB.subscribe(currentUser.uid, 'quotes', (data) => {
+            const quotes = Object.values(data || {});
+            logToStorage(`LocalDB: Received (${quotes.length} docs)`, 'info');
 
             if (isInitialLoad.current) {
                 // Mark current accepted as notified
-                snapshot.docs.forEach(doc => {
-                    if (doc.data().status === 'accepted') {
-                        persistentIds.add(doc.id);
+                quotes.forEach(quote => {
+                    if (quote.status === 'accepted') {
+                        persistentIds.add(quote.id);
                     }
                 });
                 localStorage.setItem('notified_quote_ids', JSON.stringify(Array.from(persistentIds)));
@@ -123,12 +123,9 @@ export const useNotifications = (projects = []) => {
 
             if (!settings.current.quoteAccepted) return;
 
-            snapshot.docChanges().forEach((change) => {
-                const quoteId = change.doc.id;
-                const quote = change.doc.data();
-
+            quotes.forEach((quote) => {
                 if (quote.status === 'accepted') {
-                    if (!persistentIds.has(quoteId)) {
+                    if (!persistentIds.has(quote.id)) {
                         logToStorage(`Acceptance detected: ${quote.number}`, 'success');
 
                         scheduleNotification(
@@ -138,14 +135,11 @@ export const useNotifications = (projects = []) => {
 
                         showToast(`Szuper! ${quote.buyerName ?? 'Ügyfél'} elfogadta az ajánlatot!`, 'success');
 
-                        persistentIds.add(quoteId);
+                        persistentIds.add(quote.id);
                         localStorage.setItem('notified_quote_ids', JSON.stringify(Array.from(persistentIds)));
                     }
                 }
             });
-        }, (error) => {
-            logToStorage(`Snapshot error: ${error.message}`, 'error');
-            console.error('Notification Engine: Listener error:', error);
         });
 
         const listener = LocalNotifications.addListener('localNotificationReceived', (notification) => {
@@ -165,15 +159,13 @@ export const useNotifications = (projects = []) => {
         showToast("Teszt értesítés kiküldve!", "info");
     };
 
-    // 2. Daily check for tomorrow's projects (Triggered on app load/refresh)
-    // 2. Daily check for tomorrow's projects
+    // 3. Daily check for tomorrow's projects
     useEffect(() => {
         if (!currentUser || projects.length === 0) return;
 
         const checkUpcomingJobs = async () => {
             if (!settings.current.upcomingWork) return;
 
-            // --- RATE LIMITING ---
             const todayStr = new Date().toISOString().split('T')[0];
             const lastCheckDate = localStorage.getItem('last_tomorrow_work_notify_date');
 
@@ -181,13 +173,11 @@ export const useNotifications = (projects = []) => {
                 console.log('Notification Engine: Tomorrow work already notified today. Skipping.');
                 return;
             }
-            // ---------------------
 
             const tomorrow = new Date();
             tomorrow.setDate(tomorrow.getDate() + 1);
             const tomorrowStr = tomorrow.toISOString().split('T')[0];
 
-            // Linked with calendar: any project ACTIVE tomorrow
             const tomorrowJobs = projects.filter(p =>
                 p.start && p.end &&
                 tomorrowStr >= p.start &&
@@ -203,7 +193,6 @@ export const useNotifications = (projects = []) => {
                     `Holnap ${tomorrowJobs.length} munkád van folyamatban: ${jobNames}${more}`
                 );
 
-                // Save that we've notified today
                 localStorage.setItem('last_tomorrow_work_notify_date', todayStr);
             }
         };

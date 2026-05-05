@@ -1,7 +1,17 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useAuth } from './useAuth';
 import { db } from '../services/firebase';
-import { collection, doc, setDoc, updateDoc, deleteDoc, onSnapshot, query } from 'firebase/firestore';
+import { 
+    collection, 
+    addDoc, 
+    updateDoc, 
+    deleteDoc, 
+    doc, 
+    onSnapshot, 
+    query, 
+    orderBy 
+} from 'firebase/firestore';
+import { localDB } from '../services/localDB';
 
 const ProjectsContext = createContext();
 
@@ -21,38 +31,28 @@ export const ProjectsProvider = ({ children }) => {
         if (!currentUser?.uid || !ownerUid) {
             setProjects([]);
             setCompanies([]);
-            setProjectsLoaded(true); // Ready (empty)
-            setCompaniesLoaded(true); // Ready (empty)
+            setProjectsLoaded(true);
+            setCompaniesLoaded(true);
             return;
         }
 
-        // Reset to loading on user/owner change
         setProjectsLoaded(false);
         setCompaniesLoaded(false);
 
-        // Projects Listener
-        const qProjects = query(collection(db, 'users', ownerUid, 'projects'));
-        const unsubProjects = onSnapshot(qProjects, (snapshot) => {
-            console.log('Projects loaded. From cache?', snapshot.metadata.fromCache);
-            const list = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
-                .sort((a, b) => (b.id > a.id ? 1 : -1));
+        // Projects Listener (LocalDB)
+        const unsubProjects = localDB.subscribe(ownerUid, 'projects', (data) => {
+            const list = Object.values(data || {}).sort((a, b) => 
+                new Date(b.createdAt || 0) - new Date(a.createdAt || 0)
+            );
             setProjects(list);
             setProjectsLoaded(true);
-        }, error => {
-            console.error("Projects listener error:", error);
-            setProjectsLoaded(true); // Don't block app on error
         });
 
-        // Companies Listener
-        const qCompanies = query(collection(db, 'users', ownerUid, 'companies'));
-        const unsubCompanies = onSnapshot(qCompanies, (snapshot) => {
-            console.log('Companies loaded. From cache?', snapshot.metadata.fromCache);
-            const list = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        // Companies Listener (LocalDB)
+        const unsubCompanies = localDB.subscribe(ownerUid, 'companies', (data) => {
+            const list = Object.values(data || {});
             setCompanies(list);
             setCompaniesLoaded(true);
-        }, error => {
-            console.error("Companies listener error:", error);
-            setCompaniesLoaded(true); // Don't block app on error
         });
 
         return () => {
@@ -61,53 +61,62 @@ export const ProjectsProvider = ({ children }) => {
         };
     }, [currentUser?.uid, ownerUid]);
 
-    // --- Projects CRUD (Fire & Forget) ---
+    // --- Projects CRUD (LocalDB) ---
 
     const addProject = async (formData) => {
-        if (!ownerUid) return;
-        const newId = String(Date.now());
-        const newProject = { ...formData, id: newId, rooms: [], docs: [] };
-
-        // Firestore update (UI updates automatically via onSnapshot)
-        const docRef = doc(db, 'users', ownerUid, 'projects', newId);
-        setDoc(docRef, newProject).catch(err => console.error("addProject error:", err));
-
-        return newId;
+        if (!ownerUid) throw new Error("Not authenticated");
+        
+        const id = Date.now().toString();
+        const newProject = { 
+            ...formData, 
+            id,
+            createdAt: new Date().toISOString(),
+            rooms: [], 
+            docs: [] 
+        };
+        
+        localDB.set(ownerUid, 'projects', id, newProject);
+        return id;
     };
 
     const updateProject = async (id, data) => {
         if (!ownerUid) return;
-        const docRef = doc(db, 'users', ownerUid, 'projects', id);
-        updateDoc(docRef, data).catch(err => console.error("updateProject error:", err));
+        localDB.set(ownerUid, 'projects', id, {
+            ...data,
+            updatedAt: new Date().toISOString()
+        });
     };
 
     const deleteProject = async (id) => {
         if (!ownerUid) return;
-        const docRef = doc(db, 'users', ownerUid, 'projects', id);
-        deleteDoc(docRef).catch(err => console.error("deleteProject error:", err));
+        localDB.remove(ownerUid, 'projects', id);
     };
 
-    // --- Companies CRUD ---
+    // --- Companies CRUD (LocalDB) ---
 
     const addCompany = async (companyData) => {
-        if (!ownerUid) return;
-        const newRef = collection(db, 'users', ownerUid, 'companies');
-        const docRef = doc(newRef);
-        const newCompany = { ...companyData, id: docRef.id };
-        setDoc(docRef, newCompany).catch(err => console.error("addCompany error:", err));
-        return docRef.id;
+        if (!ownerUid) throw new Error("Not authenticated");
+        const id = Date.now().toString();
+        const newCompany = {
+            ...companyData,
+            id,
+            createdAt: new Date().toISOString()
+        };
+        localDB.set(ownerUid, 'companies', id, newCompany);
+        return id;
     };
 
     const updateCompany = async (id, data) => {
         if (!ownerUid) return;
-        const docRef = doc(db, 'users', ownerUid, 'companies', id);
-        updateDoc(docRef, data).catch(err => console.error("updateCompany error:", err));
+        localDB.set(ownerUid, 'companies', id, {
+            ...data,
+            updatedAt: new Date().toISOString()
+        });
     };
 
     const deleteCompany = async (id) => {
         if (!ownerUid) return;
-        const docRef = doc(db, 'users', ownerUid, 'companies', id);
-        deleteDoc(docRef).catch(err => console.error("deleteCompany error:", err));
+        localDB.remove(ownerUid, 'companies', id);
     };
 
     return (

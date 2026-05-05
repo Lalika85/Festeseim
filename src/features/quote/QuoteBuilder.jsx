@@ -1,12 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
+import { useQuotes } from '../../hooks/useQuotes';
 import { db, storage } from '../../services/firebase';
 import { collection, getDocs, addDoc, deleteDoc, doc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { loadUserCollection, loadUserSettings } from '../../services/firestore';
 import { Filesystem, Directory, Encoding } from '@capacitor/filesystem';
 import { Share } from '@capacitor/share';
-import { ArrowLeft, Save, Plus, Trash2, FileText, Download, Share2, FileDown, FolderOpen } from 'lucide-react';
+import { ArrowLeft, Save, Plus, Trash2, FileText, Download, Share2, FileDown, FolderOpen, Building } from 'lucide-react';
+import { imageStore } from '../../services/imageStore';
 import Card from '../../components/ui/Card';
 import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input';
@@ -25,9 +28,8 @@ const VAT_RATES = [
 ];
 
 export default function QuoteBuilder() {
-    const { currentUser } = useAuth();
+    const { currentUser, ownerUid } = useAuth();
     const navigate = useNavigate();
-    const [companies, setCompanies] = useState([]);
     const [projects, setProjects] = useState([]);
     const [templates, setTemplates] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -52,19 +54,25 @@ export default function QuoteBuilder() {
     }, [currentUser]);
 
     const fetchData = async () => {
+        if (!ownerUid) return;
         setIsAppLoading(true);
         try {
-            const [compSnap, projSnap, templSnap] = await Promise.all([
-                getDocs(collection(db, 'users', currentUser.uid, 'companies')),
-                getDocs(collection(db, 'users', currentUser.uid, 'projects')),
-                getDocs(collection(db, 'users', currentUser.uid, 'quote_templates'))
+            // These still use Firestore for now
+            const [projSnap, templSnap] = await Promise.all([
+                getDocs(collection(db, 'users', ownerUid, 'projects')),
+                getDocs(collection(db, 'users', ownerUid, 'quote_templates'))
             ]);
-            setCompanies(compSnap.docs.map(d => ({ id: d.id, ...d.data() })));
+
             setProjects(projSnap.docs.map(d => ({ id: d.id, ...d.data() })));
             setTemplates(templSnap.docs.map(d => ({ id: d.id, ...d.data() })));
 
-            if (!formData.sellerId && compSnap.docs.length > 0) {
-                setFormData(prev => ({ ...prev, sellerId: compSnap.docs[0].id }));
+            if (!formData.sellerId && quotesCompanies.length > 0) {
+                const defaultComp = quotesCompanies.find(c => c.isDefault);
+                if (defaultComp) {
+                    setFormData(prev => ({ ...prev, sellerId: defaultComp.id }));
+                } else {
+                    setFormData(prev => ({ ...prev, sellerId: quotesCompanies[0].id }));
+                }
             }
         } catch (err) {
             console.error("Error fetching data:", err);
@@ -80,6 +88,7 @@ export default function QuoteBuilder() {
             setFormData(prev => ({
                 ...prev,
                 buyerId: projectId,
+                projectId: projectId,
                 buyerName: project.client || '',
                 buyerAddress: project.address || ''
             }));
@@ -165,10 +174,38 @@ export default function QuoteBuilder() {
         }
     }
 
+    const { saveQuote, branding, profile, companies: quotesCompanies } = useQuotes();
+
+    const handleSaveQuote = async () => {
+        try {
+            const totals = calculateTotals();
+            const quoteId = await saveQuote({ ...formData, totals });
+            alert('Árajánlat elmentve a listába!');
+        } catch (err) {
+            console.error('Hiba a mentéskor:', err);
+            alert('Hiba a mentéskor!');
+        }
+    };
+
     const handleGeneratePDF = async (action = 'download') => {
         try {
-            const seller = companies.find(c => c.id === formData.sellerId) || {};
-            await generateQuotePDF(formData, seller, action);
+            // Find specific company by ID or fallback to global branding
+            const company = quotesCompanies.find(c => c.id === formData.sellerId) || {};
+            
+            // Reconstruct seller identity for the premium PDF
+            const sellerData = {
+                name: company.name || branding.companyName || profile.name || "Saját Vállalkozás",
+                address: company.address || branding.companyAddress || profile.address || "",
+                taxNumber: company.taxNumber || company.tax || branding.taxNumber || profile.tax || "",
+                phone: company.phone || branding.companyPhone || profile.phone || "",
+                email: company.email || branding.companyEmail || profile.email || "",
+                bank: company.bankAccount || company.bank || branding.bankAccount || "",
+                // LOGIC FIX: Prioritize company logo if a company is selected
+                logo: formData.sellerId ? (company.logoUrl || null) : (branding.logoUrl || profile.logo),
+                primaryColor: company.primaryColor || branding.primaryColor || '#2563eb'
+            };
+
+            await generateQuotePDF(formData, sellerData, action);
         } catch (err) {
             console.error('PDF Generation Error:', err);
             alert('Hiba a PDF generálásakor: ' + err.message);
@@ -192,7 +229,11 @@ export default function QuoteBuilder() {
                         <FolderOpen size={18} className="md:mr-2" />
                         <span className="hidden md:inline">Sablonok</span>
                     </Button>
-                    <Button variant="primary" onClick={() => setIsSavingTemplate(true)} className="!px-3 !py-2">
+                    <Button variant="secondary" onClick={() => setIsSavingTemplate(true)} className="!px-3 !py-2">
+                        <Save size={18} className="md:mr-2" />
+                        <span className="hidden md:inline">Sablon</span>
+                    </Button>
+                    <Button variant="primary" onClick={handleSaveQuote} className="!px-3 !py-2">
                         <Save size={18} className="md:mr-2" />
                         <span className="hidden md:inline">Mentés</span>
                     </Button>
@@ -202,17 +243,67 @@ export default function QuoteBuilder() {
             {/* Main Form Content */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
                 <Card header="Kivitelező Adatai">
-                    <Select
-                        label="Kiválasztott cég"
-                        value={formData.sellerId}
-                        onChange={(e) => setFormData({ ...formData, sellerId: e.target.value })}
-                        options={[{ value: '', label: 'Válassz céget...' }, ...companies.map(c => ({ value: c.id, label: c.name }))]}
-                    />
-                    {/* ... Seller Details Info ... */}
+                    <div className="space-y-4">
+                        <Select
+                            label="Kiválasztott cég"
+                            value={formData.sellerId}
+                            onChange={(e) => setFormData({ ...formData, sellerId: e.target.value })}
+                            options={[{ value: '', label: 'Vállalkozás neve (Alapértelmezett)' }, ...quotesCompanies.map(c => ({ value: c.id, label: c.name }))]}
+                        />
+
+                        {/* Company Branding Preview */}
+                        <div className="p-4 bg-gray-50 rounded-2xl border border-gray-100 flex items-start gap-4 transition-all">
+                            {(() => {
+                                const selectedCompany = quotesCompanies.find(c => c.id === formData.sellerId);
+                                
+                                // LOGIC FIX: If a specific company is selected, we MUST try its logo first.
+                                // If NO company is selected, we use the global branding.
+                                const currentLogo = formData.sellerId ? 
+                                    (selectedCompany?.logoUrl || null) : 
+                                    (branding.logoUrl || profile.logo || null);
+
+                                const currentName = selectedCompany?.name || branding.companyName || profile.name || "Névtelen Vállalkozás";
+                                const currentAddress = selectedCompany?.address || branding.companyAddress || profile.address || "";
+                                
+                                return (
+                                    <>
+                                        <div className="w-16 h-16 bg-white rounded-xl border border-gray-200 flex items-center justify-center overflow-hidden shrink-0">
+                                            {currentLogo ? (
+                                                <img src={imageStore.getUrl(currentLogo)} alt="Logo" className="w-full h-full object-contain" />
+                                            ) : (
+                                                <div className="text-gray-300">
+                                                    <Building size={24} />
+                                                </div>
+                                            )}
+                                        </div>
+                                        <div className="flex-1 min-w-0">
+                                            <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-0.5">Aktuális Arculat</p>
+                                            <p className="font-black text-gray-900 truncate">{currentName}</p>
+                                            <p className="text-xs text-gray-500 truncate">{currentAddress}</p>
+                                            {selectedCompany ? (
+                                                <div className="mt-2 inline-flex items-center gap-1 px-2 py-0.5 bg-primary-50 text-primary-600 rounded-md text-[10px] font-bold uppercase tracking-wide">
+                                                    Saját Cég Adatok
+                                                </div>
+                                            ) : (
+                                                <div className="mt-2 inline-flex items-center gap-1 px-2 py-0.5 bg-amber-50 text-amber-600 rounded-md text-[10px] font-bold uppercase tracking-wide">
+                                                    Alapértelmezett (Globális)
+                                                </div>
+                                            )}
+                                        </div>
+                                    </>
+                                );
+                            })()}
+                        </div>
+                        
+                        {!formData.sellerId && quotesCompanies.length > 0 && (
+                            <p className="text-[10px] text-amber-600 font-medium italic">
+                                Tipp: Válassz egy céget a listából, ha nem a globális adatokat szeretnéd használni.
+                            </p>
+                        )}
+                    </div>
                 </Card>
 
                 <Card header="Megrendelő Adatai">
-                    {/* ... Buyer Inputs ... */}
                     <Select
                         label="Meglévő ügyfél betöltése"
                         value={formData.buyerId}

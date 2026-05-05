@@ -10,7 +10,7 @@ export default function BottomNav() {
         { path: '/', icon: Home, label: 'Főoldal' },
         { path: '/projects', icon: Users, label: 'Ügyfelek' },
         { path: '/calendar', icon: Calendar, label: 'Naptár' },
-        { path: '/profile', icon: User, label: 'Profil' }
+        { path: '/settings', icon: Settings, label: 'Beállítások' }
     ];
 
     return (

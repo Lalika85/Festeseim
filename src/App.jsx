@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { AuthProvider, useAuth } from './hooks/useAuth';
 import { ProjectsProvider, useProjects } from './hooks/useProjects';
 import { NotificationProvider, useNotifications } from './contexts/NotificationContext';
+import { SubscriptionProvider } from './contexts/SubscriptionContext';
 import Header from './components/layout/Header';
 import BottomNav from './components/layout/BottomNav';
 import Login from './features/profile/Login';
@@ -11,14 +12,13 @@ import Projects from './features/projects/Projects';
 import ProjectDetail from './features/projects/ProjectDetail';
 import ProjectForm from './features/projects/ProjectForm';
 import Calendar from './features/calendar/Calendar';
-import Profile from './features/profile/Profile';
 import Settings from './features/settings/Settings';
 import QuoteList from './features/quote/QuoteList';
 import QuoteEditor from './features/quote/QuoteEditor';
-import ClientQuoteView from './features/quote/ClientQuoteView';
 import ShopManager from './features/shop/ShopManager';
 import Calculator from './features/calculator/Calculator';
-import Team from './features/team/Team';
+import QuotePreview from './features/quote/QuotePreview';
+import QuoteBranding from './features/quote/QuoteBranding';
 
 const ProtectedRoute = ({ children }) => {
     const { currentUser, loading } = useAuth();
@@ -35,17 +35,30 @@ const AdminRoute = ({ children }) => {
 };
 
 import { useLocation } from 'react-router-dom';
+import PinLock from './components/auth/PinLock';
+import { localDB } from './services/localDB';
 
 function AppContent() {
     const { currentUser, loading } = useAuth();
-    const location = useLocation();
-    const isPublicQuoteView = location.pathname.includes('/quote/view/');
+    const [isUnlocked, setIsUnlocked] = React.useState(false);
+    const [isInitializingSec, setIsInitializingSec] = React.useState(true);
+    
+    React.useEffect(() => {
+        const initSec = async () => {
+            if (!localDB.isSecureStorageInitialized) {
+                await localDB.initSecureStorage();
+            }
+            setIsInitializingSec(false);
+        };
+        initSec();
+    }, []);
 
-    // useNotifications should not be called if not authenticated or in public view ideally,
-    // but its own logic handles internal guards.
-    useNotifications();
+    // Check if security PIN is enabled
+    const hasPin = !!localDB.cachedPin;
 
-    if (loading) {
+    // useNotifications() call removed as it's now handled by NotificationProvider
+
+    if (loading || isInitializingSec) {
         return (
             <div className="flex items-center justify-center min-h-screen">
                 <div className="animate-spin text-4xl">⏳</div>
@@ -53,11 +66,16 @@ function AppContent() {
         );
     }
 
-    return (
-        <div className="min-h-screen bg-mesh overflow-x-hidden">
-            {!isPublicQuoteView && currentUser && <Header />}
+    // Security Lockdown: If PIN is set and not yet unlocked this session
+    if (currentUser && hasPin && !isUnlocked) {
+        return <PinLock onUnlock={() => setIsUnlocked(true)} />;
+    }
 
-            <main className={!isPublicQuoteView ? 'view-container' : ''}>
+    return (
+        <div className="min-h-screen bg-mesh overflow-x-hidden safe-area-inset-top">
+            {currentUser && <Header />}
+
+            <main className="view-container">
                 <Routes>
                     <Route path="/login" element={!currentUser ? <Login /> : <Navigate to="/" />} />
                     <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
@@ -71,8 +89,6 @@ function AppContent() {
                     {/* Calendar - Open to all members */}
                     <Route path="/calendar" element={<ProtectedRoute><Calendar /></ProtectedRoute>} />
 
-                    {/* Profile - Open to all members */}
-                    <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
 
                     {/* Settings - Accessible to all (content restricted inside) */}
                     <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
@@ -81,20 +97,18 @@ function AppContent() {
                     <Route path="/quote" element={<ProtectedRoute><QuoteList /></ProtectedRoute>} />
                     <Route path="/quote/new" element={<ProtectedRoute><QuoteEditor /></ProtectedRoute>} />
                     <Route path="/quote/edit/:id" element={<ProtectedRoute><QuoteEditor /></ProtectedRoute>} />
-
+                    <Route path="/quote/preview/:id" element={<ProtectedRoute><QuotePreview /></ProtectedRoute>} />
+                    <Route path="/quote/branding" element={<ProtectedRoute><QuoteBranding /></ProtectedRoute>} />
                     <Route path="/shop" element={<ProtectedRoute><ShopManager /></ProtectedRoute>} />
                     <Route path="/calculator" element={<ProtectedRoute><Calculator /></ProtectedRoute>} />
-                    <Route path="/team" element={<ProtectedRoute><Team /></ProtectedRoute>} />
 
-                    {/* Public Client View */}
-                    <Route path="/quote/view/:userId/:quoteId" element={<ClientQuoteView />} />
 
                     {/* Fallback */}
                     <Route path="*" element={<Navigate to="/" />} />
                 </Routes>
             </main>
 
-            {!isPublicQuoteView && currentUser && <BottomNav />}
+            {currentUser && <BottomNav />}
         </div>
     );
 }
@@ -104,9 +118,11 @@ function App() {
         <AuthProvider>
             <ProjectsProvider>
                 <NotificationProvider>
-                    <Router>
-                        <AppContent />
-                    </Router>
+                    <SubscriptionProvider>
+                        <Router>
+                            <AppContent />
+                        </Router>
+                    </SubscriptionProvider>
                 </NotificationProvider>
             </ProjectsProvider>
         </AuthProvider>

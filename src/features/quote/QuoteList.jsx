@@ -5,19 +5,31 @@ import { useAuth } from '../../hooks/useAuth';
 import {
     Plus, Search, Filter, MoreVertical, Edit3,
     Trash2, Eye, Share2, FileText, ChevronRight,
-    SearchX, AlertCircle
+    SearchX, AlertCircle, Palette, Receipt,
+    CreditCard, Banknote, Landmark
 } from 'lucide-react';
 import Card from '../../components/ui/Card';
 import Button from '../../components/ui/Button';
 import Badge from '../../components/ui/Badge';
+import Modal from '../../components/ui/Modal';
 import { Share } from '@capacitor/share';
-import { PUBLIC_BASE_URL } from '../../hooks/useQuotes';
+import { createSzamlazzHuInvoice, createBillingoInvoice, createOtpEbizInvoice } from '../../services/billingService';
+import { localDB } from '../../services/localDB';
 
 export default function QuoteList() {
     const navigate = useNavigate();
-    const { currentUser } = useAuth();
-    const { quotes, loading, deleteQuote, branding, updateStatus } = useQuotes();
+    const { quotes, loading, deleteQuote, branding, updateStatus, companies = [] } = useQuotes();
+    const { ownerUid } = useAuth();
     const [searchTerm, setSearchTerm] = useState('');
+    const [showPaymentModal, setShowPaymentModal] = useState(false);
+    const [activeQuote, setActiveQuote] = useState(null);
+    const [isCreatingInvoice, setIsCreatingInvoice] = useState(false);
+    const [fulfillmentDate, setFulfillmentDate] = useState(() => new Date().toISOString().split('T')[0]);
+    const [dueDate, setDueDate] = useState(() => {
+        const d = new Date();
+        d.setDate(d.getDate() + 8);
+        return d.toISOString().split('T')[0];
+    });
 
     const filteredQuotes = quotes.filter(q =>
         q.number?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -40,6 +52,68 @@ export default function QuoteList() {
         }
     };
 
+    const handleCreateInvoice = async (q, e) => {
+        e.stopPropagation();
+        
+        if (!ownerUid) {
+            alert('Be kell jelentkezned!');
+            return;
+        }
+
+        setActiveQuote(q);
+        setShowPaymentModal(true);
+    };
+
+    const executeInvoiceCreation = async (paymentMethod) => {
+        if (!activeQuote || !ownerUid) return;
+
+        let company = companies.find(c => c.id === activeQuote.sellerId);
+        
+        // Fallback for older quotes with missing sellerId
+        if (!company && companies.length > 0) {
+            company = companies.find(c => c.isDefault) || companies[0];
+            console.log("Fallback company used for invoice:", company?.name);
+        }
+
+        if (!company) {
+            alert(`HIBA: Nem található cég ehhez az árajánlathoz!\n(SellerId: ${activeQuote.sellerId || 'üres'})\n\nKérlek szerkeszd az árajánlatot és válassz egy céget a Megjelenés fülön.`);
+            return;
+        }
+        
+        if (!company.billingProvider || company.billingProvider === 'none') {
+            alert(`HIBA: A(z) "${company.name}" (${company.id}) cégnél nincs beállítva a számlázó!\n\nKérlek menj a Beállítások / Saját Cégeim menübe, szerkeszd ezt a céget, és VÁLASZD KI a Számlázó Rendszert (Billingo vagy Számlázz.hu).`);
+            return;
+        }
+        
+        if (!activeQuote.buyerEmail) {
+            if (!window.confirm('Nincs email cím megadva a vevőhöz. A számla kiállításra kerül, de nem lesz automatikusan elküldve. Folytatod?')) {
+                return;
+            }
+        }
+
+        setIsCreatingInvoice(true);
+        try {
+            if (company.billingProvider === 'szamlazzhu') {
+                if (!company.szamlazzAgentKey) throw new Error('Nincs megadva a Számla Agent kulcs ehhez a céghez!');
+                await createSzamlazzHuInvoice(activeQuote, company.szamlazzAgentKey, paymentMethod, fulfillmentDate, dueDate);
+            } else if (company.billingProvider === 'billingo') {
+                if (!company.billingoApiKey) throw new Error('Nincs megadva a Billingo API kulcs ehhez a céghez!');
+                await createBillingoInvoice(activeQuote, company.billingoApiKey, paymentMethod, fulfillmentDate, dueDate, company.billingoBlockId);
+            } else if (company.billingProvider === 'otpebiz') {
+                if (!company.otpEbizApiKey) throw new Error('Nincs megadva az OTP eBIZ API kulcs ehhez a céghez!');
+                await createOtpEbizInvoice(activeQuote, company.otpEbizApiKey, paymentMethod, fulfillmentDate, dueDate);
+            }
+            alert('A számla sikeresen kiállításra került, és a partner hamarosan megkapja emailben!');
+            await updateStatus(activeQuote.id, 'accepted');
+            setShowPaymentModal(false);
+        } catch (err) {
+            console.error('Invoice creation error:', err);
+            alert(`Hiba történt a számla kiállításakor: ${err.message}`);
+        } finally {
+            setIsCreatingInvoice(false);
+        }
+    };
+
     if (loading) return (
         <div className="flex flex-col items-center justify-center py-20">
             <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary-600 mb-4"></div>
@@ -50,17 +124,19 @@ export default function QuoteList() {
     return (
         <div className="pb-24 max-w-5xl mx-auto px-4">
             {/* Header Area */}
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 py-8">
-                <div>
-                    <h1 className="text-2xl font-black text-gray-900 tracking-tight">Árajánlataim</h1>
-                    <p className="text-sm text-gray-500 mt-1 font-medium">Kezeld és kövesd nyomon az összes ajánlatodat egy helyen</p>
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 py-10">
+                <div className="space-y-1">
+                    <h1 className="text-3xl font-black text-gray-900 tracking-tight">Árajánlataim</h1>
+                    <p className="text-sm text-gray-500 font-medium">Kezeld és küldd el professzionális ajánlataidat</p>
                 </div>
-                <Button
-                    className="bg-primary-600 hover:bg-primary-700 text-white shadow-xl shadow-primary-100 px-6 py-3 rounded-2xl"
-                    onClick={() => navigate('/quote/new')}
-                >
-                    <Plus size={20} className="mr-2" /> Új Árajánlat
-                </Button>
+                <div className="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto">
+                    <Button
+                        className="bg-primary-600 hover:bg-primary-700 text-white shadow-xl shadow-primary-100 px-6 py-3 rounded-2xl flex-1 sm:flex-none justify-center w-full"
+                        onClick={() => navigate('/quote/new')}
+                    >
+                        <Plus size={20} className="mr-2" /> Új Árajánlat
+                    </Button>
+                </div>
             </div>
 
             {/* Stats & Search */}
@@ -139,40 +215,56 @@ export default function QuoteList() {
 
                                     <div className="flex items-center gap-2">
                                         <button
-                                            onClick={async (e) => {
+                                            onClick={(e) => handleCreateInvoice(q, e)}
+                                            className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all"
+                                            title="Számla készítése"
+                                        >
+                                            <Receipt size={20} />
+                                        </button>
+                                        <button
+                                            onClick={(e) => {
                                                 e.stopPropagation();
-                                                const url = `${PUBLIC_BASE_URL}/quote/view/${currentUser.uid}/${q.id}`;
-                                                window.open(url, '_blank');
+                                                navigate(`/quote/preview/${q.id}`);
                                             }}
                                             className="p-2 text-gray-400 hover:text-primary-600 hover:bg-primary-50 rounded-xl transition-all"
-                                            title="Ügyfél nézet megnyitása"
+                                            title="Előnézet megnyitása"
                                         >
                                             <Eye size={20} />
                                         </button>
                                         <button
                                             onClick={async (e) => {
                                                 e.stopPropagation();
-                                                const url = `${PUBLIC_BASE_URL}/quote/view/${currentUser.uid}/${q.id}`;
-
                                                 try {
-                                                    await Share.share({
-                                                        title: `Árajánlat #${q.number}`,
-                                                        text: `Küldtem neked egy árajánlatot (${q.buyerName}). Itt tudod megtekinteni és aláírni:`,
-                                                        url: url,
-                                                        dialogTitle: 'Árajánlat megosztása',
-                                                    });
+                                                    const { generateQuotePDF } = await import('../../services/pdfGenerator');
+                                                    
+                                                    // Get seller info
+                                                    // Note: We might need to fetch the specific company or use generic branding
+                                                    // In list view, we usually use the default branding
+                                                    // Resolve seller data based on the quote's selected company
+                                                    const company = companies.find(c => c.id === q.sellerId) || {};
+                                                    const sellerData = {
+                                                        name: company.name || branding.companyName || "Saját Vállalkozás",
+                                                        address: company.address || branding.companyAddress || "",
+                                                        taxNumber: company.taxNumber || company.tax || branding.taxNumber || "",
+                                                        phone: company.phone || branding.companyPhone || "",
+                                                        email: company.email || branding.companyEmail || "",
+                                                        bank: company.bankAccount || company.bank || branding.bankAccount || "",
+                                                        logo: company.logoUrl || branding.logoUrl,
+                                                        primaryColor: company.primaryColor || branding.primaryColor || '#2563eb'
+                                                    };
+
+                                                    await generateQuotePDF(q, sellerData, 'share');
 
                                                     if (!q.status || q.status === 'draft') {
                                                         await updateStatus(q.id, 'sent');
                                                     }
                                                 } catch (err) {
                                                     console.warn('Share error:', err);
-                                                    navigator.clipboard.writeText(url);
-                                                    alert('Link másolva a vágólapra!');
+                                                    alert('Hiba a PDF megosztásakor!');
                                                 }
                                             }}
                                             className="p-2 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-xl transition-all"
-                                            title="Megosztás"
+                                            title="Megosztás (PDF)"
                                         >
                                             <Share2 size={20} />
                                         </button>
@@ -193,6 +285,99 @@ export default function QuoteList() {
                     ))}
                 </div>
             )}
+
+            <Modal
+                isOpen={showPaymentModal}
+                onClose={() => !isCreatingInvoice && setShowPaymentModal(false)}
+                title="Számla kiállítása"
+            >
+                <div className="p-4">
+                    <div className="grid grid-cols-2 gap-4 mb-6">
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">Teljesítés</label>
+                            <input
+                                type="date"
+                                value={fulfillmentDate}
+                                onChange={(e) => setFulfillmentDate(e.target.value)}
+                                className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none transition-all"
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">Határidő</label>
+                            <input
+                                type="date"
+                                value={dueDate}
+                                onChange={(e) => setDueDate(e.target.value)}
+                                className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none transition-all"
+                            />
+                        </div>
+                    </div>
+
+                    <p className="text-sm text-gray-600 mb-4">
+                        Válaszd ki a fizetési módot a számlához:
+                    </p>
+                    
+                    <div className="space-y-3">
+                        <button
+                            onClick={() => executeInvoiceCreation('Átutalás')}
+                            disabled={isCreatingInvoice}
+                            className="w-full flex items-center justify-between p-4 bg-gray-50 hover:bg-blue-50 border border-gray-100 hover:border-blue-200 rounded-2xl transition-all group"
+                        >
+                            <div className="flex items-center gap-3">
+                                <div className="p-2 bg-blue-100 text-blue-600 rounded-lg group-hover:bg-blue-600 group-hover:text-white transition-all">
+                                    <Landmark size={20} />
+                                </div>
+                                <div className="text-left">
+                                    <p className="font-bold text-gray-900">Átutalás</p>
+                                    <p className="text-xs text-gray-500">Banki utalásos számla</p>
+                                </div>
+                            </div>
+                            <ChevronRight size={20} className="text-gray-400" />
+                        </button>
+
+                        <button
+                            onClick={() => executeInvoiceCreation('Készpénz')}
+                            disabled={isCreatingInvoice}
+                            className="w-full flex items-center justify-between p-4 bg-gray-50 hover:bg-green-50 border border-gray-100 hover:border-green-200 rounded-2xl transition-all group"
+                        >
+                            <div className="flex items-center gap-3">
+                                <div className="p-2 bg-green-100 text-green-600 rounded-lg group-hover:bg-green-600 group-hover:text-white transition-all">
+                                    <Banknote size={20} />
+                                </div>
+                                <div className="text-left">
+                                    <p className="font-bold text-gray-900">Készpénz</p>
+                                    <p className="text-xs text-gray-500">Helyszíni fizetés</p>
+                                </div>
+                            </div>
+                            <ChevronRight size={20} className="text-gray-400" />
+                        </button>
+
+                        <button
+                            onClick={() => executeInvoiceCreation('Bankkártya')}
+                            disabled={isCreatingInvoice}
+                            className="w-full flex items-center justify-between p-4 bg-gray-50 hover:bg-purple-50 border border-gray-100 hover:border-purple-200 rounded-2xl transition-all group"
+                        >
+                            <div className="flex items-center gap-3">
+                                <div className="p-2 bg-purple-100 text-purple-600 rounded-lg group-hover:bg-purple-600 group-hover:text-white transition-all">
+                                    <CreditCard size={20} />
+                                </div>
+                                <div className="text-left">
+                                    <p className="font-bold text-gray-900">Bankkártya</p>
+                                    <p className="text-xs text-gray-500">Online vagy terminál</p>
+                                </div>
+                            </div>
+                            <ChevronRight size={20} className="text-gray-400" />
+                        </button>
+                    </div>
+
+                    {isCreatingInvoice && (
+                        <div className="mt-6 flex items-center justify-center gap-3 text-primary-600 font-medium">
+                            <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-primary-600"></div>
+                            Számla kiállítása folyamatban...
+                        </div>
+                    )}
+                </div>
+            </Modal>
         </div>
     );
 }

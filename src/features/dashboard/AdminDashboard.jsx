@@ -2,8 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { db } from '../../services/firebase';
 import { collection, query, orderBy, limit, onSnapshot } from 'firebase/firestore';
-import { PlusCircle, FileText, ShoppingBag, Users, ArrowRight, Calculator as CalcIcon, ChevronRight } from 'lucide-react';
+import { PlusCircle, FileText, ShoppingBag, Users, ArrowRight, Calculator as CalcIcon, ChevronRight, Palette, Briefcase } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
+import { useProjects } from '../../hooks/useProjects';
 import Card from '../../components/ui/Card';
 import Button from '../../components/ui/Button';
 import Badge from '../../components/ui/Badge';
@@ -11,28 +12,7 @@ import Badge from '../../components/ui/Badge';
 export default function AdminDashboard({ currentUser }) {
     const navigate = useNavigate();
     const { ownerUid } = useAuth();
-    const [projects, setProjects] = useState([]);
-    const [loading, setLoading] = useState(true);
-
-    useEffect(() => {
-        if (!currentUser?.uid) return;
-
-        const projectsQuery = query(
-            collection(db, 'users', ownerUid, 'projects'),
-            orderBy('createdAt', 'desc'),
-            limit(5)
-        );
-
-        const unsubscribe = onSnapshot(projectsQuery, (snap) => {
-            setProjects(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
-            setLoading(false);
-        }, (err) => {
-            console.error("Error fetching projects:", err);
-            setLoading(false);
-        });
-
-        return () => unsubscribe();
-    }, [ownerUid]);
+    const { projects, loading } = useProjects();
 
     const activeCount = projects.filter(p => !p.status || p.status === 'active').length;
 
@@ -42,9 +22,6 @@ export default function AdminDashboard({ currentUser }) {
                 <div>
                     <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight mb-1">Üdvözöljük!</h1>
                     <p className="text-gray-400 text-xs font-bold uppercase tracking-[0.2em]">Vállalkozás áttekintése</p>
-                </div>
-                <div className="w-12 h-12 bg-white rounded-2xl shadow-sm border border-gray-100 flex items-center justify-center text-primary-600">
-                    <Palette size={24} />
                 </div>
             </header>
 
@@ -86,20 +63,20 @@ export default function AdminDashboard({ currentUser }) {
                         <span className="text-[10px] text-gray-400 font-medium mt-1">Készítés</span>
                     </button>
 
-                    <button onClick={() => navigate('/team')} className="action-card group">
-                        <div className="action-card-icon bg-amber-50 text-amber-600">
-                            <Users size={24} />
-                        </div>
-                        <span className="text-sm font-bold text-gray-900">Csapat</span>
-                        <span className="text-[10px] text-gray-400 font-medium mt-1">Kezelés</span>
-                    </button>
-
                     <button onClick={() => navigate('/calculator')} className="action-card group">
                         <div className="action-card-icon bg-emerald-50 text-emerald-600">
                             <CalcIcon size={24} />
                         </div>
                         <span className="text-sm font-bold text-gray-900">Kalkulátor</span>
                         <span className="text-[10px] text-gray-400 font-medium mt-1">Számítás</span>
+                    </button>
+
+                    <button onClick={() => navigate('/shop')} className="action-card group">
+                        <div className="action-card-icon bg-purple-50 text-purple-600">
+                            <ShoppingBag size={24} />
+                        </div>
+                        <span className="text-sm font-bold text-gray-900">Bolt</span>
+                        <span className="text-[10px] text-gray-400 font-medium mt-1">Beszerzés</span>
                     </button>
                 </div>
             </section>

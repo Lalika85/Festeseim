@@ -2,55 +2,33 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Plus, Search, MapPin, Phone } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
-import { loadUserCollection } from '../../services/firestore';
+import { useProjects } from '../../hooks/useProjects';
+import { useSubscription } from '../../contexts/SubscriptionContext';
 import Button from '../../components/ui/Button';
+import PremiumModal from '../../components/ui/PremiumModal';
+import { Lock } from 'lucide-react';
 import Input from '../../components/ui/Input';
 import Badge from '../../components/ui/Badge';
-import { doc, onSnapshot } from 'firebase/firestore';
-import { db } from '../../services/firebase';
 
 export default function Projects() {
     const { currentUser } = useAuth();
-    const [projects, setProjects] = useState([]);
+    const { projects } = useProjects();
+    const { hasReachedLimit } = useSubscription();
+    const [isPremiumModalOpen, setIsPremiumModalOpen] = useState(false);
+
     const [filteredProjects, setFilteredProjects] = useState([]);
     const [search, setSearch] = useState('');
     const [statusFilter, setStatusFilter] = useState('all');
-    const [teamMap, setTeamMap] = useState({});
-    const [loading, setLoading] = useState(true);
+    const [loading, setLoading] = useState(false);
     const navigate = useNavigate();
 
-    useEffect(() => {
-        if (!currentUser) return;
-
-        // Fetch projects
-        const fetchProjects = async () => {
-            try {
-                const data = await loadUserCollection(currentUser.uid, 'projects');
-                setProjects(data);
-                setFilteredProjects(data);
-            } catch (err) {
-                console.error("Fetch projects error:", err);
-            } finally {
-                setLoading(false);
-            }
-        };
-        fetchProjects();
-
-        // Fetch team for name mapping
-        const teamRef = doc(db, 'users', currentUser.uid, 'settings', 'team');
-        const unsubTeam = onSnapshot(teamRef, (docSnap) => {
-            if (docSnap.exists()) {
-                const data = docSnap.data();
-                const map = {};
-                (data.members || []).forEach(m => {
-                    map[m.id] = m.name || m.email;
-                });
-                setTeamMap(map);
-            }
-        });
-
-        return () => unsubTeam();
-    }, [currentUser]);
+    const handleNewProject = () => {
+        if (hasReachedLimit) {
+            setIsPremiumModalOpen(true);
+        } else {
+            navigate('/projects/new');
+        }
+    };
 
     useEffect(() => {
         const filtered = projects.filter(p => {
@@ -69,7 +47,11 @@ export default function Projects() {
         <div className="view-container">
             <div className="flex justify-between items-center mb-6">
                 <h1 className="text-2xl font-bold text-gray-900">Munkák</h1>
-                <Button onClick={() => navigate('/projects/new')} icon={<Plus size={18} />}>
+                <Button 
+                    onClick={handleNewProject} 
+                    icon={hasReachedLimit ? <Lock size={18} className="text-amber-500" /> : <Plus size={18} />}
+                    className={hasReachedLimit ? 'border-amber-200 bg-amber-50 !text-amber-700 hover:bg-amber-100' : ''}
+                >
                     Új
                 </Button>
             </div>
@@ -127,14 +109,6 @@ export default function Projects() {
                             <div className="flex justify-between items-start mb-2">
                                 <div>
                                     <h3 className="font-semibold text-lg text-gray-900">{p.client}</h3>
-                                    {p.assignedTo && teamMap[p.assignedTo] && (
-                                        <div className="flex items-center gap-1.5 mt-1">
-                                            <div className="w-4 h-4 rounded-full bg-blue-100 flex items-center justify-center">
-                                                <div className="w-1.5 h-1.5 rounded-full bg-blue-600"></div>
-                                            </div>
-                                            <span className="text-[10px] font-bold text-blue-600 uppercase tracking-tight">Felelős: {teamMap[p.assignedTo]}</span>
-                                        </div>
-                                    )}
                                 </div>
                                 <Badge variant={p.status === 'done' ? 'success' : p.status === 'suspend' ? 'warning' : 'info'}>
                                     {p.status === 'done' ? 'Kész' : p.status === 'suspend' ? 'Felfügg.' : 'Aktív'}
@@ -161,6 +135,11 @@ export default function Projects() {
                     ))}
                 </div>
             )}
+
+            <PremiumModal 
+                isOpen={isPremiumModalOpen} 
+                onClose={() => setIsPremiumModalOpen(false)} 
+            />
         </div>
     );
 }

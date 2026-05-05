@@ -41,6 +41,7 @@ export default function Calculator({ isModal, onClose }) {
         }
     };
     const [activeTab, setActiveTab] = useState(CATEGORIES.PAINTING);
+    const [calcMode, setCalcMode] = useState('room'); // 'room', 'surface'
 
     // Shared Dimensions
     const [length, setLength] = useState(4);
@@ -81,10 +82,20 @@ export default function Calculator({ isModal, onClose }) {
         const d = parseInt(doors) || 0;
         const win = parseInt(windows) || 0;
 
-        const rawWallArea = (l * 2 + w * 2) * h;
+        let rawWallArea, ceilingArea, floorArea;
+
+        if (calcMode === 'room') {
+            rawWallArea = (l * 2 + w * 2) * h;
+            ceilingArea = l * w;
+            floorArea = l * w;
+        } else {
+            // Egyetlen felület (fal vagy padló)
+            rawWallArea = l * h;
+            ceilingArea = l * h;
+            floorArea = l * h;
+        }
+
         const netWallArea = Math.max(0, rawWallArea - (d * 2.0) - (win * 1.5));
-        const ceilingArea = l * w;
-        const floorArea = l * w;
 
         setNetArea({
             walls: netWallArea,
@@ -92,11 +103,11 @@ export default function Calculator({ isModal, onClose }) {
             floor: floorArea,
             totalForPainting: netWallArea + (includeCeiling ? ceilingArea : 0)
         });
-    }, [length, width, height, doors, windows, includeCeiling]);
+    }, [length, width, height, doors, windows, includeCeiling, calcMode]);
 
     useEffect(() => {
         calculateMaterials();
-    }, [netArea, activeTab, coats, usePrimer, plasterThickness, plasterUsage, paintCoverage, tileL, tileW, tileT, jointW, tileTarget, masonryType, masonryThickness]);
+    }, [netArea, activeTab, coats, usePrimer, plasterThickness, plasterUsage, paintCoverage, tileL, tileW, tileT, jointW, tileTarget, masonryType, masonryThickness, calcMode]);
 
     const calculateMaterials = () => {
         let list = [];
@@ -168,7 +179,7 @@ export default function Calculator({ isModal, onClose }) {
             )}
 
             {/* Tab Navigation */}
-            <div className="flex gap-1 p-1 bg-gray-100 rounded-2xl mb-6">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-2 p-1 bg-gray-100 rounded-2xl mb-6">
                 {[
                     { id: CATEGORIES.PAINTING, label: 'Festés', icon: <Paintbrush size={18} /> },
                     { id: CATEGORIES.PLASTERING, label: 'Glettelés', icon: <Eraser size={18} /> },
@@ -178,7 +189,7 @@ export default function Calculator({ isModal, onClose }) {
                     <button
                         key={tab.id}
                         onClick={() => setActiveTab(tab.id)}
-                        className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-bold transition-all ${activeTab === tab.id ? 'bg-white text-primary-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'
+                        className={`flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-bold transition-all ${activeTab === tab.id ? 'bg-white text-primary-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'
                             }`}
                     >
                         {tab.icon}
@@ -195,32 +206,72 @@ export default function Calculator({ isModal, onClose }) {
                             <CalcIcon size={20} className="text-primary-600" />
                             Alapméretek (méter)
                         </h3>
-                        <div className="grid grid-cols-2 gap-4">
-                            <Input label="Hossz (m)" type="number" value={length} onChange={(e) => setLength(e.target.value)} className="!mb-0" />
-                            <Input label="Szélesség (m)" type="number" value={width} onChange={(e) => setWidth(e.target.value)} className="!mb-0" />
-                            <Input label="Magasság (m)" type="number" value={height} onChange={(e) => setHeight(e.target.value)} className="!mb-0" />
-                            <div className="flex flex-col justify-end">
-                                <div className="text-xs text-gray-400 mb-1 italic">Levonások (ajtó/ablak)</div>
-                                <div className="flex gap-2">
-                                    <div className="flex-1 bg-gray-50 p-2 rounded-lg text-center border border-gray-100">
-                                        <div className="text-[10px] text-gray-500 uppercase">Ajtó</div>
-                                        <div className="flex items-center justify-center gap-2">
-                                            <button onClick={() => setDoors(Math.max(0, doors - 1))}><Minus size={14} /></button>
-                                            <span className="font-bold">{doors}</span>
-                                            <button onClick={() => setDoors(doors + 1)}><Plus size={14} /></button>
+                        
+                        <div className="flex flex-col gap-2 p-1.5 bg-gray-100 rounded-xl mb-4 sm:flex-row">
+                            <button onClick={() => setCalcMode('room')} className={`flex-1 py-2 rounded-lg text-sm font-bold transition-all ${calcMode === 'room' ? 'bg-white shadow-md text-primary-600' : 'text-gray-500 hover:bg-gray-200'}`}>Teljes szoba</button>
+                            <button onClick={() => setCalcMode('surface')} className={`flex-1 py-2 rounded-lg text-sm font-bold transition-all ${calcMode === 'surface' ? 'bg-white shadow-md text-primary-600' : 'text-gray-500 hover:bg-gray-200'}`}>Egyetlen felület</button>
+                        </div>
+
+                        {calcMode === 'room' ? (
+                            <div className="flex flex-col gap-4">
+                                <div className="flex flex-col gap-4">
+                                    <Input label="Szoba hossza (m)" type="number" value={length} onChange={(e) => setLength(e.target.value)} className="!mb-0" />
+                                    <Input label="Szoba szélessége (m)" type="number" value={width} onChange={(e) => setWidth(e.target.value)} className="!mb-0" />
+                                    <Input label="Belmagasság (m)" type="number" value={height} onChange={(e) => setHeight(e.target.value)} className="!mb-0" />
+                                </div>
+                                
+                                <div className="border-t border-gray-100 pt-3 mt-1 w-full">
+                                    <div className="text-[10px] text-gray-500 mb-2 uppercase font-bold tracking-wider text-center">Levonások</div>
+                                    <div className="flex flex-col gap-2">
+                                        <div className="bg-gray-50 p-3 rounded-xl flex items-center justify-between border border-gray-100">
+                                            <div className="text-xs text-gray-600 font-bold uppercase tracking-wide">Ajtó levonás</div>
+                                            <div className="flex items-center gap-3">
+                                                <button type="button" onClick={(e) => { e.preventDefault(); setDoors(Math.max(0, doors - 1)); }} className="bg-white shadow-sm rounded-md border border-gray-200 p-2 active:bg-gray-100"><Minus size={14} className="text-gray-600"/></button>
+                                                <span className="font-black text-sm min-w-[24px] text-center text-gray-800">{doors}</span>
+                                                <button type="button" onClick={(e) => { e.preventDefault(); setDoors(doors + 1); }} className="bg-white shadow-sm rounded-md border border-gray-200 p-2 active:bg-gray-100"><Plus size={14} className="text-gray-600"/></button>
+                                            </div>
                                         </div>
-                                    </div>
-                                    <div className="flex-1 bg-gray-50 p-2 rounded-lg text-center border border-gray-100">
-                                        <div className="text-[10px] text-gray-500 uppercase">Ablak</div>
-                                        <div className="flex items-center justify-center gap-2">
-                                            <button onClick={() => setWindows(Math.max(0, windows - 1))}><Minus size={14} /></button>
-                                            <span className="font-bold">{windows}</span>
-                                            <button onClick={() => setWindows(windows + 1)}><Plus size={14} /></button>
+                                        <div className="bg-gray-50 p-3 rounded-xl flex items-center justify-between border border-gray-100">
+                                            <div className="text-xs text-gray-600 font-bold uppercase tracking-wide">Ablak levonás</div>
+                                            <div className="flex items-center gap-3">
+                                                <button type="button" onClick={(e) => { e.preventDefault(); setWindows(Math.max(0, windows - 1)); }} className="bg-white shadow-sm rounded-md border border-gray-200 p-2 active:bg-gray-100"><Minus size={14} className="text-gray-600"/></button>
+                                                <span className="font-black text-sm min-w-[24px] text-center text-gray-800">{windows}</span>
+                                                <button type="button" onClick={(e) => { e.preventDefault(); setWindows(windows + 1); }} className="bg-white shadow-sm rounded-md border border-gray-200 p-2 active:bg-gray-100"><Plus size={14} className="text-gray-600"/></button>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
                             </div>
-                        </div>
+                        ) : (
+                            <div className="flex flex-col gap-4">
+                                <div className="flex flex-col gap-4">
+                                    <Input label="Felület Szélessége (m)" type="number" value={length} onChange={(e) => setLength(e.target.value)} className="!mb-0" />
+                                    <Input label="Felület Magassága (m)" type="number" value={height} onChange={(e) => setHeight(e.target.value)} className="!mb-0" />
+                                </div>
+                                <div className="border-t border-gray-100 pt-3 mt-1 w-full">
+                                    <div className="text-[10px] text-gray-500 mb-2 uppercase font-bold tracking-wider text-center">Levonások</div>
+                                    <div className="flex flex-col gap-2">
+                                        <div className="bg-gray-50 p-3 rounded-xl flex items-center justify-between border border-gray-100 gap-2">
+                                            <div className="text-xs text-gray-600 font-bold uppercase tracking-wide flex-1">Ajtó-rész levonás</div>
+                                            <div className="flex items-center gap-3">
+                                                <button type="button" onClick={(e) => { e.preventDefault(); setDoors(Math.max(0, doors - 1)); }} className="bg-white shadow-sm rounded-md border border-gray-200 p-2 active:bg-gray-100"><Minus size={14} className="text-gray-600"/></button>
+                                                <span className="font-black text-sm min-w-[24px] text-center text-gray-800">{doors}</span>
+                                                <button type="button" onClick={(e) => { e.preventDefault(); setDoors(doors + 1); }} className="bg-white shadow-sm rounded-md border border-gray-200 p-2 active:bg-gray-100"><Plus size={14} className="text-gray-600"/></button>
+                                            </div>
+                                        </div>
+                                        <div className="bg-gray-50 p-3 rounded-xl flex items-center justify-between border border-gray-100 gap-2">
+                                            <div className="text-xs text-gray-600 font-bold uppercase tracking-wide flex-1">Ablak-rész levonás</div>
+                                            <div className="flex items-center gap-3">
+                                                <button type="button" onClick={(e) => { e.preventDefault(); setWindows(Math.max(0, windows - 1)); }} className="bg-white shadow-sm rounded-md border border-gray-200 p-2 active:bg-gray-100"><Minus size={14} className="text-gray-600"/></button>
+                                                <span className="font-black text-sm min-w-[24px] text-center text-gray-800">{windows}</span>
+                                                <button type="button" onClick={(e) => { e.preventDefault(); setWindows(windows + 1); }} className="bg-white shadow-sm rounded-md border border-gray-200 p-2 active:bg-gray-100"><Plus size={14} className="text-gray-600"/></button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <p className="text-[10px] text-gray-400 mt-2 italic text-center">A beállított mennyiséget levonja a kiszámolt m²-ből.</p>
+                                </div>
+                            </div>
+                        )}
                     </Card>
 
                     {/* Category Specific Inputs */}
@@ -229,9 +280,9 @@ export default function Calculator({ isModal, onClose }) {
 
                         {activeTab === CATEGORIES.PAINTING && (
                             <div className="space-y-4">
-                                <div className="grid grid-cols-2 gap-4">
-                                    <Input label="Rétegszám" type="number" value={coats} onChange={(e) => setCoats(e.target.value)} />
-                                    <Input label="Kiadósság (m²/L)" type="number" value={paintCoverage} onChange={(e) => setPaintCoverage(e.target.value)} />
+                                <div className="flex flex-col sm:flex-row gap-4">
+                                    <div className="flex-1"><Input label="Rétegszám" type="number" value={coats} onChange={(e) => setCoats(e.target.value)} className="!mb-0" /></div>
+                                    <div className="flex-1"><Input label="Kiadósság (m²/L)" type="number" value={paintCoverage} onChange={(e) => setPaintCoverage(e.target.value)} className="!mb-0" /></div>
                                 </div>
                                 <div className="flex flex-col gap-2">
                                     <label className="flex items-center gap-3 p-3 rounded-xl bg-gray-50 cursor-pointer">
@@ -248,9 +299,9 @@ export default function Calculator({ isModal, onClose }) {
 
                         {activeTab === CATEGORIES.PLASTERING && (
                             <div className="space-y-4">
-                                <div className="grid grid-cols-2 gap-4">
-                                    <Input label="Réteg (mm)" type="number" value={plasterThickness} onChange={(e) => setPlasterThickness(e.target.value)} />
-                                    <Input label="Kiadósság (kg/m²/mm)" type="number" value={plasterUsage} onChange={(e) => setPlasterUsage(e.target.value)} />
+                                <div className="flex flex-col sm:flex-row gap-4">
+                                    <div className="flex-1"><Input label="Réteg (mm)" type="number" value={plasterThickness} onChange={(e) => setPlasterThickness(e.target.value)} className="!mb-0" /></div>
+                                    <div className="flex-1"><Input label="Kiadósság (kg/m²/mm)" type="number" value={plasterUsage} onChange={(e) => setPlasterUsage(e.target.value)} className="!mb-0" /></div>
                                 </div>
                                 <p className="text-xs text-gray-400 italic">Vékony glettelésre általában 1-2 mm javasolt.</p>
                                 <label className="flex items-center gap-3 p-3 rounded-xl bg-gray-50 cursor-pointer">
@@ -262,29 +313,33 @@ export default function Calculator({ isModal, onClose }) {
 
                         {activeTab === CATEGORIES.TILING && (
                             <div className="space-y-4">
-                                <div className="flex gap-2 p-1 bg-gray-100 rounded-xl mb-4">
-                                    <button onClick={() => setTileTarget('floor')} className={`flex-1 py-2 rounded-lg text-xs font-bold ${tileTarget === 'floor' ? 'bg-white shadow-sm' : 'text-gray-500'}`}>Padló</button>
-                                    <button onClick={() => setTileTarget('walls')} className={`flex-1 py-2 rounded-lg text-xs font-bold ${tileTarget === 'walls' ? 'bg-white shadow-sm' : 'text-gray-500'}`}>Oldalfal</button>
+                                <div className="flex flex-col gap-2 p-1.5 bg-gray-100 rounded-xl mb-4 sm:flex-row">
+                                    <button onClick={() => setTileTarget('floor')} className={`flex-1 py-2.5 rounded-lg text-sm font-bold transition-all ${tileTarget === 'floor' ? 'bg-white shadow-md text-primary-600' : 'text-gray-500 hover:bg-gray-200'}`}>Padló burkolása</button>
+                                    <button onClick={() => setTileTarget('walls')} className={`flex-1 py-2.5 rounded-lg text-sm font-bold transition-all ${tileTarget === 'walls' ? 'bg-white shadow-md text-primary-600' : 'text-gray-500 hover:bg-gray-200'}`}>Oldalfal burkolása</button>
                                 </div>
-                                <div className="grid grid-cols-2 gap-3">
-                                    <Input label="Lap Hossz (mm)" type="number" value={tileL} onChange={(e) => setTileL(e.target.value)} className="!mb-0" />
-                                    <Input label="Lap Szélesség (mm)" type="number" value={tileW} onChange={(e) => setTileW(e.target.value)} className="!mb-0" />
-                                    <Input label="Vastagság (mm)" type="number" value={tileT} onChange={(e) => setTileT(e.target.value)} className="!mb-0" />
-                                    <Input label="Fúga (mm)" type="number" value={jointW} onChange={(e) => setJointW(e.target.value)} className="!mb-0" />
+                                <div className="flex flex-col gap-3">
+                                    <div className="flex gap-3">
+                                        <div className="flex-1"><Input label="Lap Hossz (mm)" type="number" value={tileL} onChange={(e) => setTileL(e.target.value)} className="!mb-0" /></div>
+                                        <div className="flex-1"><Input label="Lap Szélesség (mm)" type="number" value={tileW} onChange={(e) => setTileW(e.target.value)} className="!mb-0" /></div>
+                                    </div>
+                                    <div className="flex gap-3">
+                                        <div className="flex-1"><Input label="Vastagság (mm)" type="number" value={tileT} onChange={(e) => setTileT(e.target.value)} className="!mb-0" /></div>
+                                        <div className="flex-1"><Input label="Fúga (mm)" type="number" value={jointW} onChange={(e) => setJointW(e.target.value)} className="!mb-0" /></div>
+                                    </div>
                                 </div>
                             </div>
                         )}
 
                         {activeTab === CATEGORIES.MASONRY && (
                             <div className="space-y-4">
-                                <div className="flex flex-wrap gap-2 p-1 bg-gray-100 rounded-xl mb-4">
-                                    <button onClick={() => setMasonryType(MASONRY_TYPES.DRY_CONCRETE)} className={`flex-1 py-2 px-1 rounded-lg text-[10px] font-bold ${masonryType === MASONRY_TYPES.DRY_CONCRETE ? 'bg-white shadow-sm text-primary-600' : 'text-gray-500'}`}>Szárazbeton</button>
-                                    <button onClick={() => setMasonryType(MASONRY_TYPES.VIABLOKK)} className={`flex-1 py-2 px-1 rounded-lg text-[10px] font-bold ${masonryType === MASONRY_TYPES.VIABLOKK ? 'bg-white shadow-sm text-primary-600' : 'text-gray-500'}`}>Viablokk</button>
-                                    <button onClick={() => setMasonryType(MASONRY_TYPES.MANUAL_PLASTER)} className={`flex-1 py-2 px-1 rounded-lg text-[10px] font-bold ${masonryType === MASONRY_TYPES.MANUAL_PLASTER ? 'bg-white shadow-sm text-primary-600' : 'text-gray-500'}`}>Kézi vakolat</button>
+                                <div className="flex flex-col sm:flex-row gap-2 p-1.5 bg-gray-100 rounded-xl mb-4">
+                                    <button onClick={() => setMasonryType(MASONRY_TYPES.DRY_CONCRETE)} className={`flex-1 py-3 px-2 rounded-lg text-sm sm:text-xs font-bold leading-tight transition-all ${masonryType === MASONRY_TYPES.DRY_CONCRETE ? 'bg-white shadow-md text-primary-600' : 'text-gray-500 hover:bg-gray-200'}`}>Szárazbeton</button>
+                                    <button onClick={() => setMasonryType(MASONRY_TYPES.VIABLOKK)} className={`flex-1 py-3 px-2 rounded-lg text-sm sm:text-xs font-bold leading-tight transition-all ${masonryType === MASONRY_TYPES.VIABLOKK ? 'bg-white shadow-md text-primary-600' : 'text-gray-500 hover:bg-gray-200'}`}>Viablokk fal</button>
+                                    <button onClick={() => setMasonryType(MASONRY_TYPES.MANUAL_PLASTER)} className={`flex-1 py-3 px-2 rounded-lg text-sm sm:text-xs font-bold leading-tight transition-all ${masonryType === MASONRY_TYPES.MANUAL_PLASTER ? 'bg-white shadow-md text-primary-600' : 'text-gray-500 hover:bg-gray-200'}`}>Kézi vakolat</button>
                                 </div>
                                 
                                 {masonryType !== MASONRY_TYPES.VIABLOKK && (
-                                    <div className="grid grid-cols-1 gap-3">
+                                    <div className="flex flex-col gap-3">
                                         <Input 
                                             label="Vastagság (cm)" 
                                             type="number" 
@@ -299,7 +354,7 @@ export default function Calculator({ isModal, onClose }) {
                                 )}
                                 
                                 {masonryType === MASONRY_TYPES.VIABLOKK && (
-                                    <p className="text-xs text-gray-400 italic">A számítás standard 8,33 db/m² anyagszükséglettel történik.</p>
+                                    <p className="text-xs text-gray-400 italic">A számítás standard 8,33 db/m² anyagszükséglettel történik, 10 cm vastagságú válaszfal elemmel számolva.</p>
                                 )}
                             </div>
                         )}

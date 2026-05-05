@@ -44,7 +44,7 @@ export default function AIAssistant() {
                         <Bot size={20} />
                     </div>
                     <div>
-                        <h3 className="font-bold text-sm">Festő Al Segéd</h3>
+                        <h3 className="font-bold text-sm">Vállalkozói Segéd</h3>
                         <div className="flex items-center gap-1.5">
                             <div className={`w-2 h-2 rounded-full ${isThinking ? 'bg-amber-400 animate-pulse' : 'bg-green-400'}`}></div>
                             <span className="text-[10px] opacity-80 uppercase tracking-widest font-bold">

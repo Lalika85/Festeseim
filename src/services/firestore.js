@@ -1,42 +1,54 @@
 import { db } from "./firebase";
-import {
-    doc,
-    collection,
+import { 
+    doc, 
+    setDoc, 
+    deleteDoc, 
+    collection, 
+    getDocs, 
     getDoc,
-    getDocs,
-    setDoc,
-    deleteDoc,
     query,
     orderBy
 } from "firebase/firestore";
 
-export const getUserRef = (uid, collName) => collection(db, 'users', uid, collName);
-export const getSettingsRef = (uid, docName) => doc(db, 'users', uid, 'settings', docName);
-
 export const syncItem = async (uid, collName, item) => {
     if (!uid || !item.id) return;
-    await setDoc(doc(db, 'users', uid, collName, String(item.id)), item);
+    const docRef = doc(db, 'users', uid, collName, String(item.id));
+    await setDoc(docRef, item, { merge: true });
 };
 
 export const removeItem = async (uid, collName, id) => {
     if (!uid || !id) return;
-    await deleteDoc(doc(db, 'users', uid, collName, String(id)));
+    const docRef = doc(db, 'users', uid, collName, String(id));
+    await deleteDoc(docRef);
 };
 
 export const syncSettings = async (uid, docName, data) => {
     if (!uid) return;
-    await setDoc(getSettingsRef(uid, docName), data);
+    const docRef = doc(db, 'users', uid, 'settings', docName);
+    await setDoc(docRef, data, { merge: true });
 };
 
-export const loadUserCollection = async (uid, collName, sortBy = 'id') => {
-    const q = query(getUserRef(uid, collName), orderBy(sortBy, 'desc'));
-    const snap = await getDocs(q);
-    const items = [];
-    snap.forEach(doc => items.push(doc.data()));
-    return items;
+export const loadUserCollection = async (uid, collName, sortBy = 'createdAt') => {
+    if (!uid) return [];
+    try {
+        const colRef = collection(db, 'users', uid, collName);
+        const q = query(colRef, orderBy(sortBy, 'desc'));
+        const snapshot = await getDocs(q);
+        return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    } catch (err) {
+        console.error(`Error loading collection ${collName}:`, err);
+        return [];
+    }
 };
 
 export const loadUserSettings = async (uid, docName) => {
-    const docSnap = await getDoc(getSettingsRef(uid, docName));
-    return docSnap.exists() ? docSnap.data() : null;
+    if (!uid) return null;
+    try {
+        const docRef = doc(db, 'users', uid, 'settings', docName);
+        const snapshot = await getDoc(docRef);
+        return snapshot.exists() ? snapshot.data() : null;
+    } catch (err) {
+        console.error(`Error loading settings ${docName}:`, err);
+        return null;
+    }
 };

@@ -38,6 +38,7 @@
   /* Glassmorphism Header Effects */
   .glass-header {
     @apply bg-white/70 backdrop-blur-xl border-b border-white/20 sticky top-0 z-[60];
+    padding-top: max(env(safe-area-inset-top), 0px);
   }
 
   /* Modern Buttons */
@@ -111,6 +112,10 @@
 @layer utilities {
   .safe-area-inset-bottom {
     padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  .safe-area-inset-top {
+    padding-top: env(safe-area-inset-top);
   }
 
   .text-gradient {

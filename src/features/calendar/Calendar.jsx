@@ -2,24 +2,20 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, Loader, Edit3, X, Save, ExternalLink } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
-import { loadUserCollection } from '../../services/firestore';
-import { auth, googleProvider, db } from '../../services/firebase';
-import { signInWithPopup } from 'firebase/auth';
-import { doc, updateDoc } from 'firebase/firestore';
+import { localDB } from '../../services/localDB';
 import Card from '../../components/ui/Card';
 import Button from '../../components/ui/Button';
 import Modal from '../../components/ui/Modal';
 import Input from '../../components/ui/Input';
 import Select from '../../components/ui/Select';
+import Badge from '../../components/ui/Badge';
 
 export default function Calendar() {
     const { currentUser } = useAuth();
     const navigate = useNavigate();
     const [currentDate, setCurrentDate] = useState(new Date());
     const [projects, setProjects] = useState([]);
-    const [googleEvents, setGoogleEvents] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [isGoogleConnected, setIsGoogleConnected] = useState(!!localStorage.getItem('google_access_token'));
 
     // Modal State
     const [selectedEvent, setSelectedEvent] = useState(null);
@@ -65,93 +61,23 @@ export default function Calendar() {
         return calColors[index];
     };
 
-    const fetchGoogleEvents = useCallback(async () => {
-        const token = localStorage.getItem('google_access_token');
-        if (!token) return [];
-        try {
-            const startOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1).toISOString();
-            const endOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0).toISOString();
-
-            const response = await fetch(`https://www.googleapis.com/calendar/v3/calendars/primary/events?timeMin=${startOfMonth}&timeMax=${endOfMonth}&singleEvents=true&orderBy=startTime`, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-
-            if (response.status === 401) {
-                localStorage.removeItem('google_access_token');
-                setIsGoogleConnected(false);
-                return [];
-            }
-
-            const data = await response.json();
-            return data.items || [];
-        } catch (err) {
-            console.error("Google fetch error:", err);
-            return [];
-        }
-    }, [currentDate]);
-
     const loadData = useCallback(async () => {
         if (!currentUser) return;
         setLoading(true);
         try {
-            const [pData, gData] = await Promise.all([
-                loadUserCollection(currentUser.uid, 'projects'),
-                fetchGoogleEvents()
-            ]);
+            // Load local projects
+            const pData = localDB.getAll(currentUser.uid, 'projects');
             setProjects(pData || []);
-            setGoogleEvents(gData || []);
         } catch (err) {
             console.error("Calendar data load error:", err);
         } finally {
             setLoading(false);
         }
-    }, [currentUser, fetchGoogleEvents]);
+    }, [currentUser]);
 
     useEffect(() => {
         loadData();
     }, [loadData]);
-
-    const handleGoogleLogin = async () => {
-        try {
-            const isNative = window.Capacitor?.isNative;
-            let token = null;
-
-            if (isNative) {
-                // Native Google Sign-In
-                try {
-                    const { FirebaseAuthentication } = await import('@capacitor-firebase/authentication');
-                    const result = await FirebaseAuthentication.signInWithGoogle();
-                    const idToken = result.credential?.idToken;
-
-                    if (idToken) {
-                        // Bridge to Web SDK for Firestore access
-                        const { GoogleAuthProvider, signInWithCredential } = await import('firebase/auth');
-                        const credential = GoogleAuthProvider.credential(idToken);
-                        await signInWithCredential(auth, credential);
-                        token = result.credential?.accessToken; // Or use idToken as needed for API
-                    }
-                } catch (nativeErr) {
-                    console.error("Native Google Login failed:", nativeErr);
-                    throw nativeErr; // Re-throw to handle in outer catch
-                }
-            } else {
-                // Web Google Sign-In
-                const result = await signInWithPopup(auth, googleProvider);
-                const credential = result.credential;
-                token = credential?.accessToken;
-            }
-
-            if (token) {
-                localStorage.setItem('google_access_token', token);
-                setIsGoogleConnected(true);
-                const gData = await fetchGoogleEvents();
-                setGoogleEvents(gData);
-            }
-        } catch (error) {
-            console.error("Google login error:", error);
-            alert("Google bejelentkezés sikertelen! " + error.message);
-        }
-    };
 
     const changeMonth = (delta) => {
         const next = new Date(currentDate.getFullYear(), currentDate.getMonth() + delta, 1);
@@ -159,7 +85,6 @@ export default function Calendar() {
     };
 
     const openEventModal = (e) => {
-        if (e.type === 'google') return; // Read-only for Google events currently
         setSelectedEvent(e);
         setEditForm({
             status: e.status || 'active',
@@ -173,14 +98,14 @@ export default function Calendar() {
         if (!selectedEvent || !currentUser) return;
         setIsFormatSaving(true);
         try {
-            const docRef = doc(db, 'users', currentUser.uid, 'projects', selectedEvent.id);
-            await updateDoc(docRef, editForm);
+            // Update localDB
+            localDB.set(currentUser.uid, 'projects', selectedEvent.id, editForm);
 
             // Update local state
             setProjects(prev => prev.map(p => p.id === selectedEvent.id ? { ...p, ...editForm } : p));
             setSelectedEvent(null);
         } catch (err) {
-            console.error("Error updating project:", err);
+            console.error("Error updating project locally:", err);
             alert("Hiba mentéskor!");
         } finally {
             setIsFormatSaving(false);
@@ -199,19 +124,13 @@ export default function Calendar() {
     for (let i = 1; i <= daysInMonth; i++) {
         const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
         const dayProjects = projects.filter(p => p.start && p.end && dateStr >= p.start && dateStr <= p.end);
-        const dayGoogle = googleEvents.filter(e => {
-            if (!e.start) return false;
-            const start = (e.start.dateTime || e.start.date || '').slice(0, 10);
-            return start === dateStr;
-        });
 
         days.push({
             type: 'day',
             num: i,
             isToday: new Date().toDateString() === new Date(year, month, i).toDateString(),
             events: [
-                ...dayProjects.map(p => ({ ...p, color: getProjectColor(p.id), type: 'project' })),
-                ...dayGoogle.map(() => ({ color: '#4285F4', type: 'google' }))
+                ...dayProjects.map(p => ({ ...p, color: getProjectColor(p.id), type: 'project' }))
             ]
         });
     }
@@ -222,26 +141,13 @@ export default function Calendar() {
             const mStart = `${year}-${String(month + 1).padStart(2, '0')}-01`;
             const mEnd = `${year}-${String(month + 1).padStart(2, '0')}-${daysInMonth}`;
             return p.start <= mEnd && p.end >= mStart;
-        }).map(p => ({ ...p, type: 'project', date: p.start })),
-        ...googleEvents.filter(e => e.start && (e.start.dateTime || e.start.date)).map(e => ({
-            id: e.id,
-            client: e.summary || 'Névtelen esemény',
-            start: (e.start.dateTime || e.start.date),
-            end: (e.end.dateTime || e.end.date),
-            type: 'google',
-            date: (e.start.dateTime || e.start.date)
-        }))
+        }).map(p => ({ ...p, type: 'project', date: p.start }))
     ].sort((a, b) => new Date(a.date) - new Date(b.date));
 
     return (
         <div className="view-container">
             <div className="flex justify-between items-center mb-6">
                 <h1 className="text-2xl font-bold text-gray-900">Naptár</h1>
-                {!isGoogleConnected && (
-                    <Button variant="secondary" onClick={handleGoogleLogin} className="!py-1.5 !px-3 !text-xs">
-                        Google Connect
-                    </Button>
-                )}
             </div>
 
             <Card className="!p-4 mb-6">
@@ -277,7 +183,7 @@ export default function Calendar() {
                                                 title={e.client}
                                                 onClick={(ev) => {
                                                     ev.stopPropagation();
-                                                    if (e.type === 'project') openEventModal(e);
+                                                    openEventModal(e);
                                                 }}
                                             ></div>
                                         ))}
@@ -305,13 +211,13 @@ export default function Calendar() {
                         {allMonthEvents.map((e, idx) => (
                             <div
                                 key={idx}
-                                onClick={() => e.type === 'project' && openEventModal(e)}
-                                className={`bg-white p-3 rounded-xl border border-gray-200 shadow-sm flex items-center gap-3 transition-colors ${e.type === 'project' ? 'cursor-pointer hover:border-primary-300' : ''}`}
+                                onClick={() => openEventModal(e)}
+                                className="bg-white p-3 rounded-xl border border-gray-200 shadow-sm flex items-center gap-3 transition-colors cursor-pointer hover:border-primary-300"
                             >
                                 <div
                                     className="w-2.5 h-2.5 rounded-full flex-shrink-0"
                                     style={{
-                                        background: e.type === 'project' ? getProjectColor(e.id || 'x') : '#4285F4',
+                                        background: getProjectColor(e.id || 'x'),
                                         opacity: e.status === 'done' ? 0.4 : 1
                                     }}
                                 ></div>
@@ -324,10 +230,7 @@ export default function Calendar() {
                                         {e.status === 'suspend' && <Badge variant="warning" className="text-[9px] py-0 px-1">SZÜNETEL</Badge>}
                                     </div>
                                     <div className="text-xs text-gray-500">
-                                        {e.type === 'project' ?
-                                            `${e.start} - ${e.end}` :
-                                            new Date(e.date).toLocaleTimeString('hu-HU', { hour: '2-digit', minute: '2-digit' })
-                                        }
+                                        {e.start} - {e.end}
                                     </div>
                                 </div>
                             </div>

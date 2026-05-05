@@ -1,19 +1,23 @@
-import React, { createContext, useContext, useEffect, useRef } from 'react';
+import React, { createContext, useContext, useEffect, useRef, useState } from 'react';
 import { LocalNotifications } from '@capacitor/local-notifications';
-import { db } from '../services/firebase';
-import { doc, onSnapshot, collection } from 'firebase/firestore';
 import { useAuth } from '../hooks/useAuth';
 import { useToast } from '../hooks/useToast';
 import { useProjects } from '../hooks/useProjects';
+import { localDB } from '../services/localDB';
 
 const NotificationContext = createContext();
 
 export const NotificationProvider = ({ children }) => {
-    const { currentUser } = useAuth();
+    const { currentUser, ownerUid } = useAuth();
     const { showToast } = useToast();
     const { projects } = useProjects();
-    const isInitialLoad = useRef(true);
-    const settings = useRef({ upcomingWork: true, quoteAccepted: true, newWorkAssigned: true });
+    const [settings, setSettings] = useState({
+        upcomingWork: true,
+        notifyJobStart: true,
+        startLeadTime: '1d',
+        notifyDeadline: true,
+        endLeadTime: '1d'
+    });
 
     // --- DIAGNOSTIC LOGGER ---
     const logToStorage = (message, type = 'info') => {
@@ -47,9 +51,9 @@ export const NotificationProvider = ({ children }) => {
         try {
             await LocalNotifications.createChannel({
                 id: 'default',
-                name: 'Fontos Értesítések',
+                name: 'Munkanapló Értesítések',
                 importance: 5,
-                description: 'Árajánlat elfogadva és egyéb fontos események',
+                description: 'Munka kezdete és határidő emlékeztetők',
                 sound: 'beep.wav',
                 visibility: 1,
                 vibration: true
@@ -59,157 +63,135 @@ export const NotificationProvider = ({ children }) => {
         }
     };
 
-    const scheduleNotification = async (title, body, id = Math.floor(Math.random() * 100000)) => {
+    const scheduleNotification = async (title, body, id, at) => {
         try {
             await createChannel();
             const perm = await LocalNotifications.checkPermissions();
             if (perm.display !== 'granted') {
-                logToStorage('Permission not granted', 'warn');
+                logToStorage('Engedély megtagadva', 'warn');
                 return;
             }
 
-            const scheduleAt = new Date(Date.now() + 2000);
+            // Only schedule if 'at' is in the future
+            if (at && at < new Date()) {
+                return;
+            }
+
+            // Ensure id is a number, default to randomly generated for tests if missing
+            const notificationId = typeof id === 'number' ? id : Math.floor(Math.random() * 2147483647);
+            
+            const notification = {
+                title: title || "Értesítés",
+                body: body || "",
+                id: notificationId,
+                channelId: 'default',
+                schedule: { at: at || new Date(Date.now() + 2000) },
+                sound: 'beep.wav'
+            };
+
             await LocalNotifications.schedule({
-                notifications: [
-                    {
-                        title, body, id,
-                        channelId: 'default',
-                        schedule: { at: scheduleAt },
-                        sound: 'beep.wav'
-                    }
-                ]
+                notifications: [notification]
             });
-            logToStorage(`Scheduled: ${title}`, 'success');
+
+            if (at) {
+                logToStorage(`Ütemezve: ${title} (${at.toLocaleString()})`, 'success');
+            } else {
+                logToStorage(`Azonnali értesítés: ${title}`, 'success');
+            }
         } catch (e) {
-            logToStorage(`Schedule error: ${e.message}`, 'error');
+            logToStorage(`Hiba az ütemezésnél: ${e.message}`, 'error');
+            console.error("Notification scheduling error:", e);
         }
     };
 
     const sendTestNotification = async () => {
         await createChannel();
         await requestPermissions();
-        await scheduleNotification("Teszt Értesítés 🔔", "Ez egy visszajelzés, hogy a telefonod értesítési rendszere működik.");
+        await scheduleNotification("Teszt Értesítés 🔔", "Az értesítési rendszer megfelelően működik.");
         showToast("Teszt értesítés kiküldve!", "info");
     };
 
-    // 1. Settings listener
+    // Load settings from localDB
     useEffect(() => {
-        if (!currentUser) return;
-        const unsub = onSnapshot(doc(db, 'users', currentUser.uid, 'settings', 'notifications'), (snap) => {
-            if (snap.exists()) {
-                settings.current = snap.data();
+        if (!ownerUid) return;
+        const unsub = localDB.subscribe(ownerUid, 'settings', (data) => {
+            if (data && data.notifications) {
+                setSettings(prev => ({ ...prev, ...data.notifications }));
             }
         });
         return () => unsub();
-    }, [currentUser]);
+    }, [ownerUid]);
 
-    // 2. Quote acceptance observer
+    // Main Scheduling Logic
     useEffect(() => {
-        if (!currentUser) return;
+        if (!ownerUid || projects.length === 0) return;
 
-        const path = `users/${currentUser.uid}/quotes`;
-        logToStorage(`Observer: Starting on ${path}`, 'info');
-
-        const q = collection(db, 'users', currentUser.uid, 'quotes');
-
-        const unsubscribe = onSnapshot(q, (snapshot) => {
-            const persistentIds = new Set(JSON.parse(localStorage.getItem('notified_quote_ids') || '[]'));
-
-            if (isInitialLoad.current) {
-                snapshot.docs.forEach(doc => {
-                    const data = doc.data();
-                    if (data.status === 'accepted') persistentIds.add(doc.id);
-                });
-                localStorage.setItem('notified_quote_ids', JSON.stringify(Array.from(persistentIds)));
-                isInitialLoad.current = false;
-                logToStorage(`Observer ready.`, 'success');
-                return;
+        const syncReminders = async () => {
+            // 1. Cancel all existing notification to avoid duplicates
+            try {
+                const pending = await LocalNotifications.getPending();
+                if (pending.notifications.length > 0) {
+                    await LocalNotifications.cancel(pending);
+                }
+            } catch (e) {
+                console.warn("Could not cancel pending notifications", e);
             }
 
-            if (!settings.current.quoteAccepted) return;
+            if (!settings.upcomingWork) return;
 
-            snapshot.docChanges().forEach((change) => {
-                if (change.type === 'added' || change.type === 'modified') {
-                    const quote = change.doc.data();
-                    const qId = change.doc.id;
+            const leadTimeMs = {
+                '1h': 3600000,
+                '3h': 10800000,
+                '1d': 86400000,
+                '2d': 172800000,
+                '1w': 604800000
+            };
 
-                    if (quote.status === 'accepted' && !persistentIds.has(qId)) {
-                        logToStorage(`Elfogadva: ${quote.number}`, 'success');
+            projects.forEach(project => {
+                if (!project.id) return;
+                
+                // IDs must be numeric 32-bit. Project IDs are strings with timestamps usually.
+                const baseId = parseInt(String(project.id).slice(-7)) || Math.floor(Math.random() * 1000000);
+
+                // --- Job Start Reminder ---
+                if (settings.notifyJobStart && project.start) {
+                    const startTime = new Date(project.start);
+                    startTime.setHours(8, 0, 0, 0); // Default to 8 AM on start day
+                    const notifyAt = new Date(startTime.getTime() - (leadTimeMs[settings.startLeadTime] || leadTimeMs['1d']));
+                    
+                    if (notifyAt > new Date()) {
                         scheduleNotification(
-                            "Árajánlat elfogadva! 🎉",
-                            `${quote.buyerName ?? 'Ügyfél'} elfogadta a(z) ${quote.number ?? ''} számú ajánlatot.`
+                            "Hamarosan kezdés! 🚀",
+                            `Munka kezdődik: ${project.client || 'Ismeretlen'} (${project.location || ''})`,
+                            baseId * 10 + 1,
+                            notifyAt
                         );
-                        showToast(`${quote.buyerName ?? 'Ügyfél'} elfogadta az ajánlatot!`, 'success');
-                        persistentIds.add(qId);
-                        localStorage.setItem('notified_quote_ids', JSON.stringify(Array.from(persistentIds)));
+                    }
+                }
+
+                // --- Deadline Reminder ---
+                if (settings.notifyDeadline && project.end) {
+                    const endTime = new Date(project.end);
+                    endTime.setHours(17, 0, 0, 0); // Default to 5 PM on end day
+                    const notifyAt = new Date(endTime.getTime() - (leadTimeMs[settings.endLeadTime] || leadTimeMs['1d']));
+                    
+                    if (notifyAt > new Date()) {
+                        scheduleNotification(
+                            "Határidő közeledik! ⏳",
+                            `Befejezési határidő: ${project.client || 'Ismeretlen'}`,
+                            baseId * 10 + 2,
+                            notifyAt
+                        );
                     }
                 }
             });
-        }, (error) => {
-            logToStorage(`Error: ${error.message}`, 'error');
-        });
-
-        const listenerPromise = LocalNotifications.addListener('localNotificationReceived', (n) => {
-            logToStorage(`Foreground: ${n.title}`, 'info');
-        });
-
-        // 4. Generic Notifications Observer (New Member, Work Assigned)
-        const notifPath = `users/${currentUser.uid}/notifications`;
-        const notifQ = collection(db, 'users', currentUser.uid, 'notifications');
-
-        const unsubscribeNotifs = onSnapshot(notifQ, (snapshot) => {
-            snapshot.docChanges().forEach((change) => {
-                if (change.type === 'added') {
-                    const data = change.doc.data();
-
-                    // Skip if initial load or already read
-                    if (data.read || isInitialLoad.current) return;
-
-                    logToStorage(`New Notification: ${data.title}`, 'success');
-                    scheduleNotification(data.title, data.body);
-                    showToast(data.title, 'info');
-                }
-            });
-        });
-
-        return () => {
-            unsubscribe();
-            unsubscribeNotifs();
-            listenerPromise.then(h => {
-                if (h && typeof h.remove === 'function') {
-                    h.remove();
-                }
-            }).catch(err => console.warn("Listener removal failed", err));
-        };
-    }, [currentUser]);
-
-    // 3. Tomorrow's work check
-    useEffect(() => {
-        if (!currentUser || projects.length === 0) return;
-
-        const checkUpcomingJobs = async () => {
-            if (!settings.current.upcomingWork) return;
-            const todayStr = new Date().toISOString().split('T')[0];
-            if (localStorage.getItem('last_tomorrow_work_notify_date') === todayStr) return;
-
-            const tomorrow = new Date();
-            tomorrow.setDate(tomorrow.getDate() + 1);
-            const tomorrowStr = tomorrow.toISOString().split('T')[0];
-
-            const tomorrowJobs = projects.filter(p => p.start && p.end && tomorrowStr >= p.start && tomorrowStr <= p.end);
-
-            if (tomorrowJobs.length > 0) {
-                const jobNames = tomorrowJobs.map(j => j.client).slice(0, 3).join(', ');
-                await scheduleNotification("Munkák holnapra 📅", `Holnap ${tomorrowJobs.length} munkád van: ${jobNames}`);
-                localStorage.setItem('last_tomorrow_work_notify_date', todayStr);
-            }
         };
 
-        checkUpcomingJobs();
-    }, [currentUser, projects.length]);
+        syncReminders();
+    }, [ownerUid, projects, settings]);
 
     return (
-        <NotificationContext.Provider value={{ requestPermissions, sendTestNotification }}>
+        <NotificationContext.Provider value={{ requestPermissions, sendTestNotification, settings }}>
             {children}
         </NotificationContext.Provider>
     );

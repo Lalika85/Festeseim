@@ -1,0 +1,66 @@
+diff --git a/node_modules/@aparajita/capacitor-secure-storage/android/src/main/java/com/aparajita/capacitor/securestorage/SecureStorage.java b/node_modules/@aparajita/capacitor-secure-storage/android/src/main/java/com/aparajita/capacitor/securestorage/SecureStorage.java
+index 4961b79..a64e1f8 100644
+--- a/node_modules/@aparajita/capacitor-secure-storage/android/src/main/java/com/aparajita/capacitor/securestorage/SecureStorage.java
++++ b/node_modules/@aparajita/capacitor-secure-storage/android/src/main/java/com/aparajita/capacitor/securestorage/SecureStorage.java
+@@ -16,6 +16,8 @@ import java.security.GeneralSecurityException;
+ import java.security.KeyStore;
+ import java.security.UnrecoverableKeyException;
+ import java.security.spec.AlgorithmParameterSpec;
++import android.os.Build;
++import android.util.Log;
+ import java.util.ArrayList;
+ import java.util.Enumeration;
+ import javax.crypto.Cipher;
+@@ -301,19 +303,41 @@ public class SecureStorage extends Plugin {
+       // We haven't yet generated a secret key for prefixedKey, generate one
+     }
+ 
+-    SecretKey secretKey;
++    SecretKey secretKey = null;
+ 
+     if (entry == null) {
+-      KeyGenParameterSpec.Builder builder = new KeyGenParameterSpec.Builder(
+-        prefixedKey,
+-        KeyProperties.PURPOSE_ENCRYPT | KeyProperties.PURPOSE_DECRYPT
+-      );
+-      AlgorithmParameterSpec spec = builder
+-        .setBlockModes(KeyProperties.BLOCK_MODE_GCM)
+-        .setEncryptionPaddings(KeyProperties.ENCRYPTION_PADDING_NONE)
+-        .build();
+-      keyGenerator.init(spec);
+-      secretKey = keyGenerator.generateKey();
++      boolean generated = false;
++      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
++        try {
++          KeyGenParameterSpec.Builder builder = new KeyGenParameterSpec.Builder(
++            prefixedKey,
++            KeyProperties.PURPOSE_ENCRYPT | KeyProperties.PURPOSE_DECRYPT
++          );
++          builder.setBlockModes(KeyProperties.BLOCK_MODE_GCM)
++                 .setEncryptionPaddings(KeyProperties.ENCRYPTION_PADDING_NONE)
++                 .setIsStrongBoxBacked(true);
++          keyGenerator.init(builder.build());
++          secretKey = keyGenerator.generateKey();
++          generated = true;
++          Log.i("SecureStorage", "Key generated using StrongBox");
++        } catch (java.security.ProviderException e) {
++          Log.w("SecureStorage", "StrongBox unavailable, falling back to TEE");
++        }
++      }
++
++      if (!generated) {
++        KeyGenParameterSpec.Builder builder = new KeyGenParameterSpec.Builder(
++          prefixedKey,
++          KeyProperties.PURPOSE_ENCRYPT | KeyProperties.PURPOSE_DECRYPT
++        );
++        AlgorithmParameterSpec spec = builder
++          .setBlockModes(KeyProperties.BLOCK_MODE_GCM)
++          .setEncryptionPaddings(KeyProperties.ENCRYPTION_PADDING_NONE)
++          .build();
++        keyGenerator.init(spec);
++        secretKey = keyGenerator.generateKey();
++        Log.i("SecureStorage", "Key generated using standard TEE Keystore");
++      }
+     } else {
+       secretKey = entry.getSecretKey();
+     }
